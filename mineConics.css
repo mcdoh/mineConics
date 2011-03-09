@@ -3,39 +3,29 @@
 	margin:0;
 }
 
+body
+{
+	color: #999;
+	font-family: Verdana;
+	font-size: 10px;
+}
+
+ul
+{
+	list-style-type: none;
+	margin-left: .5em;
+	padding-left: .5em;
+}
+
 .controlPane
 {
-	width: 20%;
+	width: 25%;
 	float: left;
-}
-
-.draw a:link, a:visited
-{
-	color: #111;
-	text-decoration: none;
-}
-
-.draw a:hover
-{
-	color: #222;
-	text-decoration: underline;
-}
-
-.row a:link, a:visited
-{
-	color: #111;
-	text-decoration: none;
-}
-
-.row a:hover
-{
-	color: #222;
-	text-decoration: underline;
 }
 
 .graphPane
 {
-	width: 80%;
+	width: 50%;
 	float: right;
 }
 
@@ -43,3 +33,34 @@
 {
 	margin: 1em;
 }
+
+.debugPane
+{
+	width: 25%;
+	float: right;
+}
+
+.draw a:link, a:visited
+{
+	color: #999;
+	text-decoration: underline;
+}
+
+.draw a:hover
+{
+	color: #888;
+	text-decoration: none;
+}
+
+.row a:link, a:visited
+{
+	color: #999;
+	text-decoration: underline;
+}
+
+.row a:hover
+{
+	color: #888;
+	text-decoration: none;
+}
+
