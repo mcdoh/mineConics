@@ -101,7 +101,6 @@ function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,dr
 	$drawList.append('<li>Conic Size: ' + conicSize + '</li>');
 	// *** END DEBUG STUFF *** //
 
-	// draw "graph paper"
 	for (var row=0; row<conicSize; row++)
 	{
 		var x = Math.floor(row-radius);
@@ -144,7 +143,7 @@ function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,dr
 
 $(document).ready(function()
 {
-	var radius = 7.5;
+	var radius = 4; // default, gives us a 10x10 graph
 	var $debugList = $('#debugList');
 	var drawCtr = 0;
 
@@ -157,15 +156,45 @@ $(document).ready(function()
 	var maxConicSize = Math.ceil((radius+1)*2); // for rendering multiple conics
 	var graphScale = (graphHeight-1) / maxConicSize; // 'graphHeight-1' so we're not drawing right up to the border
 	
+	// *** DEBUG STUFF *** //
 	$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
 	$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
 	$debugList.append('<li>Graph Scale: ' + graphScale + '</li>');
+	// *** END DEBUG STUFF *** //
 
+	// display the initial "graph paper"
 	draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
 	drawCtr++;
 
-	draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Circle',drawCircle);
-	drawCtr++;
+	$('input.circleSubmit').live('click',function(event)
+	{
+		radius = parseFloat($('input.circleRadius').val());
+
+		event.preventDefault();
+
+		ctx.clearRect(0,0,graphWidth,graphHeight);
+
+		maxConicSize = Math.ceil((radius+1)*2); // for rendering multiple conics
+		graphScale = (graphHeight-1) / maxConicSize; // 'graphHeight-1' so we're not drawing right up to the border
+
+		// *** DEBUG STUFF *** //
+		$debugList.slideUp();
+		$debugList.children().remove();
+
+		$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
+		$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
+		$debugList.append('<li>Graph Scale: ' + graphScale + '</li>');
+		$debugList.slideDown();
+		// *** END DEBUG STUFF *** //
+
+		drawCtr = 0;
+
+		draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
+		drawCtr++;
+
+		draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Circle',drawCircle);
+		drawCtr++;
+	});
 
 	$('a.draw').live('click',function(event)
 	{
