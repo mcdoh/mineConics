@@ -2,6 +2,7 @@ $(document).ready(function()
 {
 	var radius = 7.5;
 	var $debugList = $('#debugList');
+	var passCtr = 0;
 
 	// get a reference to the canvas
 	var ctx = $('#graph')[0].getContext('2d');
@@ -20,11 +21,30 @@ $(document).ready(function()
 
 	ctx.beginPath();
 
+	var tempID = passCtr;
 	var $pass = $('<li/>');
+	var $passAnchor = $('<a/>');
 	var $passList = $('<ul/>');
-	$pass.text('Drawing Graph');
+
+	tempID = 'pass' + passCtr;
+	$pass.addClass('pass');
+	$pass.attr('id',tempID);
+
+	tempID = 'passAnchor' + passCtr;
+	$passAnchor.addClass('pass');
+	$passAnchor.attr('id',tempID);
+	$passAnchor.text('Drawing Graph');
+	$passAnchor.attr('href',$passAnchor.text());
+
+	tempID = 'passList' + passCtr;
+	$passList.addClass('passList');
+	$passList.attr('id',tempID);
+	$passList.hide();
+
+	$pass.append($passAnchor);
 	$pass.append($passList);
 	$debugList.append($pass);
+	passCtr++;
 
 	// draw "graph paper"
 	for (var r=0; r<conicSize; r++)
@@ -42,5 +62,16 @@ $(document).ready(function()
 
 	ctx.closePath();
 	ctx.fill();
+
+	$('a.pass').live('click',function(event)
+	{
+		var $pass = $(this).parent();
+		var $passList = $pass.find('ul.passList');
+
+		event.preventDefault();
+
+		$pass.siblings().find('ul.passList:visible').slideUp();
+		$passList.slideToggle();
+	});
 });
 
