@@ -4,48 +4,48 @@ function drawGraph(ctx,r,c,graphScale)
 	ctx.rect(r*graphScale+1,c*graphScale+1,graphScale-1,graphScale-1);
 }
 
-function pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,passName,passFunc)
+function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,drawName,drawFunc)
 {
 	var conicSize = Math.ceil((radius+1)*2); // '+1' gives us some room around the shape once drawn
 
-	var tempID = passCtr;
-	var $pass = $('<li/>');
-	var $passAnchor = $('<a/>');
-	var $passList = $('<ul/>');
+	var tempID = drawCtr;
+	var $draw = $('<li/>');
+	var $drawAnchor = $('<a/>');
+	var $drawList = $('<ul/>');
 
-	tempID = 'pass' + passCtr;
-	$pass.addClass('pass');
-	$pass.attr('id',tempID);
+	tempID = 'draw' + drawCtr;
+	$draw.addClass('draw');
+	$draw.attr('id',tempID);
 
-	tempID = 'passAnchor' + passCtr;
-	$passAnchor.addClass('pass');
-	$passAnchor.attr('id',tempID);
-	$passAnchor.text(passName);
-	$passAnchor.attr('href',$passAnchor.text());
+	tempID = 'drawAnchor' + drawCtr;
+	$drawAnchor.addClass('draw');
+	$drawAnchor.attr('id',tempID);
+	$drawAnchor.text(drawName);
+	$drawAnchor.attr('href',$drawAnchor.text());
 
-	tempID = 'passList' + passCtr;
-	$passList.addClass('passList');
-	$passList.attr('id',tempID);
-	$passList.hide();
+	tempID = 'drawList' + drawCtr;
+	$drawList.addClass('drawList');
+	$drawList.attr('id',tempID);
+	$drawList.hide();
 
-	$pass.append($passAnchor);
-	$pass.append($passList);
-	$debugList.append($pass);
-	passCtr++;
+	$draw.append($drawAnchor);
+	$draw.append($drawList);
+	$debugList.append($draw);
+	drawCtr++;
 
-	$passList.append('<li>Radius: ' + radius + '</li>');
-	$passList.append('<li>Conic Size: ' + conicSize + '</li>');
+	$drawList.append('<li>Radius: ' + radius + '</li>');
+	$drawList.append('<li>Conic Size: ' + conicSize + '</li>');
 
 	// draw "graph paper"
 	for (var r=0; r<conicSize; r++)
 	{
 		var $debugRow = $('<li/>');
 		$debugRow.text('Row: ' + r);
-		$passList.append($debugRow);
+		$drawList.append($debugRow);
 
 		for (var c=0; c<conicSize; c++)
 		{
-			passFunc(ctx,r,c,graphScale);
+			drawFunc(ctx,r,c,graphScale);
 		}
 	}
 
@@ -55,7 +55,7 @@ $(document).ready(function()
 {
 	var radius = 7.5;
 	var $debugList = $('#debugList');
-	var passCtr = 0;
+	var drawCtr = 0;
 
 	// get a reference to the canvas
 	var ctx = $('#graph')[0].getContext('2d');
@@ -72,20 +72,20 @@ $(document).ready(function()
 
 	ctx.beginPath();
 
-	pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
+	draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
 
 	ctx.closePath();
 	ctx.fill();
 
-	$('a.pass').live('click',function(event)
+	$('a.draw').live('click',function(event)
 	{
-		var $pass = $(this).parent();
-		var $passList = $pass.find('ul.passList');
+		var $draw = $(this).parent();
+		var $drawList = $draw.find('ul.drawList');
 
 		event.preventDefault();
 
-		$pass.siblings().find('ul.passList:visible').slideUp();
-		$passList.slideToggle();
+		$draw.siblings().find('ul.drawList:visible').slideUp();
+		$drawList.slideToggle();
 	});
 });
 
