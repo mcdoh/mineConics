@@ -1,4 +1,10 @@
-function pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,passName)
+function drawGraph(ctx,r,c,graphScale)
+{
+	ctx.fillStyle = "rgba(1,1,1, 0.1)";
+	ctx.rect(r*graphScale+1,c*graphScale+1,graphScale-1,graphScale-1);
+}
+
+function pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,passName,passFunc)
 {
 	var conicSize = Math.ceil((radius+1)*2); // '+1' gives us some room around the shape once drawn
 
@@ -39,8 +45,7 @@ function pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,pa
 
 		for (var c=0; c<conicSize; c++)
 		{
-			ctx.fillStyle = "rgba(1,1,1, 0.1)";
-			ctx.rect(r*graphScale+1,c*graphScale+1,graphScale-1,graphScale-1);
+			passFunc(ctx,r,c,graphScale);
 		}
 	}
 
@@ -67,7 +72,7 @@ $(document).ready(function()
 
 	ctx.beginPath();
 
-	pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph');
+	pass(radius,$debugList,passCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
 
 	ctx.closePath();
 	ctx.fill();
