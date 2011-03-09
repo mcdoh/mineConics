@@ -12,10 +12,22 @@
 .draw a:link, a:visited
 {
 	color: #111;
-	text-decoration: none;	
+	text-decoration: none;
 }
 
 .draw a:hover
+{
+	color: #222;
+	text-decoration: underline;
+}
+
+.row a:link, a:visited
+{
+	color: #111;
+	text-decoration: none;
+}
+
+.row a:hover
 {
 	color: #222;
 	text-decoration: underline;
