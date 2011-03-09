@@ -1,0 +1,21 @@
+*
+{
+	margin:0;
+}
+
+.controlPane
+{
+	width: 20%;
+	float: left;
+}
+
+.graphPane
+{
+	width: 80%;
+	float: right;
+}
+
+#graph
+{
+	margin: 1em;
+}
