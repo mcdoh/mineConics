@@ -26,7 +26,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,radius)
 {
 	circleTest = Math.sqrt((x*x) + (y*y));
 
-	if (circleTest <= radius)
+	if ((circleTest <= radius) && (circleTest > (radius-1)))
 	{
 		ctx.beginPath();
 
