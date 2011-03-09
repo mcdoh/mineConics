@@ -9,13 +9,13 @@
 	float: left;
 }
 
-.pass a:link, a:visited
+.draw a:link, a:visited
 {
 	color: #111;
 	text-decoration: none;	
 }
 
-.pass a:hover
+.draw a:hover
 {
 	color: #222;
 	text-decoration: underline;
