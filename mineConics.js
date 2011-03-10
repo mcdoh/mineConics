@@ -105,7 +105,7 @@ function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,
 
 	for (var row=0; row<graphSize; row++)
 	{
-		var y = Math.floor(row-radius);
+		var y = row - ((graphSize-1) / 2);
 
 		// *** DEBUG STUFF *** //
 		var tempID = row;
@@ -135,7 +135,7 @@ function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,
 
 		for (var col=0; col<graphSize; col++)
 		{
-			var x = Math.floor(col-radius);
+			var x = col - ((graphSize-1) / 2);
 
 			drawFunc($rowList,ctx,row,col,graphScale,x,y,diameter);
 		}
