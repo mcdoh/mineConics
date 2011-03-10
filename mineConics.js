@@ -1,4 +1,9 @@
-function drawGraph($rowList,ctx,row,col,graphScale,x,y,diameter)
+function circle(diameter)
+{
+	this.diameter = diameter;
+}
+
+function drawGraph($rowList,ctx,row,col,graphScale,x,y)
 {
 	ctx.beginPath();
 
@@ -68,12 +73,32 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 	}
 }
 
-function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,drawName,drawFunc)
+function draw(circles,ctx,$debugList)
 {
-	var radius = diameter / 2;
-	var graphSize = diameter + 2;
+	var graphHeight = $('#graph').height();
+	var graphWidth = $('#graph').width();
+	var graphSize = 10; // for rendering multiple conics
+
+	$.each(circles,function(index,element)
+	{
+		if ((element.diameter+2) > graphSize)
+			graphSize = element.diameter + 2;
+	});
+
+	var graphScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
 
 	// *** DEBUG STUFF *** //
+	$debugList.slideUp();
+	$debugList.children().remove();
+
+	$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
+	$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
+	$debugList.append('<li>Graph Scale: ' + graphScale.toFixed(1) + '</li>');
+	$debugList.slideDown();
+	// *** END DEBUG STUFF *** //
+
+	// *** DEBUG STUFF *** //
+	var drawCtr = 0;
 	var tempID = drawCtr;
 	var $draw = $('<li/>');
 	var $drawAnchor = $('<a/>');
@@ -86,7 +111,7 @@ function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,
 	tempID = 'drawAnchor' + drawCtr;
 	$drawAnchor.addClass('draw');
 	$drawAnchor.attr('id',tempID);
-	$drawAnchor.text(drawName);
+	$drawAnchor.text('test');
 	$drawAnchor.attr('href',$drawAnchor.text());
 
 	tempID = 'drawList' + drawCtr;
@@ -98,9 +123,10 @@ function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,
 	$draw.append($drawList);
 	$debugList.append($draw);
 
-	$drawList.append('<li>diameter: ' + diameter + '</li>');
 	$drawList.append('<li>Graph Size: ' + graphSize + '</li>');
 	// *** END DEBUG STUFF *** //
+
+	ctx.clearRect(0,0,graphWidth,graphHeight);
 
 	for (var row=0; row<graphSize; row++)
 	{
@@ -136,70 +162,39 @@ function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,
 		{
 			var x = col - ((graphSize-1) / 2);
 
-			drawFunc($rowList,ctx,row,col,graphScale,x,y,diameter);
+			drawGraph($rowList,ctx,row,col,graphScale,x,y);
+
+			$.each(circles,function(index,element)
+			{
+				drawCircle($rowList,ctx,row,col,graphScale,x,y,element.diameter);
+			});
 		}
 	}
-
 }
 
 $(document).ready(function()
 {
-	var diameter = 8; // default, gives us a 10x10 graph
+	var circles = [];
 	var $debugList = $('#debugList');
-	var drawCtr = 0;
 
 	// get a reference to the canvas
 	var ctx = $('#graph')[0].getContext('2d');
 
-	var graphHeight = $('#graph').height();
-	var graphWidth = $('#graph').width();
-
-	var maxConicSize = diameter + 2; // for rendering multiple conics
-	var graphScale = (graphHeight-1) / maxConicSize; // 'graphHeight-1' so we're not drawing right up to the border
-	
-	// *** DEBUG STUFF *** //
-	$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
-	$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
-	$debugList.append('<li>Graph Scale: ' + graphScale.toFixed(1) + '</li>');
-	// *** END DEBUG STUFF *** //
-
-	// display the initial "graph paper"
-	draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
-	drawCtr++;
+	// display the initial graph
+	draw(circles,ctx,$debugList);
 
 	$('input.circleSubmit').live('click',function(event)
 	{
 		diameter = parseInt($('input.circleDiameter').val());
 
-		if (!diameter)
-		{
-			diameter = 8;
-		}
+		if (diameter)
+			circles = circles.concat(new circle(diameter));
+		else
+			circles.splice(0,circles.length);
 
 		event.preventDefault();
 
-		ctx.clearRect(0,0,graphWidth,graphHeight);
-
-		maxConicSize = diameter+2; // for rendering multiple conics
-		graphScale = (graphHeight-1) / maxConicSize; // 'graphHeight-1' so we're not drawing right up to the border
-
-		// *** DEBUG STUFF *** //
-		$debugList.slideUp();
-		$debugList.children().remove();
-
-		$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
-		$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
-		$debugList.append('<li>Graph Scale: ' + graphScale.toFixed(1) + '</li>');
-		$debugList.slideDown();
-		// *** END DEBUG STUFF *** //
-
-		drawCtr = 0;
-
-		draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
-		drawCtr++;
-
-		draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Circle',drawCircle);
-		drawCtr++;
+		draw(circles,ctx,$debugList);
 	});
 
 	$('a.draw').live('click',function(event)
