@@ -1,4 +1,4 @@
-function drawGraph($rowList,ctx,row,col,graphScale,x,y,radius)
+function drawGraph($rowList,ctx,row,col,graphScale,x,y,diameter)
 {
 	ctx.beginPath();
 
@@ -22,9 +22,10 @@ function drawGraph($rowList,ctx,row,col,graphScale,x,y,radius)
 	// *** END DEBUG STUFF *** //
 }
 
-function drawCircle($rowList,ctx,row,col,graphScale,x,y,radius)
+function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 {
-	circleTest = Math.sqrt((x*x) + (y*y));
+	var radius = diameter / 2;
+	var circleTest = Math.sqrt((x*x) + (y*y));
 
 	if ((circleTest <= radius) && (circleTest > (radius-1)))
 	{
@@ -68,9 +69,10 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,radius)
 	}
 }
 
-function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,drawName,drawFunc)
+function draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,drawName,drawFunc)
 {
-	var conicSize = Math.ceil((radius+1)*2); // '+1' gives us some room around the shape once drawn
+	var radius = diameter / 2;
+	var graphSize = diameter + 2;
 
 	// *** DEBUG STUFF *** //
 	var tempID = drawCtr;
@@ -97,11 +99,11 @@ function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,dr
 	$draw.append($drawList);
 	$debugList.append($draw);
 
-	$drawList.append('<li>Radius: ' + radius + '</li>');
-	$drawList.append('<li>Conic Size: ' + conicSize + '</li>');
+	$drawList.append('<li>diameter: ' + diameter + '</li>');
+	$drawList.append('<li>Graph Size: ' + graphSize + '</li>');
 	// *** END DEBUG STUFF *** //
 
-	for (var row=0; row<conicSize; row++)
+	for (var row=0; row<graphSize; row++)
 	{
 		var x = Math.floor(row-radius);
 
@@ -131,11 +133,11 @@ function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,dr
 		$drawList.append($row);
 		// *** END DEBUG STUFF *** //
 
-		for (var col=0; col<conicSize; col++)
+		for (var col=0; col<graphSize; col++)
 		{
 			var y = Math.floor(col-radius);
 
-			drawFunc($rowList,ctx,row,col,graphScale,x,y,radius);
+			drawFunc($rowList,ctx,row,col,graphScale,x,y,diameter);
 		}
 	}
 
@@ -143,7 +145,7 @@ function draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,dr
 
 $(document).ready(function()
 {
-	var radius = 4; // default, gives us a 10x10 graph
+	var diameter = 8; // default, gives us a 10x10 graph
 	var $debugList = $('#debugList');
 	var drawCtr = 0;
 
@@ -153,7 +155,7 @@ $(document).ready(function()
 	var graphHeight = $('#graph').height();
 	var graphWidth = $('#graph').width();
 
-	var maxConicSize = Math.ceil((radius+1)*2); // for rendering multiple conics
+	var maxConicSize = diameter + 2; // for rendering multiple conics
 	var graphScale = (graphHeight-1) / maxConicSize; // 'graphHeight-1' so we're not drawing right up to the border
 	
 	// *** DEBUG STUFF *** //
@@ -163,18 +165,18 @@ $(document).ready(function()
 	// *** END DEBUG STUFF *** //
 
 	// display the initial "graph paper"
-	draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
+	draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
 	drawCtr++;
 
 	$('input.circleSubmit').live('click',function(event)
 	{
-		radius = parseFloat($('input.circleRadius').val());
+		diameter = parseInt($('input.circleDiameter').val());
 
 		event.preventDefault();
 
 		ctx.clearRect(0,0,graphWidth,graphHeight);
 
-		maxConicSize = Math.ceil((radius+1)*2); // for rendering multiple conics
+		maxConicSize = diameter+2; // for rendering multiple conics
 		graphScale = (graphHeight-1) / maxConicSize; // 'graphHeight-1' so we're not drawing right up to the border
 
 		// *** DEBUG STUFF *** //
@@ -189,10 +191,10 @@ $(document).ready(function()
 
 		drawCtr = 0;
 
-		draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
+		draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Graph',drawGraph);
 		drawCtr++;
 
-		draw(radius,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Circle',drawCircle);
+		draw(diameter,$debugList,drawCtr,ctx,graphHeight,graphWidth,graphScale,'Drawing Circle',drawCircle);
 		drawCtr++;
 	});
 
