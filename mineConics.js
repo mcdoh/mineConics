@@ -17,7 +17,7 @@ function drawGraph($rowList,ctx,row,col,graphScale,x,y,diameter)
 	$rowList.append($col);
 
 	$colList.append('<li>X: ' + x + '</li>');
-	$colList.append('<li>Y: ' + y + '</li>');
+	$colList.append('<li>Y: ' + (-1 * y) + '</li>');
 	$colList.append('<li>Graph Scale: ' + graphScale + '</li>');
 	// *** END DEBUG STUFF *** //
 }
@@ -47,7 +47,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 
 		$colList.append('<li>Inside</li>');
 		$colList.append('<li>X: ' + x + '</li>');
-		$colList.append('<li>Y: ' + y + '</li>');
+		$colList.append('<li>Y: ' + (-1 * y) + '</li>');
 		$colList.append('<li>Circle Test: ' + circleTest + '</li>');
 		// *** END DEBUG STUFF *** //
 	}
@@ -63,7 +63,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 
 		$colList.append('<li>Outside</li>');
 		$colList.append('<li>X: ' + x + '</li>');
-		$colList.append('<li>Y: ' + y + '</li>');
+		$colList.append('<li>Y: ' + (-1 * y) + '</li>');
 		$colList.append('<li>Circle Test: ' + circleTest + '</li>');
 		// *** END DEBUG STUFF *** //
 	}
