@@ -26,7 +26,7 @@ function drawGraph($rowList,ctx,row,col,graphScale,x,y)
 	// *** END DEBUG STUFF *** //
 }
 
-function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
+function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter,color)
 {
 	var radius = diameter / 2;
 	var circleTest = Math.sqrt((x*x) + (y*y));
@@ -35,7 +35,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 	{
 		ctx.beginPath();
 
-		ctx.fillStyle = "rgba(0,1,0, 0.5)";
+		ctx.fillStyle = color;
 		ctx.rect(row*graphScale+1,col*graphScale+1,graphScale-1,graphScale-1);
 		
 		ctx.closePath();
@@ -166,7 +166,7 @@ function draw(circles,ctx,$debugList)
 
 			$.each(circles,function(index,element)
 			{
-				drawCircle($rowList,ctx,row,col,graphScale,x,y,element.diameter);
+				drawCircle($rowList,ctx,row,col,graphScale,x,y,element.diameter,element.color);
 			});
 		}
 	}
@@ -188,7 +188,7 @@ $(document).ready(function()
 		diameter = parseInt($('input.circleDiameter').val());
 
 		if (diameter)
-			circles = circles.concat(new circle(diameter));
+			circles = circles.concat(new circle(diameter,"rgba(0,1,0, 0.5)"));
 		else
 			circles.splice(0,circles.length);
 
