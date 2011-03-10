@@ -18,7 +18,6 @@ function drawGraph($rowList,ctx,row,col,graphScale,x,y,diameter)
 
 	$colList.append('<li>X: ' + x + '</li>');
 	$colList.append('<li>Y: ' + (-1 * y) + '</li>');
-	$colList.append('<li>Graph Scale: ' + graphScale + '</li>');
 	// *** END DEBUG STUFF *** //
 }
 
@@ -48,7 +47,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 		$colList.append('<li>Inside</li>');
 		$colList.append('<li>X: ' + x + '</li>');
 		$colList.append('<li>Y: ' + (-1 * y) + '</li>');
-		$colList.append('<li>Circle Test: ' + circleTest + '</li>');
+		$colList.append('<li>Circle Test: ' + circleTest.toFixed(3) + '</li>');
 		// *** END DEBUG STUFF *** //
 	}
 	else
@@ -64,7 +63,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter)
 		$colList.append('<li>Outside</li>');
 		$colList.append('<li>X: ' + x + '</li>');
 		$colList.append('<li>Y: ' + (-1 * y) + '</li>');
-		$colList.append('<li>Circle Test: ' + circleTest + '</li>');
+		$colList.append('<li>Circle Test: ' + circleTest.toFixed(3) + '</li>');
 		// *** END DEBUG STUFF *** //
 	}
 }
@@ -161,7 +160,7 @@ $(document).ready(function()
 	// *** DEBUG STUFF *** //
 	$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
 	$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
-	$debugList.append('<li>Graph Scale: ' + graphScale + '</li>');
+	$debugList.append('<li>Graph Scale: ' + graphScale.toFixed(1) + '</li>');
 	// *** END DEBUG STUFF *** //
 
 	// display the initial "graph paper"
@@ -171,6 +170,11 @@ $(document).ready(function()
 	$('input.circleSubmit').live('click',function(event)
 	{
 		diameter = parseInt($('input.circleDiameter').val());
+
+		if (!diameter)
+		{
+			diameter = 8;
+		}
 
 		event.preventDefault();
 
@@ -185,7 +189,7 @@ $(document).ready(function()
 
 		$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
 		$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
-		$debugList.append('<li>Graph Scale: ' + graphScale + '</li>');
+		$debugList.append('<li>Graph Scale: ' + graphScale.toFixed(1) + '</li>');
 		$debugList.slideDown();
 		// *** END DEBUG STUFF *** //
 
