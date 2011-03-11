@@ -194,9 +194,7 @@ $(document).ready(function()
 
 		if (diameter)
 		{
-			circles = circles.concat(new circle(diameter-2,"rgba(0,128,255, 0.25)"));
-			circles = circles.concat(new circle(diameter,"rgba(0,128,255, 1)"));
-			circles = circles.concat(new circle(diameter+2,"rgba(0,128,255, 0.25)"));
+			circles = circles.concat(new circle(diameter,"rgba(32,128,32, 1)"));
 		}
 
 		event.preventDefault();
