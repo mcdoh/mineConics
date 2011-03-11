@@ -1,6 +1,7 @@
-function circle(diameter)
+function circle(diameter,color)
 {
 	this.diameter = diameter;
+	this.color = color;
 }
 
 function drawGraph($rowList,ctx,row,col,graphScale,x,y)
@@ -185,12 +186,18 @@ $(document).ready(function()
 
 	$('input.circleSubmit').live('click',function(event)
 	{
+		// grab the diameter value from the form
 		diameter = parseInt($('input.circleDiameter').val());
 
+		// clear all current circles
+		circles.splice(0,circles.length);
+
 		if (diameter)
-			circles = circles.concat(new circle(diameter,"rgba(0,1,0, 0.5)"));
-		else
-			circles.splice(0,circles.length);
+		{
+			circles = circles.concat(new circle(diameter-2,"rgba(0,128,255, 0.25)"));
+			circles = circles.concat(new circle(diameter,"rgba(0,128,255, 1)"));
+			circles = circles.concat(new circle(diameter+2,"rgba(0,128,255, 0.25)"));
+		}
 
 		event.preventDefault();
 
