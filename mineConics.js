@@ -9,7 +9,7 @@ function drawGraph($rowList,ctx,row,col,graphScale,x,y)
 	ctx.beginPath();
 
 	ctx.fillStyle = "rgba(1,1,1, 0.1)";
-	ctx.rect(row*graphScale+1,col*graphScale+1,graphScale-1,graphScale-1);
+	ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 
 	ctx.closePath();
 	ctx.fill();
@@ -37,7 +37,7 @@ function drawCircle($rowList,ctx,row,col,graphScale,x,y,diameter,color)
 		ctx.beginPath();
 
 		ctx.fillStyle = color;
-		ctx.rect(row*graphScale+1,col*graphScale+1,graphScale-1,graphScale-1);
+		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 		
 		ctx.closePath();
 		ctx.fill();
