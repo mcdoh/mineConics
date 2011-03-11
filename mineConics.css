@@ -34,33 +34,3 @@ ul
 	margin: 1em;
 }
 
-.debugPane
-{
-	width: 25%;
-	float: right;
-}
-
-.draw a:link, a:visited
-{
-	color: #999;
-	text-decoration: underline;
-}
-
-.draw a:hover
-{
-	color: #888;
-	text-decoration: none;
-}
-
-.row a:link, a:visited
-{
-	color: #999;
-	text-decoration: underline;
-}
-
-.row a:hover
-{
-	color: #888;
-	text-decoration: none;
-}
-
