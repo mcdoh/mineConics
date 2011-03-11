@@ -98,3 +98,8 @@ $(document).ready(function()
 	});
 });
 
+$(window).load(function()
+{
+	var $header = $('#header');
+	var $controlPane = $('#controlPane');
+});

@@ -17,20 +17,44 @@ ul
 	padding-left: .5em;
 }
 
-.controlPane
+#header
+{
+	width: 100%;
+	height: 50px;
+}
+
+#heading
+{
+	text-align: center;
+	margin: 1em;
+}
+
+#container
+{
+	width: 100%;
+}
+
+#controlPane
 {
 	width: 25%;
+	height: 100%;
 	float: left;
 }
 
-.graphPane
-{
-	width: 50%;
-	float: right;
-}
-
-#graph
+.circleInput
 {
 	margin: 1em;
 }
 
+#graphPane
+{
+	width: auto;
+	height: 100%;
+	float: left;
+}
+
+#graph
+{
+	float: left;
+	margin: 1em;
+}

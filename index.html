@@ -12,15 +12,23 @@
 
 <body>
 	
-	<div class="controlPane">
-		<form class="circleInput" action="makeMyCircle" method="get" accept-charset="utf-8">
-		<p>Diameter&nbsp;<input class="circleDiameter" type="text" name="diameter" value="">&nbsp;<input
-		class="circleSubmit" type="submit" value="Go"></p>
-		</form>
+	<div id="header">
+		<h1 id="heading">mineConics</h1>
 	</div>
 
-	<div class="graphPane">
-		<canvas id="graph" width="500" height="500"></canvas>		
+	<div id="container">
+
+		<div id="controlPane">
+			<form class="circleInput" action="makeMyCircle" method="get" accept-charset="utf-8">
+			<p>Diameter&nbsp;<input class="circleDiameter" type="text" name="diameter" value="">&nbsp;<input
+			class="circleSubmit" type="submit" value="Go"></p>
+			</form>
+		</div>
+
+		<div id="graphPane">
+			<canvas id="graph" width="500" height="500"></canvas>		
+		</div>
+
 	</div>
 
 </body>
