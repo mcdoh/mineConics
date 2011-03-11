@@ -80,18 +80,18 @@ function draw(circles,ctx,$debugList)
 	var graphWidth = $('#graph').width();
 	var graphSize = 10; // for rendering multiple conics
 
-	$.each(circles,function(index,element)
+	if (circles.length)
+		graphSize = circles[0].diameter;
+
+	$.each(circles,function(index,shape)
 	{
-		if ((element.diameter+2) > graphSize)
-			graphSize = element.diameter + 2;
+		if ((shape.diameter+2) > graphSize)
+			graphSize = shape.diameter + 2;
 	});
 
 	var graphScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
 
 	// *** DEBUG STUFF *** //
-	$debugList.slideUp();
-	$debugList.children().remove();
-
 	$debugList.append('<li>Graph Height: ' + graphHeight + '</li>');
 	$debugList.append('<li>Graph Width: ' + graphWidth + '</li>');
 	$debugList.append('<li>Graph Scale: ' + graphScale.toFixed(1) + '</li>');
@@ -186,6 +186,9 @@ $(document).ready(function()
 
 	$('input.circleSubmit').live('click',function(event)
 	{
+		$debugList.slideUp();
+		$debugList.children().remove();
+
 		// grab the diameter value from the form
 		diameter = parseInt($('input.circleDiameter').val());
 
