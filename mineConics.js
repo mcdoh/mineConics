@@ -97,9 +97,3 @@ $(document).ready(function()
 		draw(circles,ctx);
 	});
 });
-
-$(window).load(function()
-{
-	var $header = $('#header');
-	var $controlPane = $('#controlPane');
-});
