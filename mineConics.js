@@ -1,3 +1,27 @@
+function addConicControl($controlPane)
+{
+	var $conicForm = $('<form/>');
+	$conicForm.addClass('conicForm');
+	$conicForm.text('Diameter');
+
+	var $conicInput = $('<input/>');
+	$conicInput.addClass('conicInput');
+	$conicInput.attr('type','text');
+	$conicInput.attr('name','diameter');
+
+	var $conicSubmit = $('<input/>');
+	$conicSubmit.addClass('conicSubmit');
+	$conicSubmit.attr('type','submit');
+	$conicSubmit.attr('value','Go');
+
+	$conicForm.append($conicInput);
+	$conicForm.append($conicSubmit);
+	$conicForm.hide();
+
+	$controlPane.append($conicForm);
+	$conicForm.slideDown();
+}
+
 function circle(diameter,color)
 {
 	this.diameter = diameter;
@@ -73,27 +97,33 @@ $(document).ready(function()
 {
 	var circles = [];
 
+	// add conic form to config div
+	var $controlPane = $('#controlPane');
+	addConicControl($controlPane);
+
 	// get a reference to the canvas
 	var ctx = $('#graph')[0].getContext('2d');
 
 	// display the initial graph
 	draw(circles,ctx);
 
-	$('input.circleSubmit').live('click',function(event)
+	$('input.conicSubmit').live('click',function(event)
 	{
-		// grab the diameter value from the form
-		diameter = parseInt($('input.circleDiameter').val());
+		event.preventDefault();
 
 		// clear all current circles
 		circles.splice(0,circles.length);
 
-		if (diameter)
+		$('form.conicForm').each(function(index,conic)
 		{
-			circles = circles.concat(new circle(diameter,"rgba(32,128,32, 1)"));
-		}
+			var diameter = parseInt($(conic).find('input.conicInput').val());
 
-		event.preventDefault();
+			if (diameter)
+				circles = circles.concat(new circle(diameter,"rgba(32,128,32,1)"));
+		});
 
 		draw(circles,ctx);
+
+		addConicControl($controlPane);
 	});
 });
