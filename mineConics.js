@@ -66,10 +66,7 @@ function draw(circles,ctx)
 {
 	var graphHeight = $('#graph').height();
 	var graphWidth = $('#graph').width();
-	var graphSize = 10; // for rendering multiple conics
-
-	if (circles.length)
-		graphSize = circles[0].diameter;
+	var graphSize = 21; // minimum graph size
 
 	// get largest shape
 	$.each(circles,function(index,shape)
