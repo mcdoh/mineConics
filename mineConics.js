@@ -97,7 +97,7 @@ function draw(circles,ctx)
 			{
 				// adjust for drawing even circles
 				if ((element.diameter % 2) == 0)
-					drawCircle(ctx,row,col,graphScale,(x-0.5),(y-0.5),element.diameter,element.color);
+					drawCircle(ctx,row,col,graphScale,(x-0.5),(y+0.5),element.diameter,element.color);
 				else
 					drawCircle(ctx,row,col,graphScale,x,y,element.diameter,element.color);
 			});
