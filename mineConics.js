@@ -32,7 +32,13 @@ function drawGraph(ctx,row,col,graphScale,x,y)
 {
 	ctx.beginPath();
 
-	ctx.fillStyle = "rgba(1,1,1, 0.1)";
+	if ((x==0) && ((y%2)==0))
+		ctx.fillStyle = "rgba(1,1,1, 0.2)";
+	else if ((y==0) && ((x%2)==0))
+		ctx.fillStyle = "rgba(1,1,1, 0.2)";
+	else
+		ctx.fillStyle = "rgba(1,1,1, 0.1)";
+
 	ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 
 	ctx.closePath();
