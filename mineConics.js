@@ -71,11 +71,16 @@ function draw(circles,ctx)
 	if (circles.length)
 		graphSize = circles[0].diameter;
 
+	// get largest shape
 	$.each(circles,function(index,shape)
 	{
 		if ((shape.diameter+2) > graphSize)
 			graphSize = shape.diameter + 2;
 	});
+
+	// ensure graph is of odd dimensions
+	if ((graphSize%2) == 0)
+		graphSize += 1;
 
 	var graphScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
 
