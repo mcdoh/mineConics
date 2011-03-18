@@ -1,20 +1,55 @@
-function addConicControl($controlPane)
+function addCircleControl($controlPane)
 {
 	var $conicForm = $('<form/>');
 	$conicForm.addClass('conicForm');
-	$conicForm.text('Diameter');
+	$conicForm.addClass('circleForm');
 
-	var $conicInput = $('<input/>');
-	$conicInput.addClass('conicInput');
-	$conicInput.attr('type','text');
-	$conicInput.attr('name','diameter');
+	var $diameterInput = $('<input/>');
+	$diameterInput.addClass('conicInput');
+	$diameterInput.addClass('diameterInput');
+	$diameterInput.attr('type','text');
+	$diameterInput.attr('name','diameter');
 
 	var $conicSubmit = $('<input/>');
 	$conicSubmit.addClass('conicSubmit');
 	$conicSubmit.attr('type','submit');
 	$conicSubmit.attr('value','Go');
 
-	$conicForm.append($conicInput);
+	$conicForm.text('Diameter');
+	$conicForm.append($diameterInput);
+	$conicForm.append($conicSubmit);
+	$conicForm.hide();
+
+	$controlPane.append($conicForm);
+	$conicForm.slideDown();
+}
+
+function addEllipseControl($controlPane)
+{
+	var $conicForm = $('<form/>');
+	$conicForm.addClass('conicForm');
+
+	var $heightInput = $('<input/>');
+	$heightInput.addClass('conicInput');
+	$heightInput.addClass('heightInput');
+	$heightInput.attr('type','text');
+	$heightInput.attr('name','height');
+
+	var $widthInput = $('<input/>');
+	$widthInput.addClass('conicInput');
+	$widthInput.addClass('widthInput');
+	$widthInput.attr('type','text');
+	$widthInput.attr('name','width');
+
+	var $conicSubmit = $('<input/>');
+	$conicSubmit.addClass('conicSubmit');
+	$conicSubmit.attr('type','submit');
+	$conicSubmit.attr('value','Go');
+
+	$conicForm.text('Height');
+	$conicForm.append($heightInput);
+	$conicForm.text('Width');
+	$conicForm.append($widthInput);
 	$conicForm.append($conicSubmit);
 	$conicForm.hide();
 
@@ -25,6 +60,13 @@ function addConicControl($controlPane)
 function circle(diameter,color)
 {
 	this.diameter = diameter;
+	this.color = color;
+}
+
+function ellipse(height,width,color)
+{
+	this.height = height;
+	this.width = width;
 	this.color = color;
 }
 
@@ -51,6 +93,26 @@ function drawCircle(ctx,row,col,graphScale,x,y,diameter,color)
 	var circleTest = Math.sqrt((x*x) + (y*y));
 
 	if ((circleTest <= radius) && (circleTest > (radius-1)))
+	{
+		ctx.beginPath();
+
+		ctx.fillStyle = color;
+		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		
+		ctx.closePath();
+		ctx.fill();
+	}
+}
+
+function drawEllipse(ctx,row,col,graphScale,x,y,height,width,color)
+{
+	var a = width;
+	var b = height;
+	var unit = 1;
+	var perimiter = ((x*x)/(a*a) + (y*y)/(b*b));
+	var inner = ((x*x)/((a-1)*(a-1)) + (y*y)/((b-1)*(b-1)));
+
+	if ((inner <= unit) && (inner > unit))
 	{
 		ctx.beginPath();
 
@@ -111,7 +173,7 @@ $(document).ready(function()
 
 	// add conic form to config div
 	var $controlPane = $('#controlPane');
-	addConicControl($controlPane);
+	addCircleControl($controlPane);
 
 	// get a reference to the canvas
 	var ctx = $('#graph')[0].getContext('2d');
@@ -136,6 +198,6 @@ $(document).ready(function()
 
 		draw(circles,ctx);
 
-		addConicControl($controlPane);
+		addCircleControl($controlPane);
 	});
 });
