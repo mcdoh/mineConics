@@ -68,6 +68,23 @@ circle.prototype.size = function()
 	return this.diameter;
 }
 
+circle.prototype.draw = function(ctx,row,col,graphScale,x,y)
+{
+	var radius = this.diameter / 2;
+	var circleTest = Math.sqrt((x*x) + (y*y));
+
+	if ((circleTest <= radius) && (circleTest > (radius-1)))
+	{
+		ctx.beginPath();
+
+		ctx.fillStyle = this.color;
+		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		
+		ctx.closePath();
+		ctx.fill();
+	}
+}
+
 function ellipse(height,width,color)
 {
 	this.height = height;
@@ -81,6 +98,24 @@ ellipse.prototype.size = function()
 		return this.height;
 	else
 		return this.width;
+}
+
+ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
+{
+	var unit = 1;
+	var perimiter = ((x*x)/(this.width*this.width) + (y*y)/(this.height*this.height));
+	var inner = ((x*x)/((this.width-1)*(this.width-1)) + (y*y)/((this.height-1)*(this.height-1)));
+
+	if ((inner <= unit) && (inner > unit))
+	{
+		ctx.beginPath();
+
+		ctx.fillStyle = color;
+		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		
+		ctx.closePath();
+		ctx.fill();
+	}
 }
 
 function drawGraph(ctx,row,col,graphScale,x,y)
@@ -98,43 +133,6 @@ function drawGraph(ctx,row,col,graphScale,x,y)
 
 	ctx.closePath();
 	ctx.fill();
-}
-
-function drawCircle(ctx,row,col,graphScale,x,y,diameter,color)
-{
-	var radius = diameter / 2;
-	var circleTest = Math.sqrt((x*x) + (y*y));
-
-	if ((circleTest <= radius) && (circleTest > (radius-1)))
-	{
-		ctx.beginPath();
-
-		ctx.fillStyle = color;
-		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
-		
-		ctx.closePath();
-		ctx.fill();
-	}
-}
-
-function drawEllipse(ctx,row,col,graphScale,x,y,height,width,color)
-{
-	var a = width;
-	var b = height;
-	var unit = 1;
-	var perimiter = ((x*x)/(a*a) + (y*y)/(b*b));
-	var inner = ((x*x)/((a-1)*(a-1)) + (y*y)/((b-1)*(b-1)));
-
-	if ((inner <= unit) && (inner > unit))
-	{
-		ctx.beginPath();
-
-		ctx.fillStyle = color;
-		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
-		
-		ctx.closePath();
-		ctx.fill();
-	}
 }
 
 function draw(circles,ctx)
@@ -172,9 +170,9 @@ function draw(circles,ctx)
 			{
 				// adjust for drawing even circles
 				if ((element.diameter % 2) == 0)
-					drawCircle(ctx,row,col,graphScale,(x-0.5),(y+0.5),element.diameter,element.color);
+					element.draw(ctx,row,col,graphScale,(x-0.5),(y+0.5));
 				else
-					drawCircle(ctx,row,col,graphScale,x,y,element.diameter,element.color);
+					element.draw(ctx,row,col,graphScale,x,y);
 			});
 		}
 	}
