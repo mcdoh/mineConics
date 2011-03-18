@@ -63,11 +63,24 @@ function circle(diameter,color)
 	this.color = color;
 }
 
+circle.prototype.size = function()
+{
+	return this.diameter;
+}
+
 function ellipse(height,width,color)
 {
 	this.height = height;
 	this.width = width;
 	this.color = color;
+}
+
+ellipse.prototype.size = function()
+{
+	if (height >= width)
+		return this.height;
+	else
+		return this.width;
 }
 
 function drawGraph(ctx,row,col,graphScale,x,y)
@@ -133,8 +146,8 @@ function draw(circles,ctx)
 	// get largest shape
 	$.each(circles,function(index,shape)
 	{
-		if ((shape.diameter+2) > graphSize)
-			graphSize = shape.diameter + 2;
+		if ((shape.size()+2) > graphSize)
+			graphSize = shape.size() + 2;
 	});
 
 	// ensure graph is of odd dimensions
