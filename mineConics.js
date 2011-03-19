@@ -1,17 +1,17 @@
 function addCircleControl($controlPane)
 {
 	var $conicForm = $('<form/>');
-	$conicForm.addClass('conicForm');
-	$conicForm.addClass('circleForm');
+	$conicForm.addClass('conic');
+	$conicForm.addClass('circle');
 
 	var $diameterInput = $('<input/>');
-	$diameterInput.addClass('conicInput');
-	$diameterInput.addClass('diameterInput');
+	$diameterInput.addClass('conic');
+	$diameterInput.addClass('diameter');
 	$diameterInput.attr('type','text');
 	$diameterInput.attr('name','diameter');
 
 	var $conicSubmit = $('<input/>');
-	$conicSubmit.addClass('conicSubmit');
+	$conicSubmit.addClass('conic');
 	$conicSubmit.attr('type','submit');
 	$conicSubmit.attr('value','Go');
 
@@ -27,22 +27,22 @@ function addCircleControl($controlPane)
 function addEllipseControl($controlPane)
 {
 	var $conicForm = $('<form/>');
-	$conicForm.addClass('conicForm');
+	$conicForm.addClass('conic');
 
 	var $heightInput = $('<input/>');
-	$heightInput.addClass('conicInput');
-	$heightInput.addClass('heightInput');
+	$heightInput.addClass('conic');
+	$heightInput.addClass('height');
 	$heightInput.attr('type','text');
 	$heightInput.attr('name','height');
 
 	var $widthInput = $('<input/>');
-	$widthInput.addClass('conicInput');
-	$widthInput.addClass('widthInput');
+	$widthInput.addClass('conic');
+	$widthInput.addClass('width');
 	$widthInput.attr('type','text');
 	$widthInput.attr('name','width');
 
 	var $conicSubmit = $('<input/>');
-	$conicSubmit.addClass('conicSubmit');
+	$conicSubmit.addClass('conic');
 	$conicSubmit.attr('type','submit');
 	$conicSubmit.attr('value','Go');
 
@@ -208,16 +208,16 @@ $(document).ready(function()
 	// display the initial graph
 	draw(ctx,graph,circles);
 
-	$('input.conicSubmit').live('click',function(event)
+	$('input.conic:submit').live('click',function(event)
 	{
 		event.preventDefault();
 
 		// clear all current circles
 		circles.splice(0,circles.length);
 
-		$('form.conicForm').each(function(index,conic)
+		$('form.conic').each(function(index,conic)
 		{
-			var diameter = parseInt($(conic).find('input.conicInput').val());
+			var diameter = parseInt($(conic).find('input.conic').val());
 
 			if (diameter)
 				circles = circles.concat(new circle(diameter,"rgba(32,128,32,1)"));
