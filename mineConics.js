@@ -152,8 +152,8 @@ ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
 
 function draw(ctx,graph,circles)
 {
-	var graphHeight = $('#graph').height();
-	var graphWidth = $('#graph').width();
+	var graphHeight = $('#canvas').height();
+	var graphWidth = $('#canvas').width();
 	var graphSize = graph.getSize();
 
 	// get largest shape
@@ -203,7 +203,7 @@ $(document).ready(function()
 	addCircleControl($controlPane);
 
 	// get a reference to the canvas
-	var ctx = $('#graph')[0].getContext('2d');
+	var ctx = $('#canvas')[0].getContext('2d');
 
 	// display the initial graph
 	draw(ctx,graph,circles);
