@@ -53,7 +53,6 @@ function addCircleControl($controlPane)
 	$conicForm.addClass('circle');
 
 	var $diameterInput = $('<input/>');
-	$diameterInput.addClass('conic');
 	$diameterInput.addClass('diameter');
 	$diameterInput.attr('type','text');
 	$diameterInput.attr('name','diameter');
@@ -79,14 +78,12 @@ function addEllipseControl($controlPane)
 
 	var $heightDiv = $('<div/>');
 	var $heightInput = $('<input/>');
-	$heightInput.addClass('conic');
 	$heightInput.addClass('height');
 	$heightInput.attr('type','text');
 	$heightInput.attr('name','height');
 
 	var $widthDiv = $('<div/>');
 	var $widthInput = $('<input/>');
-	$widthInput.addClass('conic');
 	$widthInput.addClass('width');
 	$widthInput.attr('type','text');
 	$widthInput.attr('name','width');
@@ -109,11 +106,12 @@ function addEllipseControl($controlPane)
 	$conicForm.slideDown();
 }
 
-function cartesianPlane(height,width,color)
+function cartesianPlane(height,width,color,highlight)
 {
 	this.height = height;
 	this.width = width;
 	this.color = color;
+	this.highlight = highlight;
 }
 
 cartesianPlane.prototype.getSize = function()
@@ -128,14 +126,14 @@ cartesianPlane.prototype.draw = function(ctx,row,col,graphScale,x,y)
 {
 	ctx.beginPath();
 
-	if ((x==0) && ((y%2)==0))
-		ctx.fillStyle = "rgba(1,1,1, 0.2)";
-	else if ((y==0) && ((x%2)==0))
-		ctx.fillStyle = "rgba(1,1,1, 0.2)";
-	else
-		ctx.fillStyle = "rgba(1,1,1, 0.1)";
-
+	ctx.fillStyle = this.color;
 	ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+
+	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
+	{
+		ctx.fillStyle = this.highlight;
+		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+	}
 
 	ctx.closePath();
 	ctx.fill();
@@ -178,7 +176,7 @@ function ellipse(height,width,color)
 
 ellipse.prototype.getSize = function()
 {
-	if (height >= width)
+	if (this.height >= this.width)
 		return this.height;
 	else
 		return this.width;
@@ -187,14 +185,16 @@ ellipse.prototype.getSize = function()
 ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
 {
 	var unit = 1;
-	var perimiter = ((x*x)/(this.width*this.width) + (y*y)/(this.height*this.height));
-	var inner = ((x*x)/((this.width-1)*(this.width-1)) + (y*y)/((this.height-1)*(this.height-1)));
+	var a = this.width / 2;
+	var b = this.height / 2;
+	var perimeter = ((x*x)/(a*a) + (y*y)/(b*b));
+	var inner = ((x*x)/((a-1)*(a-1)) + (y*y)/((b-1)*(b-1)));
 
-	if ((inner <= unit) && (inner > unit))
+	if ((perimeter <= unit) && (inner > unit))
 	{
 		ctx.beginPath();
 
-		ctx.fillStyle = color;
+		ctx.fillStyle = this.color;
 		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 		
 		ctx.closePath();
@@ -236,9 +236,9 @@ function draw(ctx,graph,circles)
 			$.each(circles,function(index,element)
 			{
 				// adjust for drawing even circles
-				if ((element.diameter % 2) == 0)
-					element.draw(ctx,row,col,graphScale,(x-0.5),(y+0.5));
-				else
+//				if ((element.diameter % 2) == 0)
+//					element.draw(ctx,row,col,graphScale,(x-0.5),(y+0.5));
+//				else
 					element.draw(ctx,row,col,graphScale,x,y);
 			});
 		}
@@ -247,7 +247,7 @@ function draw(ctx,graph,circles)
 
 $(document).ready(function()
 {
-	var graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)");
+	var graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
 	var circles = [];
 
 	// add conic form to config div
@@ -280,10 +280,19 @@ $(document).ready(function()
 
 		$('form.conic').each(function(index,conic)
 		{
-			var diameter = parseInt($(conic).find('input.conic').val());
+			var diameter = parseInt($(conic).find('input.diameter').val());
 
 			if (diameter)
 				circles = circles.concat(new circle(diameter,"rgba(32,128,32,1)"));
+			else
+			{
+				var height = parseInt($(conic).find('input.height').val());
+				var width = parseInt($(conic).find('input.width').val());
+				
+				if (height && width)
+					circles = circles.concat(new ellipse(height,width,"rgba(32,128,32,1)"));
+			}
+
 		});
 
 		draw(ctx,graph,circles);
