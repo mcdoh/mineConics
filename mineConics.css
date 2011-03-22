@@ -59,3 +59,24 @@ ul
 	float: left;
 	margin: 1em;
 }
+
+div.controls
+{
+	border: 1px solid black;
+	margin: 2px;
+	padding: 2px;
+
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+}
+div.conic
+{
+	border: 1px solid black;
+	margin: 2px;
+	padding: 2px;
+
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+}

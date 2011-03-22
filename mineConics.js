@@ -1,5 +1,8 @@
-function addGraphControl($controlPane)
+function graphControl()
 {
+	var $graphDiv = $('<div/>');
+	$graphDiv.addClass('control');
+
 	var $graphForm = $('<form/>');
 	$graphForm.addClass('graph');
 
@@ -17,14 +20,16 @@ function addGraphControl($controlPane)
 	$graphForm.text('size');
 	$graphForm.append($sizeInput);
 	$graphForm.append($graphSubmit);
-	$graphForm.hide();
+	$graphDiv.append($graphForm);
 
-	$controlPane.append($graphForm);
-	$graphForm.slideDown();
+	return $graphDiv;
 }
 
-function addNewConicControl($controlPane)
+function newConicControl()
 {
+	var $newConicDiv = $('<div/>');
+	$newConicDiv.addClass('control');
+
 	var $newConicForm = $('<form/>');
 	$newConicForm.addClass('newConic');
 
@@ -40,18 +45,21 @@ function addNewConicControl($controlPane)
 
 	$newConicForm.append($newCircleButton);
 	$newConicForm.append($newEllipseButton);
-	$newConicForm.hide();
+	$newConicDiv.append($newConicForm);
 
-	$controlPane.append($newConicForm);
-	$newConicForm.slideDown();
+	return $newConicDiv;
 }
 
 function addCircleControl($controlPane)
 {
+	var $conicDiv = $('<div/>');
+	$conicDiv.addClass('conic');
+
 	var $conicForm = $('<form/>');
 	$conicForm.addClass('conic');
 	$conicForm.addClass('circle');
 
+	var $diameterDiv = $('<div/>');
 	var $diameterInput = $('<input/>');
 	$diameterInput.addClass('diameter');
 	$diameterInput.attr('type','text');
@@ -62,17 +70,22 @@ function addCircleControl($controlPane)
 	$conicSubmit.attr('type','submit');
 	$conicSubmit.attr('value','Go');
 
-	$conicForm.text('Diameter');
-	$conicForm.append($diameterInput);
+	$diameterDiv.text('Diameter');
+	$diameterDiv.append($diameterInput);
+	$conicForm.append($diameterDiv);
 	$conicForm.append($conicSubmit);
-	$conicForm.hide();
+	$conicDiv.append($conicForm);
+	$conicDiv.hide();
 
-	$controlPane.append($conicForm);
-	$conicForm.slideDown();
+	$controlPane.append($conicDiv);
+	$conicDiv.slideDown();
 }
 
 function addEllipseControl($controlPane)
 {
+	var $conicDiv = $('<div/>');
+	$conicDiv.addClass('conic');
+
 	var $conicForm = $('<form/>');
 	$conicForm.addClass('conic');
 
@@ -100,10 +113,11 @@ function addEllipseControl($controlPane)
 	$conicForm.append($heightDiv);
 	$conicForm.append($widthDiv);
 	$conicForm.append($conicSubmit);
-	$conicForm.hide();
+	$conicDiv.append($conicForm);
+	$conicDiv.hide();
 
-	$controlPane.append($conicForm);
-	$conicForm.slideDown();
+	$controlPane.append($conicDiv);
+	$conicDiv.slideDown();
 }
 
 function cartesianPlane(height,width,color,highlight)
@@ -252,8 +266,14 @@ $(document).ready(function()
 
 	// add conic form to config div
 	var $controlPane = $('#controlPane');
-	addGraphControl($controlPane);
-	addNewConicControl($controlPane);
+	var $controls = $('<div/>');
+	$controls.addClass('controls');
+	$controls.hide();
+
+	$controls.append(graphControl());
+	$controls.append(newConicControl());
+	$controlPane.append($controls);
+	$controls.slideDown();
 
 	// get a reference to the canvas
 	var ctx = $('canvas')[0].getContext('2d');
