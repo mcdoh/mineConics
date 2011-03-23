@@ -318,3 +318,16 @@ $(document).ready(function()
 		draw(ctx,graph,circles);
 	});
 });
+
+
+$(window).load(function()
+{
+	var $header = $('#header');
+	var $heading = $('#heading');
+	var $controlPane = $('#controlPane');
+	var $canvas = $('#canvas');
+
+	// simply using the size of #heading as a relative margin size
+	$canvas.height($(window).height() - $header.outerHeight(true) - $heading.height());
+	$canvas.width($(window).width() - $controlPane.outerWidth(true) - $heading.height());
+});

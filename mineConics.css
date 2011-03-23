@@ -17,22 +17,26 @@ ul
 	padding-left: .5em;
 }
 
+#container
+{
+	overflow: hidden;
+}
+
 #header
 {
 	width: 100%;
 	height: 50px;
+	padding: 1em;
 }
 
 #heading
 {
 	text-align: center;
-	margin: 1em;
 }
 
-#container
+#content
 {
-	width: 100%;
-	height: 100%;
+	overflow: hidden;
 }
 
 #controlPane
@@ -40,24 +44,6 @@ ul
 	width: 25%;
 	height: 100%;
 	float: left;
-}
-
-.circleInput
-{
-	margin: 1em;
-}
-
-#graphPane
-{
-	width: auto;
-	height: 100%;
-	float: left;
-}
-
-#graph
-{
-	float: left;
-	margin: 1em;
 }
 
 div.controls
@@ -79,4 +65,17 @@ div.conic
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
+}
+
+#graphPane
+{
+	width: auto;
+	height: 100%;
+	float: left;
+}
+
+#graph
+{
+	float: left;
+	margin: 1em;
 }
