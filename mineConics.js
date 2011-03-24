@@ -218,8 +218,8 @@ ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
 
 function draw(ctx,graph,circles)
 {
-	var graphHeight = $('canvas').height();
-	var graphWidth = $('canvas').width();
+	var graphHeight = $('#canvas').height();
+	var graphWidth = $('#canvas').width();
 	var graphSize = graph.getSize();
 
 	// get largest shape
@@ -233,17 +233,27 @@ function draw(ctx,graph,circles)
 	if ((graphSize%2) == 0)
 		graphSize += 1;
 
-	var graphScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
+	var graphScale;
+	var yScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
+	var xScale = (graphWidth-1) / graphSize; // 'graphWidth-1' so we're not drawing right up to the border
+
+	if (xScale <= yScale)
+		graphScale = xScale;
+	else
+		graphScale = yScale;
+
+	var ySize = parseInt(graphHeight / graphScale);
+	var xSize = parseInt(graphWidth / graphScale);
 
 	ctx.clearRect(0,0,graphWidth,graphHeight);
 
-	for (var row=0; row<graphSize; row++)
+	for (var row=0; row<ySize; row++)
 	{
-		var y = row - ((graphSize-1) / 2);
+		var y = row - ((ySize-1) / 2);
 
-		for (var col=0; col<graphSize; col++)
+		for (var col=0; col<xSize; col++)
 		{
-			var x = col - ((graphSize-1) / 2);
+			var x = col - ((xSize-1) / 2);
 
 			graph.draw(ctx,row,col,graphScale,x,y);
 
@@ -261,11 +271,19 @@ function draw(ctx,graph,circles)
 
 $(document).ready(function()
 {
+	var $header = $('#header');
+	var $heading = $('#heading');
+	var $controlPane = $('#controlPane');
+	var $canvas = $('#canvas');
+
+	// simply using the size of #heading as a relative margin size
+	$canvas.attr('height', ($(window).height() - $header.outerHeight(true) - $heading.height()));
+	$canvas.attr('width', ($(window).width() - $controlPane.outerWidth(true) - $heading.height()));
+
 	var graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
 	var circles = [];
 
 	// add conic form to config div
-	var $controlPane = $('#controlPane');
 	var $controls = $('<div/>');
 	$controls.addClass('controls');
 	$controls.hide();
@@ -317,17 +335,4 @@ $(document).ready(function()
 
 		draw(ctx,graph,circles);
 	});
-});
-
-
-$(window).load(function()
-{
-	var $header = $('#header');
-	var $heading = $('#heading');
-	var $controlPane = $('#controlPane');
-	var $canvas = $('#canvas');
-
-	// simply using the size of #heading as a relative margin size
-	$canvas.height($(window).height() - $header.outerHeight(true) - $heading.height());
-	$canvas.width($(window).width() - $controlPane.outerWidth(true) - $heading.height());
 });
