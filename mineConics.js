@@ -166,6 +166,12 @@ circle.prototype.getSize = function()
 
 circle.prototype.draw = function(ctx,row,col,graphScale,x,y)
 {
+	if ((this.diameter % 2) == 0)
+	{
+		x -= 0.5;
+		y += 0.5;
+	}
+
 	var radius = this.diameter / 2;
 	var circleTest = Math.sqrt((x*x) + (y*y));
 
@@ -198,6 +204,12 @@ ellipse.prototype.getSize = function()
 
 ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
 {
+	if ((this.width % 2) == 0)
+		x -= 0.5;
+
+	if ((this.height % 2) == 0)
+		y += 0.5;
+
 	var unit = 1;
 	var a = this.width / 2;
 	var b = this.height / 2;
@@ -259,11 +271,7 @@ function draw(ctx,graph,circles)
 
 			$.each(circles,function(index,element)
 			{
-				// adjust for drawing even circles
-//				if ((element.diameter % 2) == 0)
-//					element.draw(ctx,row,col,graphScale,(x-0.5),(y+0.5));
-//				else
-					element.draw(ctx,row,col,graphScale,x,y);
+				element.draw(ctx,row,col,graphScale,x,y);
 			});
 		}
 	}
