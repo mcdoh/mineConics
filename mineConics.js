@@ -1,5 +1,25 @@
-var ctx;
+var canvas;
 var graph;
+
+function canvasHandler()
+{
+	this.$canvas = $('#canvas');
+	this.context = $('canvas')[0].getContext('2d');
+
+	// resize the canvas to take advantage of extra viewport space
+	this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#heading').height()));
+	this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#heading').height()));
+}
+
+canvasHandler.prototype.height = function()
+{
+	return this.$canvas.height();
+}
+
+canvasHandler.prototype.width = function()
+{
+	return this.$canvas.width();
+}
 
 function graphControl()
 {
@@ -128,21 +148,21 @@ cartesianPlane.prototype.getSize = function()
 		return this.width;
 }
 
-cartesianPlane.prototype.draw = function(ctx,row,col,graphScale,x,y)
+cartesianPlane.prototype.draw = function(row,col,graphScale,x,y)
 {
-	ctx.beginPath();
+	canvas.context.beginPath();
 
-	ctx.fillStyle = this.color;
-	ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+	canvas.context.fillStyle = this.color;
+	canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 
 	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
 	{
-		ctx.fillStyle = this.highlight;
-		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		canvas.context.fillStyle = this.highlight;
+		canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 	}
 
-	ctx.closePath();
-	ctx.fill();
+	canvas.context.closePath();
+	canvas.context.fill();
 }
 
 function circle(diameter,color)
@@ -156,7 +176,7 @@ circle.prototype.getSize = function()
 	return this.diameter;
 }
 
-circle.prototype.draw = function(ctx,row,col,graphScale,x,y)
+circle.prototype.draw = function(row,col,graphScale,x,y)
 {
 	if ((this.diameter % 2) == 0)
 	{
@@ -169,13 +189,13 @@ circle.prototype.draw = function(ctx,row,col,graphScale,x,y)
 
 	if ((circleTest <= radius) && (circleTest > (radius-1)))
 	{
-		ctx.beginPath();
+		canvas.context.beginPath();
 
-		ctx.fillStyle = this.color;
-		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		canvas.context.fillStyle = this.color;
+		canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 		
-		ctx.closePath();
-		ctx.fill();
+		canvas.context.closePath();
+		canvas.context.fill();
 	}
 }
 
@@ -194,7 +214,7 @@ ellipse.prototype.getSize = function()
 		return this.width;
 }
 
-ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
+ellipse.prototype.draw = function(row,col,graphScale,x,y)
 {
 	if ((this.width % 2) == 0)
 		x -= 0.5;
@@ -210,20 +230,18 @@ ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
 
 	if ((perimeter <= unit) && (inner > unit))
 	{
-		ctx.beginPath();
+		canvas.context.beginPath();
 
-		ctx.fillStyle = this.color;
-		ctx.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		canvas.context.fillStyle = this.color;
+		canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
 		
-		ctx.closePath();
-		ctx.fill();
+		canvas.context.closePath();
+		canvas.context.fill();
 	}
 }
 
 function draw()
 {
-	var graphHeight = $('#canvas').height();
-	var graphWidth = $('#canvas').width();
 	var graphSize = graph.getSize();
 	var $conics = $('form.conic');
 	var conics = [];
@@ -265,16 +283,16 @@ function draw()
 		graphSize += 1;
 
 	var graphScale;
-	var xScale = (graphWidth-1) / graphSize; // 'graphWidth-1' so we're not drawing right up to the border
-	var yScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
+	var xScale = (canvas.width()-1) / graphSize; // 'graph width - 1' so we're not drawing right up to the border
+	var yScale = (canvas.height()-1) / graphSize; // 'graph height - 1' so we're not drawing right up to the border
 
 	if (xScale <= yScale)
 		graphScale = xScale;
 	else
 		graphScale = yScale;
 
-	var xSize = parseInt(graphWidth / graphScale);
-	var ySize = parseInt(graphHeight / graphScale);
+	var xSize = parseInt(canvas.width() / graphScale);
+	var ySize = parseInt(canvas.height() / graphScale);
 
 	// ensure graph is of odd dimensions
 	if ((xSize%2) == 0)
@@ -284,7 +302,7 @@ function draw()
 	if ((ySize%2) == 0)
 		ySize += 1;
 
-	ctx.clearRect(0,0,graphWidth,graphHeight);
+	canvas.context.clearRect(0,0,canvas.width(),canvas.height());
 
 	for (var row=0; row<ySize; row++)
 	{
@@ -294,11 +312,11 @@ function draw()
 		{
 			var x = col - ((xSize-1) / 2);
 
-			graph.draw(ctx,row,col,graphScale,x,y);
+			graph.draw(row,col,graphScale,x,y);
 
 			$.each(conics,function(index,conic)
 			{
-				conic.draw(ctx,row,col,graphScale,x,y);
+				conic.draw(row,col,graphScale,x,y);
 			});
 		}
 	}
@@ -306,14 +324,8 @@ function draw()
 
 $(document).ready(function()
 {
-	var $header = $('#header');
-	var $heading = $('#heading');
-	var $controlPane = $('#controlPane');
-	var $canvas = $('#canvas');
-
-	// simply using the size of #heading as a relative margin size
-	$canvas.attr('height', ($(window).height() - $header.outerHeight(true) - $heading.height()));
-	$canvas.attr('width', ($(window).width() - $controlPane.outerWidth(true) - $heading.height()));
+	canvas = new canvasHandler();
+	graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
 
 	// add conic form to config div
 	var $controls = $('<div/>');
@@ -322,14 +334,10 @@ $(document).ready(function()
 
 	$controls.append(graphControl());
 	$controls.append(newConicControl());
+
+	var $controlPane = $('#controlPane');
 	$controlPane.append($controls);
 	$controls.slideDown();
-
-	// get a reference to the canvas
-	ctx = $('canvas')[0].getContext('2d');
-
-	// create our graph object
-	graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
 
 	// display the initial graph
 	setInterval(draw,10);
