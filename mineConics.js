@@ -171,15 +171,15 @@ cartesianPlane.prototype.ensureOddWidth = function()
 // resize if graph needs to be enlarged
 cartesianPlane.prototype.resize = function(height,width)
 {
-	if ((height+2) > this.height)
+	if (height > this.height)
 	{
-		this.height = height + 2;
+		this.height = height;
 		this.ensureOddHeight();
 	}
 
-	if ((width+2) > this.width)
+	if (width > this.width)
 	{
-		this.width = width + 2;
+		this.width = width;
 		this.ensureOddWidth();
 	}
 
@@ -296,7 +296,7 @@ function draw()
 			{
 				conics = conics.concat(new circle(diameter,"rgba(32,128,32,1)"));
 
-				graph.resize(diameter,diameter);
+				graph.resize(diameter+2,diameter+2); // "+2" to give some extra space around the shape
 			}
 		}
 		else if ($($conic).is('.ellipse'))
@@ -308,7 +308,7 @@ function draw()
 			{
 				conics = conics.concat(new ellipse(height,width,"rgba(32,128,32,1)"));
 
-				graph.resize(height,width);
+				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
 			}
 		}
 	});
@@ -351,7 +351,7 @@ $(document).ready(function()
 	$controls.slideDown();
 
 	// display the initial graph
-	setInterval(draw,10);
+	setInterval(draw,100);
 
 	$('input.newCircle').live('click',function(event)
 	{
