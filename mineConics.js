@@ -132,33 +132,85 @@ function addEllipseControl($controlPane)
 	$conicDiv.slideDown();
 }
 
-function cartesianPlane(height,width,color,highlight)
+function cartesianPlane()
 {
-	this.height = height;
-	this.width = width;
-	this.color = color;
-	this.highlight = highlight;
+	this.defaultHeight = 21;
+	this.defaultWidth = 21;
+	this.defaultColor = "rgba(1,1,1,0.1)";
+	this.defaultHighlight = "rgba(1,1,1,0.2)";
+
+	this.height;
+	this.width;
+	this.scale;
+	this.color = this.defaultColor;
+	this.highlight = this.defaultHighlight;
+	
+	this.reset();
 }
 
-cartesianPlane.prototype.getSize = function()
+cartesianPlane.prototype.reset = function()
 {
-	if (this.height <= this.width)
-		return this.height;
+	this.height = this.defaultHeight;
+	this.width = this.defaultWidth;
+
+	this.resize(this.height,this.width);
+}
+
+cartesianPlane.prototype.ensureOddHeight = function()
+{
+	if ((this.height%2) == 0)
+		this.height += 1;
+}
+
+cartesianPlane.prototype.ensureOddWidth = function()
+{
+	if ((this.width%2) == 0)
+		this.width += 1;
+}
+
+// resize if graph needs to be enlarged
+cartesianPlane.prototype.resize = function(height,width)
+{
+	if ((height+2) > this.height)
+	{
+		this.height = height + 2;
+		this.ensureOddHeight();
+	}
+
+	if ((width+2) > this.width)
+	{
+		this.width = width + 2;
+		this.ensureOddWidth();
+	}
+
+	var xScale = (canvas.width()-1) / this.width; // 'graph width - 1' so we're not drawing right up to the border
+	var yScale = (canvas.height()-1) / this.height; // 'graph height - 1' so we're not drawing right up to the border
+
+	if (xScale <= yScale)
+	{
+		this.scale = xScale;
+		this.height = parseInt(canvas.height() / this.scale);
+		this.ensureOddHeight();
+	}
 	else
-		return this.width;
+	{
+		this.scale = yScale;
+		this.width = parseInt(canvas.width() / this.scale);
+		this.ensureOddWidth();
+	}
 }
 
-cartesianPlane.prototype.draw = function(row,col,graphScale,x,y)
+cartesianPlane.prototype.draw = function(row,col,x,y)
 {
 	canvas.context.beginPath();
 
 	canvas.context.fillStyle = this.color;
-	canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+	canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
 
 	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
 	{
 		canvas.context.fillStyle = this.highlight;
-		canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
 	}
 
 	canvas.context.closePath();
@@ -171,12 +223,7 @@ function circle(diameter,color)
 	this.color = color;
 }
 
-circle.prototype.getSize = function()
-{
-	return this.diameter;
-}
-
-circle.prototype.draw = function(row,col,graphScale,x,y)
+circle.prototype.draw = function(row,col,x,y)
 {
 	if ((this.diameter % 2) == 0)
 	{
@@ -192,7 +239,7 @@ circle.prototype.draw = function(row,col,graphScale,x,y)
 		canvas.context.beginPath();
 
 		canvas.context.fillStyle = this.color;
-		canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
 		
 		canvas.context.closePath();
 		canvas.context.fill();
@@ -206,15 +253,7 @@ function ellipse(height,width,color)
 	this.color = color;
 }
 
-ellipse.prototype.getSize = function()
-{
-	if (this.height >= this.width)
-		return this.height;
-	else
-		return this.width;
-}
-
-ellipse.prototype.draw = function(row,col,graphScale,x,y)
+ellipse.prototype.draw = function(row,col,x,y)
 {
 	if ((this.width % 2) == 0)
 		x -= 0.5;
@@ -233,7 +272,7 @@ ellipse.prototype.draw = function(row,col,graphScale,x,y)
 		canvas.context.beginPath();
 
 		canvas.context.fillStyle = this.color;
-		canvas.context.rect(col*graphScale+1,row*graphScale+1,graphScale-1,graphScale-1);
+		canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
 		
 		canvas.context.closePath();
 		canvas.context.fill();
@@ -242,7 +281,8 @@ ellipse.prototype.draw = function(row,col,graphScale,x,y)
 
 function draw()
 {
-	var graphSize = graph.getSize();
+	graph.reset();
+
 	var $conics = $('form.conic');
 	var conics = [];
 
@@ -256,8 +296,7 @@ function draw()
 			{
 				conics = conics.concat(new circle(diameter,"rgba(32,128,32,1)"));
 
-				if ((diameter+2) > graphSize)
-					graphSize = diameter + 2;
+				graph.resize(diameter,diameter);
 			}
 		}
 		else if ($($conic).is('.ellipse'))
@@ -269,54 +308,26 @@ function draw()
 			{
 				conics = conics.concat(new ellipse(height,width,"rgba(32,128,32,1)"));
 
-				if ((height+2) > graphSize)
-					graphSize = height + 2;
-
-				if ((width+2) > graphSize)
-					graphSize = width + 2;
+				graph.resize(height,width);
 			}
 		}
 	});
 
-	// ensure graph is of odd dimensions
-	if ((graphSize%2) == 0)
-		graphSize += 1;
-
-	var graphScale;
-	var xScale = (canvas.width()-1) / graphSize; // 'graph width - 1' so we're not drawing right up to the border
-	var yScale = (canvas.height()-1) / graphSize; // 'graph height - 1' so we're not drawing right up to the border
-
-	if (xScale <= yScale)
-		graphScale = xScale;
-	else
-		graphScale = yScale;
-
-	var xSize = parseInt(canvas.width() / graphScale);
-	var ySize = parseInt(canvas.height() / graphScale);
-
-	// ensure graph is of odd dimensions
-	if ((xSize%2) == 0)
-		xSize += 1;
-
-	// ensure graph is of odd dimensions
-	if ((ySize%2) == 0)
-		ySize += 1;
-
 	canvas.context.clearRect(0,0,canvas.width(),canvas.height());
 
-	for (var row=0; row<ySize; row++)
+	for (var row=0; row<graph.height; row++)
 	{
-		var y = row - ((ySize-1) / 2);
+		var y = row - ((graph.height-1) / 2);
 
-		for (var col=0; col<xSize; col++)
+		for (var col=0; col<graph.width; col++)
 		{
-			var x = col - ((xSize-1) / 2);
+			var x = col - ((graph.width-1) / 2);
 
-			graph.draw(row,col,graphScale,x,y);
+			graph.draw(row,col,x,y);
 
 			$.each(conics,function(index,conic)
 			{
-				conic.draw(row,col,graphScale,x,y);
+				conic.draw(row,col,x,y);
 			});
 		}
 	}
@@ -325,7 +336,7 @@ function draw()
 $(document).ready(function()
 {
 	canvas = new canvasHandler();
-	graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
+	graph = new cartesianPlane();
 
 	// add conic form to config div
 	var $controls = $('<div/>');
