@@ -1,3 +1,6 @@
+var ctx;
+var graph;
+
 function graphControl()
 {
 	var $graphDiv = $('<div/>');
@@ -65,15 +68,9 @@ function addCircleControl($controlPane)
 	$diameterInput.attr('type','text');
 	$diameterInput.attr('name','diameter');
 
-	var $conicSubmit = $('<input/>');
-	$conicSubmit.addClass('conic');
-	$conicSubmit.attr('type','submit');
-	$conicSubmit.attr('value','Go');
-
 	$diameterDiv.text('Diameter');
 	$diameterDiv.append($diameterInput);
 	$conicForm.append($diameterDiv);
-	$conicForm.append($conicSubmit);
 	$conicDiv.append($conicForm);
 	$conicDiv.hide();
 
@@ -88,6 +85,7 @@ function addEllipseControl($controlPane)
 
 	var $conicForm = $('<form/>');
 	$conicForm.addClass('conic');
+	$conicForm.addClass('ellipse');
 
 	var $heightDiv = $('<div/>');
 	var $heightInput = $('<input/>');
@@ -101,18 +99,12 @@ function addEllipseControl($controlPane)
 	$widthInput.attr('type','text');
 	$widthInput.attr('name','width');
 
-	var $conicSubmit = $('<input/>');
-	$conicSubmit.addClass('conic');
-	$conicSubmit.attr('type','submit');
-	$conicSubmit.attr('value','Go');
-
 	$heightDiv.text('Height');
 	$heightDiv.append($heightInput);
 	$widthDiv.text('Width');
 	$widthDiv.append($widthInput);
 	$conicForm.append($heightDiv);
 	$conicForm.append($widthDiv);
-	$conicForm.append($conicSubmit);
 	$conicDiv.append($conicForm);
 	$conicDiv.hide();
 
@@ -228,17 +220,44 @@ ellipse.prototype.draw = function(ctx,row,col,graphScale,x,y)
 	}
 }
 
-function draw(ctx,graph,circles)
+function draw()
 {
 	var graphHeight = $('#canvas').height();
 	var graphWidth = $('#canvas').width();
 	var graphSize = graph.getSize();
+	var $conics = $('form.conic');
+	var conics = [];
 
-	// get largest shape
-	$.each(circles,function(index,shape)
+	$($conics).each(function(index,$conic)
 	{
-		if ((shape.getSize()+2) > graphSize)
-			graphSize = shape.getSize() + 2;
+		if ($($conic).is('.circle'))
+		{
+			var diameter = parseInt($($conic).find('input.diameter').val());
+
+			if (diameter)
+			{
+				conics = conics.concat(new circle(diameter,"rgba(32,128,32,1)"));
+
+				if ((diameter+2) > graphSize)
+					graphSize = diameter + 2;
+			}
+		}
+		else if ($($conic).is('.ellipse'))
+		{
+			var height = parseInt($($conic).find('input.height').val());
+			var width = parseInt($($conic).find('input.width').val());
+
+			if (height && width)
+			{
+				conics = conics.concat(new ellipse(height,width,"rgba(32,128,32,1)"));
+
+				if ((height+2) > graphSize)
+					graphSize = height + 2;
+
+				if ((width+2) > graphSize)
+					graphSize = width + 2;
+			}
+		}
 	});
 
 	// ensure graph is of odd dimensions
@@ -246,16 +265,24 @@ function draw(ctx,graph,circles)
 		graphSize += 1;
 
 	var graphScale;
-	var yScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
 	var xScale = (graphWidth-1) / graphSize; // 'graphWidth-1' so we're not drawing right up to the border
+	var yScale = (graphHeight-1) / graphSize; // 'graphHeight-1' so we're not drawing right up to the border
 
 	if (xScale <= yScale)
 		graphScale = xScale;
 	else
 		graphScale = yScale;
 
-	var ySize = parseInt(graphHeight / graphScale);
 	var xSize = parseInt(graphWidth / graphScale);
+	var ySize = parseInt(graphHeight / graphScale);
+
+	// ensure graph is of odd dimensions
+	if ((xSize%2) == 0)
+		xSize += 1;
+
+	// ensure graph is of odd dimensions
+	if ((ySize%2) == 0)
+		ySize += 1;
 
 	ctx.clearRect(0,0,graphWidth,graphHeight);
 
@@ -269,9 +296,9 @@ function draw(ctx,graph,circles)
 
 			graph.draw(ctx,row,col,graphScale,x,y);
 
-			$.each(circles,function(index,element)
+			$.each(conics,function(index,conic)
 			{
-				element.draw(ctx,row,col,graphScale,x,y);
+				conic.draw(ctx,row,col,graphScale,x,y);
 			});
 		}
 	}
@@ -288,9 +315,6 @@ $(document).ready(function()
 	$canvas.attr('height', ($(window).height() - $header.outerHeight(true) - $heading.height()));
 	$canvas.attr('width', ($(window).width() - $controlPane.outerWidth(true) - $heading.height()));
 
-	var graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
-	var circles = [];
-
 	// add conic form to config div
 	var $controls = $('<div/>');
 	$controls.addClass('controls');
@@ -302,10 +326,13 @@ $(document).ready(function()
 	$controls.slideDown();
 
 	// get a reference to the canvas
-	var ctx = $('canvas')[0].getContext('2d');
+	ctx = $('canvas')[0].getContext('2d');
+
+	// create our graph object
+	graph = new cartesianPlane(21,21,"rgba(1,1,1,.1)","rgba(1,1,1,.2)");
 
 	// display the initial graph
-	draw(ctx,graph,circles);
+	setInterval(draw,10);
 
 	$('input.newCircle').live('click',function(event)
 	{
@@ -315,32 +342,5 @@ $(document).ready(function()
 	$('input.newEllipse').live('click',function(event)
 	{
 		addEllipseControl($controlPane);
-	});
-
-	$('input.conic:submit').live('click',function(event)
-	{
-		event.preventDefault();
-
-		// clear all current circles
-		circles.splice(0,circles.length);
-
-		$('form.conic').each(function(index,conic)
-		{
-			var diameter = parseInt($(conic).find('input.diameter').val());
-
-			if (diameter)
-				circles = circles.concat(new circle(diameter,"rgba(32,128,32,1)"));
-			else
-			{
-				var height = parseInt($(conic).find('input.height').val());
-				var width = parseInt($(conic).find('input.width').val());
-				
-				if (height && width)
-					circles = circles.concat(new ellipse(height,width,"rgba(32,128,32,1)"));
-			}
-
-		});
-
-		draw(ctx,graph,circles);
 	});
 });
