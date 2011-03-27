@@ -351,7 +351,7 @@ $(document).ready(function()
 	$controls.slideDown();
 
 	// display the initial graph
-	setInterval(draw,100);
+	draw();
 
 	$('input.newCircle').live('click',function(event)
 	{
@@ -361,5 +361,10 @@ $(document).ready(function()
 	$('input.newEllipse').live('click',function(event)
 	{
 		addEllipseControl($controlPane);
+	});
+
+	$('div.conic').live('keyup',function(event)
+	{
+		draw();
 	});
 });
