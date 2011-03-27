@@ -21,6 +21,11 @@ canvasHandler.prototype.width = function()
 	return this.$canvas.width();
 }
 
+canvasHandler.prototype.clear = function()
+{
+	this.context.clearRect(0,0,this.width(),this.height());
+}
+
 function graphControl()
 {
 	var $graphDiv = $('<div/>');
@@ -313,7 +318,7 @@ function draw()
 		}
 	});
 
-	canvas.context.clearRect(0,0,canvas.width(),canvas.height());
+	canvas.clear();
 
 	for (var row=0; row<graph.height; row++)
 	{
