@@ -26,6 +26,46 @@ canvasHandler.prototype.clear = function()
 	this.context.clearRect(0,0,this.width(),this.height());
 }
 
+function colorControl()
+{
+	var $colorDiv = $('<div/>');
+	$colorDiv.addClass('colorSelector');
+
+	var $blueLabel = $('<label/>');
+	var $blueInput = $('<input/>');
+	$blueInput.addClass('color');
+	$blueInput.attr('type','radio');
+	$blueInput.attr('name','color');
+	$blueInput.attr('value','rgba(32,32,128,1)');
+	$blueLabel.append($blueInput);
+	$blueLabel.append('blue');
+
+	var $greenLabel = $('<label/>');
+	var $greenInput = $('<input/>');
+	$greenInput.addClass('color');
+	$greenInput.attr('type','radio');
+	$greenInput.attr('name','color');
+	$greenInput.attr('value','rgba(32,128,32,1)');
+	$greenInput.attr('checked','checked');
+	$greenLabel.append($greenInput);
+	$greenLabel.append('green');
+
+	var $redLabel = $('<label/>');
+	var $redInput = $('<input/>');
+	$redInput.addClass('color');
+	$redInput.attr('type','radio');
+	$redInput.attr('name','color');
+	$redInput.attr('value','rgba(128,32,32,1)');
+	$redLabel.append($redInput);
+	$redLabel.append('red');
+
+	$colorDiv.append($blueLabel);
+	$colorDiv.append($greenLabel);
+	$colorDiv.append($redLabel);
+
+	return $colorDiv;
+}
+
 function graphControl()
 {
 	var $graphDiv = $('<div/>');
@@ -45,9 +85,9 @@ function graphControl()
 	$graphSubmit.attr('type','submit');
 	$graphSubmit.attr('value','update');
 
-	$graphForm.text('size');
-	$graphForm.append($sizeInput);
-	$graphForm.append($graphSubmit);
+//	$graphForm.text('size');
+// 	$graphForm.append($sizeInput);
+// 	$graphForm.append($graphSubmit);
 	$graphDiv.append($graphForm);
 
 	return $graphDiv;
@@ -82,6 +122,7 @@ function addCircleControl($controlPane)
 {
 	var $conicDiv = $('<div/>');
 	$conicDiv.addClass('conic');
+	$conicDiv.addClass('circle');
 
 	var $conicForm = $('<form/>');
 	$conicForm.addClass('conic');
@@ -96,6 +137,7 @@ function addCircleControl($controlPane)
 	$diameterDiv.text('Diameter');
 	$diameterDiv.append($diameterInput);
 	$conicForm.append($diameterDiv);
+	$conicForm.append(colorControl());
 	$conicDiv.append($conicForm);
 	$conicDiv.hide();
 
@@ -107,6 +149,7 @@ function addEllipseControl($controlPane)
 {
 	var $conicDiv = $('<div/>');
 	$conicDiv.addClass('conic');
+	$conicDiv.addClass('ellipse');
 
 	var $conicForm = $('<form/>');
 	$conicForm.addClass('conic');
@@ -130,6 +173,7 @@ function addEllipseControl($controlPane)
 	$widthDiv.append($widthInput);
 	$conicForm.append($heightDiv);
 	$conicForm.append($widthDiv);
+	$conicForm.append(colorControl());
 	$conicDiv.append($conicForm);
 	$conicDiv.hide();
 
@@ -288,7 +332,7 @@ function draw()
 {
 	graph.reset();
 
-	var $conics = $('form.conic');
+	var $conics = $('div.conic');
 	var conics = [];
 
 	$($conics).each(function(index,$conic)
@@ -299,7 +343,7 @@ function draw()
 
 			if (diameter)
 			{
-				conics = conics.concat(new circle(diameter,"rgba(32,128,32,1)"));
+				conics = conics.concat(new circle(diameter,$($conic).find('input.color:checked').val()));
 
 				graph.resize(diameter+2,diameter+2); // "+2" to give some extra space around the shape
 			}
@@ -311,7 +355,7 @@ function draw()
 
 			if (height && width)
 			{
-				conics = conics.concat(new ellipse(height,width,"rgba(32,128,32,1)"));
+				conics = conics.concat(new ellipse(height,width,$($conic).find('input.color:checked').val()));
 
 				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
 			}
@@ -369,6 +413,11 @@ $(document).ready(function()
 	});
 
 	$('div.conic').live('keyup',function(event)
+	{
+		draw();
+	});
+
+	$('input.color').live('click',function(event)
 	{
 		draw();
 	});
