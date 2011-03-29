@@ -1,5 +1,6 @@
 var canvas;
 var graph;
+var points;
 
 function canvasHandler()
 {
@@ -269,6 +270,16 @@ cartesianPlane.prototype.resize = function(height,width)
 	}
 }
 
+cartesianPlane.prototype.getX = function(x)
+{
+	return (Math.floor(x/this.scale)) - (Math.floor(this.width/2));
+}
+
+cartesianPlane.prototype.getY = function(y)
+{
+	return (Math.floor(this.height/2)) - (Math.floor(y/this.scale));
+}
+
 cartesianPlane.prototype.draw = function(row,col,x,y)
 {
 	canvas.context.beginPath();
@@ -284,6 +295,46 @@ cartesianPlane.prototype.draw = function(row,col,x,y)
 
 	canvas.context.closePath();
 	canvas.context.fill();
+}
+
+function point(x,y,color)
+{
+	this.x = x;
+	this.y = y;
+	this.color = color;
+}
+
+function points()
+{
+	this.pointList = [];
+}
+
+points.prototype.addPoint = function(x,y,color)
+{
+	this.pointList = this.pointList.concat(new point(x,y,color));
+}
+
+points.prototype.draw = function()
+{
+	var maxX = Math.floor(graph.width/2);
+	var maxY = Math.floor(graph.height/2);
+
+	$.each(this.pointList,function(index,point)
+	{
+		if ((Math.abs(point.x) <= maxX) && (Math.abs(point.y) <= maxY))
+		{
+			var col = maxX + point.x;
+			var row = maxY - point.y;
+
+			canvas.context.beginPath();
+
+			canvas.context.fillStyle = point.color;
+			canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
+
+			canvas.context.closePath();
+			canvas.context.fill();
+		}
+	});
 }
 
 function circle(diameter,color)
@@ -400,13 +451,16 @@ function draw()
 			});
 		}
 	}
+
+	points.draw();
 }
 
 $(document).ready(function()
 {
 	canvas = new canvasHandler();
 	graph = new cartesianPlane();
-
+	points = new points();
+	
 	// add conic form to config div
 	var $controls = $('<div/>');
 	$controls.addClass('controls');
@@ -444,9 +498,8 @@ $(document).ready(function()
 
 	$('#canvas').live('click',function(event)
 	{
-		var x = canvas.getX(event.pageX);
-		var y = canvas.getY(event.pageY);
+		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
 
-		alert('pageX: ' + event.pageX + ' pageY: ' + event.pageY + ' X: ' + x + ' Y: ' + y);
+		draw();
 	});
 });
