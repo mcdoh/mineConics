@@ -376,22 +376,22 @@ function draw()
 			{
 				var color = "rgba(";
 
-				if ($($conic).find('input.red:checked'))
+				if ($($conic).find('input.red').is(':checked'))
 					color += "191,";
 				else
 					color += "63,";
 
-				if ($($conic).find('input.green:checked'))
+				if ($($conic).find('input.green').is(':checked'))
 					color += "191,";
 				else
 					color += "63,";
 
-				if ($($conic).find('input.blue:checked'))
+				if ($($conic).find('input.blue').is(':checked'))
 					color += "191,";
 				else
 					color += "63,";
 
-				color += "1,)";
+				color += "1)";
 
 				conics = conics.concat(new ellipse(height,width,color));
 
