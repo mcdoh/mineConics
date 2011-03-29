@@ -377,23 +377,23 @@ function draw()
 				var color = "rgba(";
 
 				if ($($conic).find('input.red:checked'))
-					color += "128,";
+					color += "191,";
 				else
-					color += "32,";
+					color += "63,";
 
 				if ($($conic).find('input.green:checked'))
-					color += "128,";
+					color += "191,";
 				else
-					color += "32,";
+					color += "63,";
 
 				if ($($conic).find('input.blue:checked'))
-					color += "128,";
+					color += "191,";
 				else
-					color += "32,";
+					color += "63,";
 
 				color += "1,)";
 
-				conics = conics.concat(new ellipse(height,width,$($conic).find('input.color:checked').val()));
+				conics = conics.concat(new ellipse(height,width,color));
 
 				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
 			}
