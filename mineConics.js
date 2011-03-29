@@ -21,6 +21,26 @@ canvasHandler.prototype.width = function()
 	return this.$canvas.width();
 }
 
+canvasHandler.prototype.offsetLeft = function()
+{
+	return this.$canvas.offset().left;
+}
+
+canvasHandler.prototype.offsetTop = function()
+{
+	return this.$canvas.offset().top;
+}
+
+canvasHandler.prototype.getX = function(x)
+{
+	return x - this.offsetLeft();
+}
+
+canvasHandler.prototype.getY = function(y)
+{
+	return y - this.offsetTop();
+}
+
 canvasHandler.prototype.clear = function()
 {
 	this.context.clearRect(0,0,this.width(),this.height());
@@ -31,37 +51,37 @@ function colorControl()
 	var $colorDiv = $('<div/>');
 	$colorDiv.addClass('colorSelector');
 
-	var $redLabel = $('<label/>');
-	var $redInput = $('<input/>');
-	$redInput.addClass('color');
-	$redInput.addClass('red');
-	$redInput.attr('type','checkbox');
-	$redInput.attr('name','color');
-	$redInput.attr('value','red');
-	$redLabel.append($redInput);
+	var $blueLabel = $('<label/>');
+	var $blueInput = $('<input/>');
+	$blueInput.addClass('color');
+	$blueInput.attr('type','radio');
+	$blueInput.attr('name','color');
+	$blueInput.attr('value','rgba(32,32,128,1)');
+	$blueLabel.append($blueInput);
+	$blueLabel.append('blue');
 
 	var $greenLabel = $('<label/>');
 	var $greenInput = $('<input/>');
 	$greenInput.addClass('color');
-	$greenInput.addClass('green');
-	$greenInput.attr('type','checkbox');
+	$greenInput.attr('type','radio');
 	$greenInput.attr('name','color');
-	$greenInput.attr('value','green');
+	$greenInput.attr('value','rgba(32,128,32,1)');
+	$greenInput.attr('checked','checked');
 	$greenLabel.append($greenInput);
+	$greenLabel.append('green');
 
-	var $blueLabel = $('<label/>');
-	var $blueInput = $('<input/>');
-	$blueInput.addClass('color');
-	$blueInput.addClass('blue');
-	$blueInput.attr('type','checkbox');
-	$blueInput.attr('name','color');
-	$blueInput.attr('value','blue');
-	$blueLabel.append($blueInput);
+	var $redLabel = $('<label/>');
+	var $redInput = $('<input/>');
+	$redInput.addClass('color');
+	$redInput.attr('type','radio');
+	$redInput.attr('name','color');
+	$redInput.attr('value','rgba(128,32,32,1)');
+	$redLabel.append($redInput);
+	$redLabel.append('red');
 
-	$colorDiv.append('color:');
-	$colorDiv.append($redLabel);
-	$colorDiv.append($greenLabel);
 	$colorDiv.append($blueLabel);
+	$colorDiv.append($greenLabel);
+	$colorDiv.append($redLabel);
 
 	return $colorDiv;
 }
@@ -343,26 +363,7 @@ function draw()
 
 			if (diameter)
 			{
-				var color = "rgba(";
-
-				if ($($conic).find('input.red').is(':checked'))
-					color += "191,";
-				else
-					color += "63,";
-
-				if ($($conic).find('input.green').is(':checked'))
-					color += "191,";
-				else
-					color += "63,";
-
-				if ($($conic).find('input.blue').is(':checked'))
-					color += "191,";
-				else
-					color += "63,";
-
-				color += "1)";
-
-				conics = conics.concat(new circle(diameter,color));
+				conics = conics.concat(new circle(diameter,$($conic).find('input.color:checked').val()));
 
 				graph.resize(diameter+2,diameter+2); // "+2" to give some extra space around the shape
 			}
@@ -374,25 +375,6 @@ function draw()
 
 			if (height && width)
 			{
-				var color = "rgba(";
-
-				if ($($conic).find('input.red:checked'))
-					color += "128,";
-				else
-					color += "32,";
-
-				if ($($conic).find('input.green:checked'))
-					color += "128,";
-				else
-					color += "32,";
-
-				if ($($conic).find('input.blue:checked'))
-					color += "128,";
-				else
-					color += "32,";
-
-				color += "1,)";
-
 				conics = conics.concat(new ellipse(height,width,$($conic).find('input.color:checked').val()));
 
 				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
@@ -458,5 +440,13 @@ $(document).ready(function()
 	$('input.color').live('click',function(event)
 	{
 		draw();
+	});
+
+	$('#canvas').live('click',function(event)
+	{
+		var x = canvas.getX(event.pageX);
+		var y = canvas.getY(event.pageY);
+
+		alert('pageX: ' + event.pageX + ' pageY: ' + event.pageY + ' X: ' + x + ' Y: ' + y);
 	});
 });
