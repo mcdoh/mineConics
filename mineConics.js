@@ -2,6 +2,8 @@ var canvas;
 var graph;
 var points;
 
+var clicking = false;
+
 function canvasHandler()
 {
 	this.$canvas = $('#canvas');
@@ -496,10 +498,31 @@ $(document).ready(function()
 		draw();
 	});
 
-	$('#canvas').live('click',function(event)
+	$('#canvas').mousedown(function(event)
 	{
+		clicking = true;
 		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
 
 		draw();
 	});
+
+	$('#canvas').mousemove(function(event)
+	{
+		if (clicking == false)
+			return;
+
+		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
+		draw();
+	});
+
+	$('#canvas').mouseup(function()
+	{
+		clicking = false;
+	});
+
+	$('#canvas').mouseout(function()
+	{
+		clicking = false;
+	});
+
 });
