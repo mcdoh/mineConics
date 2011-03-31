@@ -284,22 +284,31 @@ cartesianPlane.prototype.getY = function(y)
 	return (Math.floor(this.height/2)) - (Math.floor(y/this.scale));
 }
 
-cartesianPlane.prototype.plot = function(x,y,color)
+cartesianPlane.prototype.fill = function(row,col,color)
 {
 	canvas.context.beginPath();
 	canvas.context.fillStyle = color;
-	canvas.context.rect(x*this.scale+1,y*this.scale+1,this.scale-1,this.scale-1);
+	canvas.context.rect(col*this.scale+1,row*this.scale+1,this.scale-1,this.scale-1);
 	canvas.context.closePath();
 	canvas.context.fill();
 }
 
+cartesianPlane.prototype.plot = function(x,y,color)
+{
+	var maxX = Math.floor(this.width/2);
+	var maxY = Math.floor(this.height/2);
+
+	if ((Math.abs(x) <= maxX) && (Math.abs(y) <= maxY))
+		this.fill(maxY-y,maxX+x,color);
+}
+
 cartesianPlane.prototype.draw = function(row,col,x,y)
 {
-	this.plot(col,row,this.color);
+	this.fill(row,col,this.color);
 
 	// mark every even square along the axes
 	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
-		this.plot(col,row,this.highlight);
+		this.fill(row,col,this.highlight);
 }
 
 function point(x,y,color)
@@ -321,18 +330,9 @@ points.prototype.addPoint = function(x,y,color)
 
 points.prototype.draw = function()
 {
-	var maxX = Math.floor(graph.width/2);
-	var maxY = Math.floor(graph.height/2);
-
 	$.each(this.pointList,function(index,point)
 	{
-		if ((Math.abs(point.x) <= maxX) && (Math.abs(point.y) <= maxY))
-		{
-			var col = maxX + point.x;
-			var row = maxY - point.y;
-
-			graph.plot(col,row,point.color);
-		}
+		graph.plot(point.x,point.y,point.color);
 	});
 }
 
@@ -354,7 +354,7 @@ circle.prototype.draw = function(row,col,x,y)
 	var circleTest = Math.sqrt((x*x) + (y*y));
 
 	if ((circleTest <= radius) && (circleTest > (radius-1)))
-		graph.plot(col,row,this.color);
+		graph.fill(row,col,this.color);
 }
 
 function ellipse(height,width,color)
@@ -379,7 +379,7 @@ ellipse.prototype.draw = function(row,col,x,y)
 	var inner = ((x*x)/((a-1)*(a-1)) + (y*y)/((b-1)*(b-1)));
 
 	if ((perimeter <= unit) && (inner > unit))
-		graph.plot(col,row,this.color);
+		graph.fill(row,col,this.color);
 }
 
 function draw()
