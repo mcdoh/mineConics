@@ -284,21 +284,22 @@ cartesianPlane.prototype.getY = function(y)
 	return (Math.floor(this.height/2)) - (Math.floor(y/this.scale));
 }
 
-cartesianPlane.prototype.draw = function(row,col,x,y)
+cartesianPlane.prototype.plot = function(x,y,color)
 {
 	canvas.context.beginPath();
-
-	canvas.context.fillStyle = this.color;
-	canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
-
-	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
-	{
-		canvas.context.fillStyle = this.highlight;
-		canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
-	}
-
+	canvas.context.fillStyle = color;
+	canvas.context.rect(x*this.scale+1,y*this.scale+1,this.scale-1,this.scale-1);
 	canvas.context.closePath();
 	canvas.context.fill();
+}
+
+cartesianPlane.prototype.draw = function(row,col,x,y)
+{
+	this.plot(col,row,this.color);
+
+	// mark every even square along the axes
+	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
+		this.plot(col,row,this.highlight);
 }
 
 function point(x,y,color)
@@ -330,13 +331,7 @@ points.prototype.draw = function()
 			var col = maxX + point.x;
 			var row = maxY - point.y;
 
-			canvas.context.beginPath();
-
-			canvas.context.fillStyle = point.color;
-			canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
-
-			canvas.context.closePath();
-			canvas.context.fill();
+			graph.plot(col,row,point.color);
 		}
 	});
 }
@@ -359,15 +354,7 @@ circle.prototype.draw = function(row,col,x,y)
 	var circleTest = Math.sqrt((x*x) + (y*y));
 
 	if ((circleTest <= radius) && (circleTest > (radius-1)))
-	{
-		canvas.context.beginPath();
-
-		canvas.context.fillStyle = this.color;
-		canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
-		
-		canvas.context.closePath();
-		canvas.context.fill();
-	}
+		graph.plot(col,row,this.color);
 }
 
 function ellipse(height,width,color)
@@ -392,15 +379,7 @@ ellipse.prototype.draw = function(row,col,x,y)
 	var inner = ((x*x)/((a-1)*(a-1)) + (y*y)/((b-1)*(b-1)));
 
 	if ((perimeter <= unit) && (inner > unit))
-	{
-		canvas.context.beginPath();
-
-		canvas.context.fillStyle = this.color;
-		canvas.context.rect(col*graph.scale+1,row*graph.scale+1,graph.scale-1,graph.scale-1);
-		
-		canvas.context.closePath();
-		canvas.context.fill();
-	}
+		graph.plot(col,row,this.color);
 }
 
 function draw()
