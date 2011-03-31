@@ -1,6 +1,7 @@
 var canvas;
 var graph;
 var points;
+var lines;
 
 var clicking = false;
 var startX;
@@ -336,6 +337,89 @@ points.prototype.draw = function()
 	});
 }
 
+function line(x0,y0,x1,y1,color)
+{
+	this.x0 = x0;
+	this.y0 = y0;
+	this.x1 = x1;
+	this.y1 = y1;
+	this.color = color;
+}
+
+function lines()
+{
+	this.lineList = [];
+}
+
+lines.prototype.addLine = function(x0,y0,x1,y1,color)
+{
+	this.lineList = this.lineList.concat(new line(x0,y0,x1,y1,color));
+}
+
+lines.prototype.draw = function()
+{
+	$.each(this.lineList,function(index,line)
+	{
+		// Bresenham's line algorithm
+		var x0 = line.x0;
+		var x1 = line.x1;
+		var y0 = line.y0;
+		var y1 = line.y1;
+
+		var steep = false;
+		if (Math.abs(y1-y0) > Math.abs(x1-x0))
+			steep = true;
+
+		if (steep)
+		{
+			var temp = x0;
+			x0 = y0;
+			y0 = temp;
+
+			temp = x1;
+			x1 = y1;
+			y1 = temp;
+		}
+
+		if (x0 > x1)
+		{
+			var temp = x0;
+			x0 = x1;
+			x1 = temp;
+
+			temp = y0;
+			y0 = y1;
+			y1 = temp;
+		}
+
+		var deltaX = x1 - x0;
+		var deltaY = Math.abs(y1 - y0);
+		var error = deltaX / 2;
+		var y = y0;
+
+		var yStep;
+		if (y0 < y1)
+			yStep = 1;
+		else
+			yStep = -1;
+
+		for (var x=x0; x<=x1; x++)
+		{
+			if (steep)
+				graph.plot(y,x,line.color);
+			else
+				graph.plot(x,y,line.color);
+
+			error -= deltaY;
+			if (error < 0)
+			{
+				y += yStep;
+				error += deltaX;
+			}
+		}
+	});
+}
+
 function circle(diameter,color)
 {
 	this.diameter = diameter;
@@ -436,6 +520,7 @@ function draw()
 	}
 
 	points.draw();
+	lines.draw();
 }
 
 $(document).ready(function()
@@ -443,6 +528,7 @@ $(document).ready(function()
 	canvas = new canvasHandler();
 	graph = new cartesianPlane();
 	points = new points();
+	lines = new lines();
 	
 	// add conic form to config div
 	var $controls = $('<div/>');
@@ -485,8 +571,6 @@ $(document).ready(function()
 		startX = graph.getX(canvas.getX(event.pageX));
 		startY = graph.getY(canvas.getY(event.pageY));
 
-		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
-
 		draw();
 	});
 
@@ -495,7 +579,6 @@ $(document).ready(function()
 		if (!clicking)
 			return;
 
-		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
 		draw();
 	});
 
@@ -503,8 +586,7 @@ $(document).ready(function()
 	{
 		if (clicking)
 		{
-			points.addPoint(startX, startY, "rgba(32,192,32,1)");
-			points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(192,32,32,1)");
+			lines.addLine(startX,startY,graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,192,1)");
 
 			draw();
 		}
