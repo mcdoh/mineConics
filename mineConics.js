@@ -3,6 +3,8 @@ var graph;
 var points;
 
 var clicking = false;
+var startX;
+var startY;
 
 function canvasHandler()
 {
@@ -501,6 +503,9 @@ $(document).ready(function()
 	$('#canvas').mousedown(function(event)
 	{
 		clicking = true;
+		startX = graph.getX(canvas.getX(event.pageX));
+		startY = graph.getY(canvas.getY(event.pageY));
+
 		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
 
 		draw();
@@ -508,15 +513,23 @@ $(document).ready(function()
 
 	$('#canvas').mousemove(function(event)
 	{
-		if (clicking == false)
+		if (!clicking)
 			return;
 
 		points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,32,1)");
 		draw();
 	});
 
-	$('#canvas').mouseup(function()
+	$('#canvas').mouseup(function(event)
 	{
+		if (clicking)
+		{
+			points.addPoint(startX, startY, "rgba(32,192,32,1)");
+			points.addPoint(graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(192,32,32,1)");
+
+			draw();
+		}
+
 		clicking = false;
 	});
 
@@ -524,5 +537,4 @@ $(document).ready(function()
 	{
 		clicking = false;
 	});
-
 });
