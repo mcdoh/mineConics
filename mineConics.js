@@ -307,11 +307,21 @@ cartesianPlane.prototype.plot = function(x,y,color)
 
 cartesianPlane.prototype.draw = function(row,col,x,y)
 {
-	this.fill(row,col,this.color);
+	for (var row=0; row<this.height; row++)
+	{
+		var y = row - ((this.height-1) / 2);
 
-	// mark every even square along the axes
-	if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
-		this.fill(row,col,this.highlight);
+		for (var col=0; col<this.width; col++)
+		{
+			var x = col - ((this.width-1) / 2);
+
+			this.fill(row,col,this.color);
+
+			// mark every even square along the axes
+			if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
+				this.fill(row,col,this.highlight);
+		}
+	}
 }
 
 function point(x,y,color)
@@ -638,18 +648,7 @@ function draw()
 
 	canvas.clear();
 
-	for (var row=0; row<graph.height; row++)
-	{
-		var y = row - ((graph.height-1) / 2);
-
-		for (var col=0; col<graph.width; col++)
-		{
-			var x = col - ((graph.width-1) / 2);
-
-			graph.draw(row,col,x,y);
-		}
-	}
-
+	graph.draw();
 	points.draw();
 	lines.draw();
 	circles.draw();
