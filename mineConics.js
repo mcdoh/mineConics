@@ -2,6 +2,7 @@ var canvas;
 var graph;
 var points;
 var lines;
+var circles;
 
 var clicking = false;
 var startX;
@@ -154,15 +155,15 @@ function addCircleControl($controlPane)
 	$conicForm.addClass('conic');
 	$conicForm.addClass('circle');
 
-	var $diameterDiv = $('<div/>');
-	var $diameterInput = $('<input/>');
-	$diameterInput.addClass('diameter');
-	$diameterInput.attr('type','text');
-	$diameterInput.attr('name','diameter');
+	var $radiusDiv = $('<div/>');
+	var $radiusInput = $('<input/>');
+	$radiusInput.addClass('radius');
+	$radiusInput.attr('type','text');
+	$radiusInput.attr('name','radius');
 
-	$diameterDiv.text('Diameter');
-	$diameterDiv.append($diameterInput);
-	$conicForm.append($diameterDiv);
+	$radiusDiv.text('radius');
+	$radiusDiv.append($radiusInput);
+	$conicForm.append($radiusDiv);
 	$conicForm.append(colorControl());
 	$conicDiv.append($conicForm);
 	$conicDiv.hide();
@@ -346,6 +347,67 @@ function line(x0,y0,x1,y1,color)
 	this.color = color;
 }
 
+// Bresenham's line algorithm
+line.prototype.draw = function()
+{
+	var x0 = this.x0;
+	var x1 = this.x1;
+	var y0 = this.y0;
+	var y1 = this.y1;
+
+	var steep = false;
+	if (Math.abs(y1-y0) > Math.abs(x1-x0))
+		steep = true;
+
+	if (steep)
+	{
+		var temp = x0;
+		x0 = y0;
+		y0 = temp;
+
+		temp = x1;
+		x1 = y1;
+		y1 = temp;
+	}
+
+	if (x0 > x1)
+	{
+		var temp = x0;
+		x0 = x1;
+		x1 = temp;
+
+		temp = y0;
+		y0 = y1;
+		y1 = temp;
+	}
+
+	var deltaX = x1 - x0;
+	var deltaY = Math.abs(y1 - y0);
+	var error = deltaX / 2;
+	var y = y0;
+
+	var yStep;
+	if (y0 < y1)
+		yStep = 1;
+	else
+		yStep = -1;
+
+	for (var x=x0; x<=x1; x++)
+	{
+		if (steep)
+			graph.plot(y,x,this.color);
+		else
+			graph.plot(x,y,this.color);
+
+		error -= deltaY;
+		if (error < 0)
+		{
+			y += yStep;
+			error += deltaX;
+		}
+	}
+}
+
 function lines()
 {
 	this.lineList = [];
@@ -360,85 +422,85 @@ lines.prototype.draw = function()
 {
 	$.each(this.lineList,function(index,line)
 	{
-		// Bresenham's line algorithm
-		var x0 = line.x0;
-		var x1 = line.x1;
-		var y0 = line.y0;
-		var y1 = line.y1;
-
-		var steep = false;
-		if (Math.abs(y1-y0) > Math.abs(x1-x0))
-			steep = true;
-
-		if (steep)
-		{
-			var temp = x0;
-			x0 = y0;
-			y0 = temp;
-
-			temp = x1;
-			x1 = y1;
-			y1 = temp;
-		}
-
-		if (x0 > x1)
-		{
-			var temp = x0;
-			x0 = x1;
-			x1 = temp;
-
-			temp = y0;
-			y0 = y1;
-			y1 = temp;
-		}
-
-		var deltaX = x1 - x0;
-		var deltaY = Math.abs(y1 - y0);
-		var error = deltaX / 2;
-		var y = y0;
-
-		var yStep;
-		if (y0 < y1)
-			yStep = 1;
-		else
-			yStep = -1;
-
-		for (var x=x0; x<=x1; x++)
-		{
-			if (steep)
-				graph.plot(y,x,line.color);
-			else
-				graph.plot(x,y,line.color);
-
-			error -= deltaY;
-			if (error < 0)
-			{
-				y += yStep;
-				error += deltaX;
-			}
-		}
+		line.draw();
 	});
 }
 
-function circle(diameter,color)
+function circle(centerX,centerY,radius,color)
 {
-	this.diameter = diameter;
+	this.centerX = centerX;
+	this.centerY = centerY;
+	this.radius = radius;
 	this.color = color;
 }
 
-circle.prototype.draw = function(row,col,x,y)
+// helper for midpoint circle algorithm
+circle.prototype.plotFourPoints = function(x,y)
 {
-	if ((this.diameter % 2) == 0)
+	graph.plot(this.centerX+x,this.centerY+y,this.color);
+
+	if (x != 0)
+		graph.plot(this.centerX-x,this.centerY+y,this.color);
+
+	if (y != 0)
+		graph.plot(this.centerX+x,this.centerY-y,this.color);
+
+	if ((x != 0) && (y != 0))
+		graph.plot(this.centerX-x,this.centerY-y,this.color);
+}
+
+// helper for midpoint circle algorithm
+circle.prototype.plotEightPoints = function(x,y)
+{
+	this.plotFourPoints(x,y);
+
+	if (x != y)
+		this.plotFourPoints(y,x);
+}
+
+// midpoint circle algorithm
+circle.prototype.draw = function()
+{
+	var x = this.radius;
+	var y = 0;
+	var error = -x;
+
+	while (x >= y)
 	{
-		x -= 0.5;
-		y += 0.5;
+		this.plotEightPoints(x,y);
+		
+		error += (2 * y) + 1;
+		y++;
+
+		if (error >= 0)
+		{
+			x--;
+			error -= 2 * x;
+		}
 	}
+}
 
-	var radius = this.diameter / 2;
-	var circleTest = Math.sqrt((x*x) + (y*y));
+function circles()
+{
+	this.circleList = [];
+}
 
-	if ((circleTest <= radius) && (circleTest > (radius-1)))
-		graph.fill(row,col,this.color);
+circles.prototype.clear = function()
+{
+	this.circleList.splice(0,this.circleList.length);
+}
+
+circles.prototype.addCircle = function(radius,color)
+{
+	this.circleList = this.circleList.concat(new circle(0,0,radius,color));
+}
+
+circles.prototype.draw = function()
+{
+	$.each(this.circleList,function(index,circle)
+	{
+		circle.draw();
+	});
 }
 
 function ellipse(height,width,color)
@@ -469,35 +531,36 @@ ellipse.prototype.draw = function(row,col,x,y)
 function draw()
 {
 	graph.reset();
+	circles.clear();
 
 	var $conics = $('div.conic');
-	var conics = [];
 
 	$($conics).each(function(index,$conic)
 	{
 		if ($($conic).is('.circle'))
 		{
-			var diameter = parseInt($($conic).find('input.diameter').val());
+			var radius = parseInt($($conic).find('input.radius').val());
 
-			if (diameter)
+			if (radius)
 			{
-				conics = conics.concat(new circle(diameter,$($conic).find('input.color:checked').val()));
+//				conics = conics.concat(new circle(radius,$($conic).find('input.color:checked').val()));
 
-				graph.resize(diameter+2,diameter+2); // "+2" to give some extra space around the shape
+				circles.addCircle(radius,$($conic).find('input.color:checked').val());
+				graph.resize(radius*2+3,radius*2+3); // "+3" to give some extra space around the shape
 			}
 		}
-		else if ($($conic).is('.ellipse'))
-		{
-			var height = parseInt($($conic).find('input.height').val());
-			var width = parseInt($($conic).find('input.width').val());
-
-			if (height && width)
-			{
-				conics = conics.concat(new ellipse(height,width,$($conic).find('input.color:checked').val()));
-
-				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
-			}
-		}
+// 		else if ($($conic).is('.ellipse'))
+// 		{
+// 			var height = parseInt($($conic).find('input.height').val());
+// 			var width = parseInt($($conic).find('input.width').val());
+// 
+// 			if (height && width)
+// 			{
+// 				conics = conics.concat(new ellipse(height,width,$($conic).find('input.color:checked').val()));
+// 
+// 				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
+// 			}
+// 		}
 	});
 
 	canvas.clear();
@@ -512,15 +575,16 @@ function draw()
 
 			graph.draw(row,col,x,y);
 
-			$.each(conics,function(index,conic)
-			{
-				conic.draw(row,col,x,y);
-			});
+// 			$.each(conics,function(index,conic)
+// 			{
+// 				conic.draw(row,col,x,y);
+// 			});
 		}
 	}
 
 	points.draw();
 	lines.draw();
+	circles.draw();
 }
 
 $(document).ready(function()
@@ -529,6 +593,7 @@ $(document).ready(function()
 	graph = new cartesianPlane();
 	points = new points();
 	lines = new lines();
+	circles = new circles();
 	
 	// add conic form to config div
 	var $controls = $('<div/>');
