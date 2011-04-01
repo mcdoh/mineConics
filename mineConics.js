@@ -697,7 +697,7 @@ $(document).ready(function()
 	$controls.slideDown();
 
 	// display the initial graph
-	draw();
+	setInterval(draw,100);
 
 	$('input.newCircle').live('click',function(event)
 	{
@@ -709,41 +709,17 @@ $(document).ready(function()
 		addEllipseControl($controlPane);
 	});
 
-	$('div.conic').live('keyup',function(event)
-	{
-		draw();
-	});
-
-	$('input.color').live('click',function(event)
-	{
-		draw();
-	});
-
 	$('#canvas').mousedown(function(event)
 	{
 		clicking = true;
 		startX = graph.getX(canvas.getX(event.pageX));
 		startY = graph.getY(canvas.getY(event.pageY));
-
-		draw();
-	});
-
-	$('#canvas').mousemove(function(event)
-	{
-		if (!clicking)
-			return;
-
-		draw();
 	});
 
 	$('#canvas').mouseup(function(event)
 	{
 		if (clicking)
-		{
 			lines.addLine(startX,startY,graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,192,1)");
-
-			draw();
-		}
 
 		clicking = false;
 	});
