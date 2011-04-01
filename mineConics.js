@@ -219,6 +219,7 @@ function cartesianPlane()
 	this.height;
 	this.width;
 	this.scale;
+	this.interval = 2;
 	this.color = this.defaultColor;
 	this.highlight = this.defaultHighlight;
 	
@@ -305,22 +306,41 @@ cartesianPlane.prototype.plot = function(x,y,color)
 		this.fill(maxY-y,maxX+x,color);
 }
 
-cartesianPlane.prototype.draw = function(row,col,x,y)
+cartesianPlane.prototype.draw = function()
 {
-	for (var row=0; row<this.height; row++)
+	// fill with background color
+	canvas.context.beginPath();
+	canvas.context.fillStyle = this.color;
+	canvas.context.rect(0,0,canvas.width(),canvas.height());
+	canvas.context.closePath();
+	canvas.context.fill();
+
+	for (var col=0; col<=this.width; col++)
 	{
+		canvas.context.beginPath();
+		canvas.context.fillStyle = "rgba(255,255,255,1)";
+		canvas.context.rect((col * this.scale), 0, 1, canvas.height());
+		canvas.context.closePath();
+		canvas.context.fill();
+
+		// draw marks along the X axis
+		var x = col - ((this.width-1) / 2);
+		if ((x % this.interval) == 0)
+			this.plot(x,0,this.highlight);
+	}
+
+	for (var row=0; row<=this.height; row++)
+	{
+		canvas.context.beginPath();
+		canvas.context.fillStyle = "rgba(255,255,255,1)";
+		canvas.context.rect(0, (row * this.scale), canvas.width(), 1);
+		canvas.context.closePath();
+		canvas.context.fill();
+
+		// draw marks along the Y axis
 		var y = row - ((this.height-1) / 2);
-
-		for (var col=0; col<this.width; col++)
-		{
-			var x = col - ((this.width-1) / 2);
-
-			this.fill(row,col,this.color);
-
-			// mark every even square along the axes
-			if (((x==0) && ((y%2)==0)) || ((y==0) && ((x%2)==0)))
-				this.fill(row,col,this.highlight);
-		}
+		if ((y % this.interval) == 0)
+			this.plot(0,y,this.highlight);
 	}
 }
 
