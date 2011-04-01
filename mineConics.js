@@ -3,6 +3,7 @@ var graph;
 var points;
 var lines;
 var circles;
+var ellipses;
 
 var clicking = false;
 var startX;
@@ -182,24 +183,24 @@ function addEllipseControl($controlPane)
 	$conicForm.addClass('conic');
 	$conicForm.addClass('ellipse');
 
-	var $heightDiv = $('<div/>');
-	var $heightInput = $('<input/>');
-	$heightInput.addClass('height');
-	$heightInput.attr('type','text');
-	$heightInput.attr('name','height');
+	var $radiusXDiv = $('<div/>');
+	var $radiusXInput = $('<input/>');
+	$radiusXInput.addClass('radiusX');
+	$radiusXInput.attr('type','text');
+	$radiusXInput.attr('name','radiusX');
 
-	var $widthDiv = $('<div/>');
-	var $widthInput = $('<input/>');
-	$widthInput.addClass('width');
-	$widthInput.attr('type','text');
-	$widthInput.attr('name','width');
+	var $radiusYDiv = $('<div/>');
+	var $radiusYInput = $('<input/>');
+	$radiusYInput.addClass('radiusY');
+	$radiusYInput.attr('type','text');
+	$radiusYInput.attr('name','radiusY');
 
-	$heightDiv.text('Height');
-	$heightDiv.append($heightInput);
-	$widthDiv.text('Width');
-	$widthDiv.append($widthInput);
-	$conicForm.append($heightDiv);
-	$conicForm.append($widthDiv);
+	$radiusXDiv.text('Radius X');
+	$radiusXDiv.append($radiusXInput);
+	$radiusYDiv.text('Radius Y');
+	$radiusYDiv.append($radiusYInput);
+	$conicForm.append($radiusXDiv);
+	$conicForm.append($radiusYDiv);
 	$conicForm.append(colorControl());
 	$conicDiv.append($conicForm);
 	$conicDiv.hide();
@@ -229,7 +230,7 @@ cartesianPlane.prototype.reset = function()
 	this.height = this.defaultHeight;
 	this.width = this.defaultWidth;
 
-	this.resize(this.height,this.width);
+	this.resize(this.width,this.height);
 }
 
 cartesianPlane.prototype.ensureOddHeight = function()
@@ -245,18 +246,18 @@ cartesianPlane.prototype.ensureOddWidth = function()
 }
 
 // resize if graph needs to be enlarged
-cartesianPlane.prototype.resize = function(height,width)
+cartesianPlane.prototype.resize = function(width,height)
 {
-	if (height > this.height)
-	{
-		this.height = height;
-		this.ensureOddHeight();
-	}
-
 	if (width > this.width)
 	{
 		this.width = width;
 		this.ensureOddWidth();
+	}
+
+	if (height > this.height)
+	{
+		this.height = height;
+		this.ensureOddHeight();
 	}
 
 	var xScale = (canvas.width()-1) / this.width; // 'graph width - 1' so we're not drawing right up to the border
@@ -503,35 +504,110 @@ circles.prototype.draw = function()
 	});
 }
 
-function ellipse(height,width,color)
+function ellipse(centerX,centerY,radiusX,radiusY,color)
 {
-	this.height = height;
-	this.width = width;
+	this.centerX = centerX;
+	this.centerY = centerY;
+	this.radiusX = radiusX;
+	this.radiusY = radiusY;
 	this.color = color;
 }
 
-ellipse.prototype.draw = function(row,col,x,y)
+// helper for midpoint ellipse algorithm
+ellipse.prototype.plotFourPoints = function(x,y)
 {
-	if ((this.width % 2) == 0)
-		x -= 0.5;
+	graph.plot(this.centerX+x,this.centerY+y,this.color);
+	graph.plot(this.centerX-x,this.centerY+y,this.color);
+	graph.plot(this.centerX-x,this.centerY-y,this.color);
+	graph.plot(this.centerX+x,this.centerY-y,this.color);
+}
 
-	if ((this.height % 2) == 0)
-		y += 0.5;
+// midpoint ellipse algorithm
+ellipse.prototype.draw = function()
+{
+	var x = this.radiusX;
+	var y = 0;
+	var twoASquare = 2 * this.radiusX * this.radiusX;
+	var twoBSquare = 2 * this.radiusY * this.radiusY;
+	var changeX = this.radiusY * this.radiusY * (1 - (2 * this.radiusX));
+	var changeY = this.radiusX * this.radiusX;
+	var stoppingX = twoBSquare * this.radiusX;
+	var stoppingY = 0;
+	var error = 0;
 
-	var unit = 1;
-	var a = this.width / 2;
-	var b = this.height / 2;
-	var perimeter = ((x*x)/(a*a) + (y*y)/(b*b));
-	var inner = ((x*x)/((a-1)*(a-1)) + (y*y)/((b-1)*(b-1)));
+	while (stoppingX >= stoppingY)
+	{
+		this.plotFourPoints(x,y);
 
-	if ((perimeter <= unit) && (inner > unit))
-		graph.fill(row,col,this.color);
+		y++;
+		stoppingY += twoASquare;
+		error += changeY;
+		changeY += twoASquare;
+
+		if (((2 * error) + changeX) > 0)
+		{
+			x--;
+			stoppingX -= twoBSquare;
+			error += changeX;
+			changeX += twoBSquare;
+		}
+	}
+
+	x = 0;
+	y = this.radiusY;
+	changeX = this.radiusY * this.radiusY;
+	changeY = this.radiusX * this.radiusX * (1 - (2 * this.radiusY));
+	stoppingX = 0;
+	stoppingY = twoASquare * this.radiusY;
+	error = 0;
+
+	while (stoppingX <= stoppingY)
+	{
+		this.plotFourPoints(x,y);
+
+		x++;
+		stoppingX += twoBSquare;
+		error += changeX;
+		changeX += twoBSquare;
+
+		if (((2 * error) + changeY) > 0)
+		{
+			y--;
+			stoppingY -= twoASquare;
+			error += changeY;
+			changeY += twoASquare;
+		}
+	}
+}
+
+function ellipses()
+{
+	this.ellipseList = [];
+}
+
+ellipses.prototype.clear = function()
+{
+	this.ellipseList.splice(0,this.ellipseList.length);
+}
+
+ellipses.prototype.addEllipse = function(radiusX,radiusY,color)
+{
+	this.ellipseList = this.ellipseList.concat(new ellipse(0,0,radiusX,radiusY,color));
+}
+
+ellipses.prototype.draw = function()
+{
+	$.each(this.ellipseList,function(index,ellipse)
+	{
+		ellipse.draw();
+	});
 }
 
 function draw()
 {
 	graph.reset();
 	circles.clear();
+	ellipses.clear();
 
 	var $conics = $('div.conic');
 
@@ -543,24 +619,21 @@ function draw()
 
 			if (radius)
 			{
-//				conics = conics.concat(new circle(radius,$($conic).find('input.color:checked').val()));
-
 				circles.addCircle(radius,$($conic).find('input.color:checked').val());
 				graph.resize(radius*2+3,radius*2+3); // "+3" to give some extra space around the shape
 			}
 		}
-// 		else if ($($conic).is('.ellipse'))
-// 		{
-// 			var height = parseInt($($conic).find('input.height').val());
-// 			var width = parseInt($($conic).find('input.width').val());
-// 
-// 			if (height && width)
-// 			{
-// 				conics = conics.concat(new ellipse(height,width,$($conic).find('input.color:checked').val()));
-// 
-// 				graph.resize(height+2,width+2); // "+2" to give some extra space around the shape
-// 			}
-// 		}
+		else if ($($conic).is('.ellipse'))
+		{
+			var radiusX = parseInt($($conic).find('input.radiusX').val());
+			var radiusY = parseInt($($conic).find('input.radiusY').val());
+
+			if (radiusX && radiusY)
+			{
+				ellipses.addEllipse(radiusX,radiusY,$($conic).find('input.color:checked').val());
+				graph.resize(radiusX*2+3,radiusY*2+3); // "+3" to give some extra space around the shape
+			}
+		}
 	});
 
 	canvas.clear();
@@ -574,17 +647,13 @@ function draw()
 			var x = col - ((graph.width-1) / 2);
 
 			graph.draw(row,col,x,y);
-
-// 			$.each(conics,function(index,conic)
-// 			{
-// 				conic.draw(row,col,x,y);
-// 			});
 		}
 	}
 
 	points.draw();
 	lines.draw();
 	circles.draw();
+	ellipses.draw();
 }
 
 $(document).ready(function()
@@ -594,6 +663,7 @@ $(document).ready(function()
 	points = new points();
 	lines = new lines();
 	circles = new circles();
+	ellipses = new ellipses();
 	
 	// add conic form to config div
 	var $controls = $('<div/>');
