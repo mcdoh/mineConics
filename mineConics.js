@@ -219,7 +219,10 @@ function cartesianPlane()
 	this.height;
 	this.width;
 	this.scale;
-	this.interval = 2;
+
+	this.startX = -canvas.width() / 2; // distance in pixels from upper left corner to 0,0
+	this.startY = canvas.height() / 2; // distance in pixels from upper left corner to 0,0
+	this.interval = 2; // how often a marker is drawn along the axes
 	this.color = this.defaultColor;
 	this.highlight = this.defaultHighlight;
 	
@@ -234,47 +237,27 @@ cartesianPlane.prototype.reset = function()
 	this.resize(this.width,this.height);
 }
 
-cartesianPlane.prototype.ensureOddHeight = function()
-{
-	if ((this.height%2) == 0)
-		this.height += 1;
-}
-
-cartesianPlane.prototype.ensureOddWidth = function()
-{
-	if ((this.width%2) == 0)
-		this.width += 1;
-}
-
 // resize if graph needs to be enlarged
 cartesianPlane.prototype.resize = function(width,height)
 {
 	if (width > this.width)
-	{
 		this.width = width;
-		this.ensureOddWidth();
-	}
 
 	if (height > this.height)
-	{
 		this.height = height;
-		this.ensureOddHeight();
-	}
 
-	var xScale = (canvas.width()-1) / this.width; // 'graph width - 1' so we're not drawing right up to the border
-	var yScale = (canvas.height()-1) / this.height; // 'graph height - 1' so we're not drawing right up to the border
+	var xScale = (canvas.width()) / this.width;
+	var yScale = (canvas.height()) / this.height;
 
 	if (xScale <= yScale)
 	{
 		this.scale = xScale;
 		this.height = parseInt(canvas.height() / this.scale);
-		this.ensureOddHeight();
 	}
 	else
 	{
 		this.scale = yScale;
 		this.width = parseInt(canvas.width() / this.scale);
-		this.ensureOddWidth();
 	}
 }
 
@@ -290,17 +273,41 @@ cartesianPlane.prototype.getY = function(y)
 
 cartesianPlane.prototype.fill = function(row,col,color)
 {
+	var width = canvas.width();
+	var height = canvas.height();
+	var scale = this.scale;
+
+	// for floating point error correction
+	var width100 = width * 100;
+	var height100 = height * 100;
+	var scale100 = Math.floor(scale * 100);
+
+	var cols = Math.floor(width / scale);
+	var rows = Math.floor(height / scale);
+
+	var xOffset;
+	if ((cols % 2) == 0)
+		xOffset = ((width100 % scale100) - scale100) / 200;
+	else
+		xOffset = (width100 % scale100) / 200;
+
+	var yOffset;
+	if ((rows % 2) == 0)
+		yOffset = ((height100 % scale100) - scale100) / 200;
+	else
+		yOffset = (height100 % scale100) / 200;
+
 	canvas.context.beginPath();
 	canvas.context.fillStyle = color;
-	canvas.context.rect(col*this.scale+1,row*this.scale+1,this.scale-1,this.scale-1);
+	canvas.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
 	canvas.context.closePath();
 	canvas.context.fill();
 }
 
 cartesianPlane.prototype.plot = function(x,y,color)
 {
-	var maxX = Math.floor(this.width/2);
-	var maxY = Math.floor(this.height/2);
+	var maxX = Math.floor(canvas.width() / (this.scale*2));
+	var maxY = Math.floor(canvas.height() / (this.scale*2));
 
 	if ((Math.abs(x) <= maxX) && (Math.abs(y) <= maxY))
 		this.fill(maxY-y,maxX+x,color);
@@ -308,37 +315,62 @@ cartesianPlane.prototype.plot = function(x,y,color)
 
 cartesianPlane.prototype.draw = function()
 {
+	var width = canvas.width();
+	var height = canvas.height();
+	var scale = this.scale;
+
+	// for floating point error correction
+	var width100 = width * 100;
+	var height100 = height * 100;
+	var scale100 = Math.floor(scale * 100);
+
 	// fill with background color
 	canvas.context.beginPath();
 	canvas.context.fillStyle = this.color;
-	canvas.context.rect(0,0,canvas.width(),canvas.height());
+	canvas.context.rect(0,0,width,height);
 	canvas.context.closePath();
 	canvas.context.fill();
 
-	for (var col=0; col<=this.width; col++)
+	var cols = Math.floor(width / scale);
+
+	var xOffset;
+	if ((cols % 2) == 0)
+		xOffset = ((width100 % scale100) + scale100) / 200;
+	else
+		xOffset = (width100 % scale100) / 200;
+
+	for (var col=0; col<=cols; col++)
 	{
 		canvas.context.beginPath();
 		canvas.context.fillStyle = "rgba(255,255,255,1)";
-		canvas.context.rect((col * this.scale), 0, 1, canvas.height());
+		canvas.context.rect((col * scale) + xOffset, 0, 1, height);
 		canvas.context.closePath();
 		canvas.context.fill();
 
 		// draw marks along the X axis
-		var x = col - ((this.width-1) / 2);
+		var x = parseInt(col - (cols / 2));
 		if ((x % this.interval) == 0)
 			this.plot(x,0,this.highlight);
 	}
 
-	for (var row=0; row<=this.height; row++)
+	var rows = Math.floor(height / scale);
+
+	var yOffset;
+	if ((rows % 2) == 0)
+		yOffset = ((height100 % scale100) + scale100) / 200;
+	else
+		yOffset = (height100 % scale100) / 200;
+
+	for (var row=0; row<=rows; row++)
 	{
 		canvas.context.beginPath();
 		canvas.context.fillStyle = "rgba(255,255,255,1)";
-		canvas.context.rect(0, (row * this.scale), canvas.width(), 1);
+		canvas.context.rect(0, (row * scale) + yOffset, width, 1);
 		canvas.context.closePath();
 		canvas.context.fill();
 
 		// draw marks along the Y axis
-		var y = row - ((this.height-1) / 2);
+		var y = parseInt(row - (rows / 2));
 		if ((y % this.interval) == 0)
 			this.plot(0,y,this.highlight);
 	}
