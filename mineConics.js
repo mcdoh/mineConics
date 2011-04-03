@@ -735,20 +735,37 @@ $(document).ready(function()
 	$('#canvas').mousedown(function(event)
 	{
 		clicking = true;
-		startX = graph.getX(canvas.getX(event.pageX));
-		startY = graph.getY(canvas.getY(event.pageY));
+// 		startX = graph.getX(canvas.getX(event.pageX));
+// 		startY = graph.getY(canvas.getY(event.pageY));
+		startX = canvas.getX(event.pageX);
+		startY = canvas.getY(event.pageY);
 	});
 
-	$('#canvas').mouseup(function(event)
+	$('#canvas').mousemove(function(event)
 	{
-		if (clicking)
-			lines.addLine(startX,startY,graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,192,1)");
+		if (!clicking)
+			return;
 
-		clicking = false;
+		var newX = canvas.getX(event.pageX);
+		var newY = canvas.getY(event.pageY);
+
+		graph.originX += newX - startX;
+		graph.originY += newY - startY;
+
+		startX = newX;
+		startY = newY
 	});
 
 	$('#canvas').mouseout(function()
 	{
+		clicking = false;
+	});
+
+	$('#canvas').mouseup(function(event)
+	{
+// 		if (clicking)
+// 			lines.addLine(startX,startY,graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,192,1)");
+
 		clicking = false;
 	});
 });
