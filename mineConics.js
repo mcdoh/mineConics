@@ -220,8 +220,8 @@ function cartesianPlane()
 	this.width;
 	this.scale;
 
-	this.startX = -canvas.width() / 2; // distance in pixels from upper left corner to 0,0
-	this.startY = canvas.height() / 2; // distance in pixels from upper left corner to 0,0
+	this.originX = canvas.width() / 2; // distance in pixels from upper left corner to 0,0
+	this.originY = canvas.height() / 2; // distance in pixels from upper left corner to 0,0
 	this.interval = 2; // how often a marker is drawn along the axes
 	this.color = this.defaultColor;
 	this.highlight = this.defaultHighlight;
@@ -285,17 +285,8 @@ cartesianPlane.prototype.fill = function(row,col,color)
 	var cols = Math.floor(width / scale);
 	var rows = Math.floor(height / scale);
 
-	var xOffset;
-	if ((cols % 2) == 0)
-		xOffset = ((width100 % scale100) - scale100) / 200;
-	else
-		xOffset = (width100 % scale100) / 200;
-
-	var yOffset;
-	if ((rows % 2) == 0)
-		yOffset = ((height100 % scale100) - scale100) / 200;
-	else
-		yOffset = (height100 % scale100) / 200;
+	var xOffset = (((this.originX*100) - (scale100/2)) % scale100) / 100;
+	var yOffset = (((this.originY*100) - (scale100/2)) % scale100) / 100;
 
 	canvas.context.beginPath();
 	canvas.context.fillStyle = color;
@@ -306,11 +297,15 @@ cartesianPlane.prototype.fill = function(row,col,color)
 
 cartesianPlane.prototype.plot = function(x,y,color)
 {
-	var maxX = Math.floor(canvas.width() / (this.scale*2));
-	var maxY = Math.floor(canvas.height() / (this.scale*2));
+	// for floating point error correction
+	var scale100 = Math.floor(this.scale * 100);
+	var originX100 = this.originX * 100;
+	var originY100 = this.originY * 100;
 
-	if ((Math.abs(x) <= maxX) && (Math.abs(y) <= maxY))
-		this.fill(maxY-y,maxX+x,color);
+	var upperLeftX = -Math.floor((originX100 - (scale100/2)) / scale100);
+	var upperLeftY = Math.floor((originY100 - (scale100/2)) / scale100);
+
+	this.fill(upperLeftY-y,x-upperLeftX,color);
 }
 
 cartesianPlane.prototype.draw = function()
@@ -323,6 +318,8 @@ cartesianPlane.prototype.draw = function()
 	var width100 = width * 100;
 	var height100 = height * 100;
 	var scale100 = Math.floor(scale * 100);
+	var originX100 = this.originX * 100;
+	var originY100 = this.originY * 100;
 
 	// fill with background color
 	canvas.context.beginPath();
@@ -332,12 +329,7 @@ cartesianPlane.prototype.draw = function()
 	canvas.context.fill();
 
 	var cols = Math.floor(width / scale);
-
-	var xOffset;
-	if ((cols % 2) == 0)
-		xOffset = ((width100 % scale100) + scale100) / 200;
-	else
-		xOffset = (width100 % scale100) / 200;
+	var xOffset = ((originX100 - (scale100/2)) % scale100) / 100;
 
 	for (var col=0; col<=cols; col++)
 	{
@@ -348,18 +340,15 @@ cartesianPlane.prototype.draw = function()
 		canvas.context.fill();
 
 		// draw marks along the X axis
-		var x = parseInt(col - (cols / 2));
+		var x = col - parseInt((originX100 + (scale100/2)) / scale100);
 		if ((x % this.interval) == 0)
 			this.plot(x,0,this.highlight);
+		else if ((col == cols) && (((x+1) % this.interval) == 0))
+			this.plot(x+1,0,this.highlight); // slight hack for small slivers at the edge
 	}
 
 	var rows = Math.floor(height / scale);
-
-	var yOffset;
-	if ((rows % 2) == 0)
-		yOffset = ((height100 % scale100) + scale100) / 200;
-	else
-		yOffset = (height100 % scale100) / 200;
+	var yOffset = ((originY100 - (scale100/2)) % scale100) / 100;
 
 	for (var row=0; row<=rows; row++)
 	{
@@ -370,9 +359,11 @@ cartesianPlane.prototype.draw = function()
 		canvas.context.fill();
 
 		// draw marks along the Y axis
-		var y = parseInt(row - (rows / 2));
+		var y = parseInt((originY100 - (scale100/2)) / scale100) - row;
 		if ((y % this.interval) == 0)
 			this.plot(0,y,this.highlight);
+		else if ((row == 0) && (((y+1) % this.interval) == 0))
+			this.plot(0,y+1,this.highlight); // slight hack for small slivers at the edge
 	}
 }
 
