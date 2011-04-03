@@ -302,8 +302,8 @@ cartesianPlane.prototype.plot = function(x,y,color)
 	var originX100 = this.originX * 100;
 	var originY100 = this.originY * 100;
 
-	var upperLeftX = -Math.floor((originX100 - (scale100/2)) / scale100);
-	var upperLeftY = Math.floor((originY100 - (scale100/2)) / scale100);
+	var upperLeftX = -parseInt((originX100 - (scale100/2)) / scale100);
+	var upperLeftY = parseInt((originY100 - (scale100/2)) / scale100);
 
 	this.fill(upperLeftY-y,x-upperLeftX,color);
 }
