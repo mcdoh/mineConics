@@ -17,16 +17,9 @@ function canvasHandler()
 	// resize the canvas to take advantage of extra viewport space
 	this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#heading').height()));
 	this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#heading').height()));
-}
 
-canvasHandler.prototype.height = function()
-{
-	return this.$canvas.height();
-}
-
-canvasHandler.prototype.width = function()
-{
-	return this.$canvas.width();
+	this.height = this.$canvas.height();
+	this.width = this.$canvas.width();
 }
 
 canvasHandler.prototype.offsetLeft = function()
@@ -51,7 +44,7 @@ canvasHandler.prototype.getY = function(y)
 
 canvasHandler.prototype.clear = function()
 {
-	this.context.clearRect(0,0,this.width(),this.height());
+	this.context.clearRect(0,0,this.width,this.height);
 }
 
 function colorControl()
@@ -220,8 +213,8 @@ function cartesianPlane()
 	this.width;
 	this.scale;
 
-	this.originX = canvas.width() / 2; // distance in pixels from upper left corner to 0,0
-	this.originY = canvas.height() / 2; // distance in pixels from upper left corner to 0,0
+	this.originX = canvas.width / 2; // distance in pixels from upper left corner to 0,0
+	this.originY = canvas.height / 2; // distance in pixels from upper left corner to 0,0
 	this.interval = 2; // how often a marker is drawn along the axes
 	this.color = this.defaultColor;
 	this.highlight = this.defaultHighlight;
@@ -246,18 +239,18 @@ cartesianPlane.prototype.resize = function(width,height)
 	if (height > this.height)
 		this.height = height;
 
-	var xScale = (canvas.width()) / this.width;
-	var yScale = (canvas.height()) / this.height;
+	var xScale = canvas.width / this.width;
+	var yScale = canvas.height / this.height;
 
 	if (xScale <= yScale)
 	{
 		this.scale = xScale;
-		this.height = parseInt(canvas.height() / this.scale);
+		this.height = parseInt(canvas.height / this.scale);
 	}
 	else
 	{
 		this.scale = yScale;
-		this.width = parseInt(canvas.width() / this.scale);
+		this.width = parseInt(canvas.width / this.scale);
 	}
 }
 
@@ -273,8 +266,8 @@ cartesianPlane.prototype.getY = function(y)
 
 cartesianPlane.prototype.fill = function(row,col,color)
 {
-	var width = canvas.width();
-	var height = canvas.height();
+	var width = canvas.width;
+	var height = canvas.height;
 	var scale = this.scale;
 
 	// for floating point error correction
@@ -282,8 +275,8 @@ cartesianPlane.prototype.fill = function(row,col,color)
 	var height100 = height * 100;
 	var scale100 = Math.floor(scale * 100);
 
-	var cols = Math.floor(width / scale);
-	var rows = Math.floor(height / scale);
+	var cols = Math.floor(width100 / scale100);
+	var rows = Math.floor(height100 / scale100);
 
 	var xOffset = (((this.originX*100) - (scale100/2)) % scale100) / 100;
 	var yOffset = (((this.originY*100) - (scale100/2)) % scale100) / 100;
@@ -310,8 +303,8 @@ cartesianPlane.prototype.plot = function(x,y,color)
 
 cartesianPlane.prototype.draw = function()
 {
-	var width = canvas.width();
-	var height = canvas.height();
+	var width = canvas.width;
+	var height = canvas.height;
 	var scale = this.scale;
 
 	// for floating point error correction
@@ -328,7 +321,7 @@ cartesianPlane.prototype.draw = function()
 	canvas.context.closePath();
 	canvas.context.fill();
 
-	var cols = Math.floor(width / scale);
+	var cols = Math.floor(width100 / scale100);
 	var xOffset = ((originX100 - (scale100/2)) % scale100) / 100;
 
 	for (var col=0; col<=cols; col++)
@@ -347,7 +340,7 @@ cartesianPlane.prototype.draw = function()
 			this.plot(x+1,0,this.highlight); // slight hack for small slivers at the edge
 	}
 
-	var rows = Math.floor(height / scale);
+	var rows = Math.floor(height100 / scale100);
 	var yOffset = ((originY100 - (scale100/2)) % scale100) / 100;
 
 	for (var row=0; row<=rows; row++)
