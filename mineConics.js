@@ -211,7 +211,7 @@ function cartesianPlane()
 
 	this.height;
 	this.width;
-	this.scale;
+	this.scale = 25;
 
 	this.originX = canvas.width / 2; // distance in pixels from upper left corner to 0,0
 	this.originY = canvas.height / 2; // distance in pixels from upper left corner to 0,0
@@ -226,32 +226,6 @@ cartesianPlane.prototype.reset = function()
 {
 	this.height = this.defaultHeight;
 	this.width = this.defaultWidth;
-
-	this.resize(this.width,this.height);
-}
-
-// resize if graph needs to be enlarged
-cartesianPlane.prototype.resize = function(width,height)
-{
-	if (width > this.width)
-		this.width = width;
-
-	if (height > this.height)
-		this.height = height;
-
-	var xScale = canvas.width / this.width;
-	var yScale = canvas.height / this.height;
-
-	if (xScale <= yScale)
-	{
-		this.scale = xScale;
-		this.height = parseInt(canvas.height / this.scale);
-	}
-	else
-	{
-		this.scale = yScale;
-		this.width = parseInt(canvas.width / this.scale);
-	}
 }
 
 cartesianPlane.prototype.getX = function(x)
@@ -664,10 +638,7 @@ function draw()
 			var radius = parseInt($($conic).find('input.radius').val());
 
 			if (radius)
-			{
 				circles.addCircle(radius,$($conic).find('input.color:checked').val());
-				graph.resize(radius*2+3,radius*2+3); // "+3" to give some extra space around the shape
-			}
 		}
 		else if ($($conic).is('.ellipse'))
 		{
@@ -675,10 +646,7 @@ function draw()
 			var radiusY = parseInt($($conic).find('input.radiusY').val());
 
 			if (radiusX && radiusY)
-			{
 				ellipses.addEllipse(radiusX,radiusY,$($conic).find('input.color:checked').val());
-				graph.resize(radiusX*2+3,radiusY*2+3); // "+3" to give some extra space around the shape
-			}
 		}
 	});
 
@@ -760,5 +728,16 @@ $(document).ready(function()
 // 			lines.addLine(startX,startY,graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,192,1)");
 
 		clicking = false;
+	});
+
+	$('#canvas').mousewheel(function(event,delta)
+	{
+		graph.scale += delta;
+
+		if (graph.scale < 3)
+			graph.scale = 3;
+
+		if (graph.scale > 50)
+			graph.scale = 50;
 	});
 });
