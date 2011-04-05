@@ -92,10 +92,6 @@ function graphControl()
 	var $graphDiv = $('<div/>');
 	$graphDiv.addClass('control');
 
-	var $locationDiv = $('<div/>');
-	$locationDiv.attr('id','location');
-	$locationDiv.text('location');
-
 	var $graphForm = $('<form/>');
 	$graphForm.addClass('graph');
 
@@ -113,7 +109,6 @@ function graphControl()
 //	$graphForm.text('size');
 // 	$graphForm.append($sizeInput);
 // 	$graphForm.append($graphSubmit);
-	$graphDiv.append($locationDiv);
 	$graphDiv.append($graphForm);
 
 	return $graphDiv;
@@ -671,9 +666,6 @@ $(document).ready(function()
 	$controlPane.append($controls);
 	$controls.slideDown();
 
-	var $location = $('div#location');
-	$location.text('running');
-
 	// display the initial graph
 	setInterval(draw,100);
 
@@ -698,13 +690,6 @@ $(document).ready(function()
 
 	$('#canvas').mousemove(function(event)
 	{
-		var mouseX = (canvas.getX(event.pageX)-graph.getOriginX());
-		var mouseY = (canvas.getY(event.pageY)-graph.getOriginY());
-		var graphX = graph.getX(mouseX);
-		var graphY = graph.getY(mouseY);
-
-		$location.text('(' + mouseX + ',' + mouseY + ')(' + graphX + ',' + graphY + '): ' + graph.scale);
-
 		if (!clicking)
 			return;
 
@@ -733,8 +718,6 @@ $(document).ready(function()
 
 	$('#canvas').mousewheel(function(event,delta)
 	{
-		var mouseX = canvas.getX(event.pageX)-graph.getOriginX();
-		var mouseY = canvas.getY(event.pageY)-graph.getOriginY();
 		var scaleTemp = graph.scale;
 
 		graph.scale += delta;
@@ -746,15 +729,11 @@ $(document).ready(function()
 			graph.scale = 50;
 		else
 		{
-			var x0 = graph.getOriginX();
-			var y0 = graph.getOriginY();
+			var mouseX = canvas.getX(event.pageX)-graph.getOriginX();
+			var mouseY = canvas.getY(event.pageY)-graph.getOriginY();
 
 			graph.moveOriginX(-(mouseX / scaleTemp) * delta);
 			graph.moveOriginY(-(mouseY / scaleTemp) * delta);
-
-			var newX = -(mouseX / scaleTemp) * delta;
-			var newY = -(mouseY / scaleTemp) * delta;
-			$location.text('(' + mouseX + ',' + mouseY + ')' + graph.scale + ': (' + x0 + ',' + y0 + ')+(' + newX + ',' + newY + ')=(' + graph.getOriginX() + ',' + graph.getOriginY() + ')');
 		}
 	});
 });
