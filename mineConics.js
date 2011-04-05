@@ -204,28 +204,12 @@ function addEllipseControl($controlPane)
 
 function cartesianPlane()
 {
-	this.defaultHeight = 21;
-	this.defaultWidth = 21;
-	this.defaultColor = "rgba(1,1,1,0.1)";
-	this.defaultHighlight = "rgba(1,1,1,0.2)";
-
-	this.height;
-	this.width;
 	this.scale = 25;
-
+	this.color = "rgba(1,1,1,0.1)";
+	this.highlight = "rgba(1,1,1,0.2)";
 	this.originX = canvas.width / 2; // distance in pixels from upper left corner to 0,0
 	this.originY = canvas.height / 2; // distance in pixels from upper left corner to 0,0
 	this.interval = 2; // how often a marker is drawn along the axes
-	this.color = this.defaultColor;
-	this.highlight = this.defaultHighlight;
-	
-	this.reset();
-}
-
-cartesianPlane.prototype.reset = function()
-{
-	this.height = this.defaultHeight;
-	this.width = this.defaultWidth;
 }
 
 cartesianPlane.prototype.getX = function(x)
@@ -244,16 +228,11 @@ cartesianPlane.prototype.fill = function(row,col,color)
 	var height = canvas.height;
 	var scale = this.scale;
 
-	// for floating point error correction
-	var width100 = width * 100;
-	var height100 = height * 100;
-	var scale100 = Math.floor(scale * 100);
+	var cols = Math.floor(width / scale);
+	var rows = Math.floor(height / scale);
 
-	var cols = Math.floor(width100 / scale100);
-	var rows = Math.floor(height100 / scale100);
-
-	var xOffset = (((this.originX*100) - (scale100/2)) % scale100) / 100;
-	var yOffset = (((this.originY*100) - (scale100/2)) % scale100) / 100;
+	var xOffset = ((this.originX - (scale/2)) % scale);
+	var yOffset = ((this.originY - (scale/2)) % scale);
 
 	canvas.context.beginPath();
 	canvas.context.fillStyle = color;
@@ -264,13 +243,8 @@ cartesianPlane.prototype.fill = function(row,col,color)
 
 cartesianPlane.prototype.plot = function(x,y,color)
 {
-	// for floating point error correction
-	var scale100 = Math.floor(this.scale * 100);
-	var originX100 = this.originX * 100;
-	var originY100 = this.originY * 100;
-
-	var upperLeftX = -parseInt((originX100 - (scale100/2)) / scale100);
-	var upperLeftY = parseInt((originY100 - (scale100/2)) / scale100);
+	var upperLeftX = -parseInt((this.originX - (this.scale/2)) / this.scale);
+	var upperLeftY = parseInt((this.originY - (this.scale/2)) / this.scale);
 
 	this.fill(upperLeftY-y,x-upperLeftX,color);
 }
@@ -281,13 +255,6 @@ cartesianPlane.prototype.draw = function()
 	var height = canvas.height;
 	var scale = this.scale;
 
-	// for floating point error correction
-	var width100 = width * 100;
-	var height100 = height * 100;
-	var scale100 = Math.floor(scale * 100);
-	var originX100 = this.originX * 100;
-	var originY100 = this.originY * 100;
-
 	// fill with background color
 	canvas.context.beginPath();
 	canvas.context.fillStyle = this.color;
@@ -295,8 +262,8 @@ cartesianPlane.prototype.draw = function()
 	canvas.context.closePath();
 	canvas.context.fill();
 
-	var cols = Math.floor(width100 / scale100);
-	var xOffset = ((originX100 - (scale100/2)) % scale100) / 100;
+	var cols = Math.floor(width / scale);
+	var xOffset = ((this.originX - (scale/2)) % scale);
 
 	for (var col=0; col<=cols; col++)
 	{
@@ -307,15 +274,15 @@ cartesianPlane.prototype.draw = function()
 		canvas.context.fill();
 
 		// draw marks along the X axis
-		var x = col - parseInt((originX100 + (scale100/2)) / scale100);
+		var x = col - parseInt((this.originX + (scale/2)) / scale);
 		if ((x % this.interval) == 0)
 			this.plot(x,0,this.highlight);
 		else if ((col == cols) && (((x+1) % this.interval) == 0))
 			this.plot(x+1,0,this.highlight); // slight hack for small slivers at the edge
 	}
 
-	var rows = Math.floor(height100 / scale100);
-	var yOffset = ((originY100 - (scale100/2)) % scale100) / 100;
+	var rows = Math.floor(height / scale);
+	var yOffset = ((this.originY - (scale/2)) % scale);
 
 	for (var row=0; row<=rows; row++)
 	{
@@ -326,7 +293,7 @@ cartesianPlane.prototype.draw = function()
 		canvas.context.fill();
 
 		// draw marks along the Y axis
-		var y = parseInt((originY100 - (scale100/2)) / scale100) - row;
+		var y = parseInt((this.originY - (scale/2)) / scale) - row;
 		if ((y % this.interval) == 0)
 			this.plot(0,y,this.highlight);
 		else if ((row == 0) && (((y+1) % this.interval) == 0))
@@ -625,7 +592,6 @@ ellipses.prototype.draw = function()
 
 function draw()
 {
-	graph.reset();
 	circles.clear();
 	ellipses.clear();
 
@@ -733,6 +699,7 @@ $(document).ready(function()
 	$('#canvas').mousewheel(function(event,delta)
 	{
 		graph.scale += delta;
+		graph.scale = parseInt(graph.scale * 100) / 100;
 
 		if (graph.scale < 3)
 			graph.scale = 3;
