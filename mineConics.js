@@ -92,6 +92,10 @@ function graphControl()
 	var $graphDiv = $('<div/>');
 	$graphDiv.addClass('control');
 
+	var $locationDiv = $('<div/>');
+	$locationDiv.attr('id','location');
+	$locationDiv.text('location');
+
 	var $graphForm = $('<form/>');
 	$graphForm.addClass('graph');
 
@@ -109,6 +113,7 @@ function graphControl()
 //	$graphForm.text('size');
 // 	$graphForm.append($sizeInput);
 // 	$graphForm.append($graphSubmit);
+	$graphDiv.append($locationDiv);
 	$graphDiv.append($graphForm);
 
 	return $graphDiv;
@@ -207,9 +212,29 @@ function cartesianPlane()
 	this.scale = 25;
 	this.color = "rgba(1,1,1,0.1)";
 	this.highlight = "rgba(1,1,1,0.2)";
-	this.originX = Math.floor(canvas.width / 2); // distance in pixels from upper left corner to 0,0
-	this.originY = Math.floor(canvas.height / 2); // distance in pixels from upper left corner to 0,0
+	this.originX = canvas.width / 2; // distance in pixels from upper left corner to 0,0
+	this.originY = canvas.height / 2; // distance in pixels from upper left corner to 0,0
 	this.interval = 2; // how often a marker is drawn along the axes
+}
+
+cartesianPlane.prototype.getOriginX = function()
+{
+	return Math.floor(this.originX);
+}
+
+cartesianPlane.prototype.getOriginY = function()
+{
+	return Math.floor(this.originY);
+}
+
+cartesianPlane.prototype.moveOriginX = function(delta)
+{
+	this.originX = Math.floor((this.originX*1000) + (delta*1000)) / 1000;
+}
+
+cartesianPlane.prototype.moveOriginY = function(delta)
+{
+	this.originY = Math.floor((this.originY*1000) + (delta*1000)) / 1000;
 }
 
 cartesianPlane.prototype.getX = function(x)
@@ -231,8 +256,8 @@ cartesianPlane.prototype.fill = function(row,col,color)
 	var cols = Math.floor(width / scale);
 	var rows = Math.floor(height / scale);
 
-	var xOffset = ((this.originX - (scale/2)) % scale);
-	var yOffset = ((this.originY - (scale/2)) % scale);
+	var xOffset = ((this.getOriginX() - (scale/2)) % scale);
+	var yOffset = ((this.getOriginY() - (scale/2)) % scale);
 
 	canvas.context.beginPath();
 	canvas.context.fillStyle = color;
@@ -243,8 +268,8 @@ cartesianPlane.prototype.fill = function(row,col,color)
 
 cartesianPlane.prototype.plot = function(x,y,color)
 {
-	var upperLeftX = -parseInt((this.originX - (this.scale/2)) / this.scale);
-	var upperLeftY = parseInt((this.originY - (this.scale/2)) / this.scale);
+	var upperLeftX = -parseInt((this.getOriginX() - (this.scale/2)) / this.scale);
+	var upperLeftY = parseInt((this.getOriginY() - (this.scale/2)) / this.scale);
 
 	this.fill(upperLeftY-y,x-upperLeftX,color);
 }
@@ -263,7 +288,7 @@ cartesianPlane.prototype.draw = function()
 	canvas.context.fill();
 
 	var cols = Math.floor(width / scale);
-	var xOffset = ((this.originX - (scale/2)) % scale);
+	var xOffset = ((this.getOriginX() - (scale/2)) % scale);
 
 	for (var col=0; col<=cols; col++)
 	{
@@ -274,7 +299,7 @@ cartesianPlane.prototype.draw = function()
 		canvas.context.fill();
 
 		// draw marks along the X axis
-		var x = col - parseInt((this.originX + (scale/2)) / scale);
+		var x = col - parseInt((this.getOriginX() + (scale/2)) / scale);
 		if ((x % this.interval) == 0)
 			this.plot(x,0,this.highlight);
 		else if ((col == cols) && (((x+1) % this.interval) == 0))
@@ -282,7 +307,7 @@ cartesianPlane.prototype.draw = function()
 	}
 
 	var rows = Math.floor(height / scale);
-	var yOffset = ((this.originY - (scale/2)) % scale);
+	var yOffset = ((this.getOriginY() - (scale/2)) % scale);
 
 	for (var row=0; row<=rows; row++)
 	{
@@ -293,7 +318,7 @@ cartesianPlane.prototype.draw = function()
 		canvas.context.fill();
 
 		// draw marks along the Y axis
-		var y = parseInt((this.originY - (scale/2)) / scale) - row;
+		var y = parseInt((this.getOriginY() - (scale/2)) / scale) - row;
 		if ((y % this.interval) == 0)
 			this.plot(0,y,this.highlight);
 		else if ((row == 0) && (((y+1) % this.interval) == 0))
@@ -646,6 +671,9 @@ $(document).ready(function()
 	$controlPane.append($controls);
 	$controls.slideDown();
 
+	var $location = $('div#location');
+	$location.text('running');
+
 	// display the initial graph
 	setInterval(draw,100);
 
@@ -670,14 +698,21 @@ $(document).ready(function()
 
 	$('#canvas').mousemove(function(event)
 	{
+		var mouseX = (canvas.getX(event.pageX)-graph.getOriginX());
+		var mouseY = (canvas.getY(event.pageY)-graph.getOriginY());
+		var graphX = graph.getX(mouseX);
+		var graphY = graph.getY(mouseY);
+
+		$location.text('(' + mouseX + ',' + mouseY + ')(' + graphX + ',' + graphY + '): ' + graph.scale);
+
 		if (!clicking)
 			return;
 
 		var newX = canvas.getX(event.pageX);
 		var newY = canvas.getY(event.pageY);
 
-		graph.originX += newX - startX;
-		graph.originY += newY - startY;
+		graph.moveOriginX(newX - startX);
+		graph.moveOriginY(newY - startY);
 
 		startX = newX;
 		startY = newY
@@ -698,13 +733,12 @@ $(document).ready(function()
 
 	$('#canvas').mousewheel(function(event,delta)
 	{
-		var mouseX = canvas.getX(event.pageX)-graph.originX;
-		var mouseY = canvas.getY(event.pageY)-graph.originY;
-// 		var graphX = graph.getX(mouseX);
-// 		var graphY = graph.getY(mouseY);
+		var mouseX = canvas.getX(event.pageX)-graph.getOriginX();
+		var mouseY = canvas.getY(event.pageY)-graph.getOriginY();
+		var scaleTemp = graph.scale;
 
 		graph.scale += delta;
-		graph.scale = parseInt(graph.scale * 100) / 100;
+		graph.scale = parseInt(graph.scale * 1000) / 1000;
 
 		if (graph.scale < 3)
 			graph.scale = 3;
@@ -712,8 +746,15 @@ $(document).ready(function()
 			graph.scale = 50;
 		else
 		{
-			graph.originX -= Math.floor((mouseX / graph.scale) * delta);
-			graph.originY -= Math.floor((mouseY / graph.scale) * delta);
+			var x0 = graph.getOriginX();
+			var y0 = graph.getOriginY();
+
+			graph.moveOriginX(-(mouseX / scaleTemp) * delta);
+			graph.moveOriginY(-(mouseY / scaleTemp) * delta);
+
+			var newX = -(mouseX / scaleTemp) * delta;
+			var newY = -(mouseY / scaleTemp) * delta;
+			$location.text('(' + mouseX + ',' + mouseY + ')' + graph.scale + ': (' + x0 + ',' + y0 + ')+(' + newX + ',' + newY + ')=(' + graph.getOriginX() + ',' + graph.getOriginY() + ')');
 		}
 	});
 });
