@@ -207,19 +207,19 @@ function cartesianPlane()
 	this.scale = 25;
 	this.color = "rgba(1,1,1,0.1)";
 	this.highlight = "rgba(1,1,1,0.2)";
-	this.originX = canvas.width / 2; // distance in pixels from upper left corner to 0,0
-	this.originY = canvas.height / 2; // distance in pixels from upper left corner to 0,0
+	this.originX = Math.floor(canvas.width / 2); // distance in pixels from upper left corner to 0,0
+	this.originY = Math.floor(canvas.height / 2); // distance in pixels from upper left corner to 0,0
 	this.interval = 2; // how often a marker is drawn along the axes
 }
 
 cartesianPlane.prototype.getX = function(x)
 {
-	return (Math.floor(x/this.scale)) - (Math.floor(this.width/2));
+	return (Math.floor(x/this.scale)) - (Math.floor(canvas.width/(2*this.scale)));
 }
 
 cartesianPlane.prototype.getY = function(y)
 {
-	return (Math.floor(this.height/2)) - (Math.floor(y/this.scale));
+	return (Math.floor(canvas.height/(2*this.scale))) - (Math.floor(y/this.scale));
 }
 
 cartesianPlane.prototype.fill = function(row,col,color)
@@ -698,13 +698,22 @@ $(document).ready(function()
 
 	$('#canvas').mousewheel(function(event,delta)
 	{
+		var mouseX = canvas.getX(event.pageX)-graph.originX;
+		var mouseY = canvas.getY(event.pageY)-graph.originY;
+// 		var graphX = graph.getX(mouseX);
+// 		var graphY = graph.getY(mouseY);
+
 		graph.scale += delta;
 		graph.scale = parseInt(graph.scale * 100) / 100;
 
 		if (graph.scale < 3)
 			graph.scale = 3;
-
-		if (graph.scale > 50)
+		else if (graph.scale > 50)
 			graph.scale = 50;
+		else
+		{
+			graph.originX -= Math.floor((mouseX / graph.scale) * delta);
+			graph.originY -= Math.floor((mouseY / graph.scale) * delta);
+		}
 	});
 });
