@@ -9,6 +9,9 @@ var clicking = false;
 var startX;
 var startY;
 
+var drawingLine = false;
+var curLine;
+
 function canvasHandler()
 {
 	this.$canvas = $('#canvas');
@@ -50,6 +53,7 @@ canvasHandler.prototype.clear = function()
 function colorControl()
 {
 	var $colorDiv = $('<div/>');
+	var $colorForm = $('<form/>');
 	$colorDiv.addClass('colorSelector');
 
 	var $blueLabel = $('<label/>');
@@ -80,9 +84,10 @@ function colorControl()
 	$redLabel.append($redInput);
 	$redLabel.append('red');
 
-	$colorDiv.append($blueLabel);
-	$colorDiv.append($greenLabel);
-	$colorDiv.append($redLabel);
+	$colorForm.append($blueLabel);
+	$colorForm.append($greenLabel);
+	$colorForm.append($redLabel);
+	$colorDiv.append($colorForm);
 
 	return $colorDiv;
 }
@@ -132,8 +137,14 @@ function newConicControl()
 	$newEllipseButton.attr('type','button');
 	$newEllipseButton.attr('value','add ellipse');
 
+	var $newLineButton = $('<input/>');
+	$newLineButton.addClass('newLine');
+	$newLineButton.attr('type','button');
+	$newLineButton.attr('value','add line');
+
 	$newConicForm.append($newCircleButton);
 	$newConicForm.append($newEllipseButton);
+	$newConicForm.append($newLineButton);
 	$newConicDiv.append($newConicForm);
 
 	return $newConicDiv;
@@ -145,21 +156,16 @@ function addCircleControl($controlPane)
 	$conicDiv.addClass('conic');
 	$conicDiv.addClass('circle');
 
-	var $conicForm = $('<form/>');
-	$conicForm.addClass('conic');
-	$conicForm.addClass('circle');
-
 	var $radiusDiv = $('<div/>');
 	var $radiusInput = $('<input/>');
+	$radiusDiv.text('radius');
 	$radiusInput.addClass('radius');
 	$radiusInput.attr('type','text');
 	$radiusInput.attr('name','radius');
-
-	$radiusDiv.text('radius');
 	$radiusDiv.append($radiusInput);
-	$conicForm.append($radiusDiv);
-	$conicForm.append(colorControl());
-	$conicDiv.append($conicForm);
+
+	$conicDiv.append($radiusDiv);
+	$conicDiv.append(colorControl());
 	$conicDiv.hide();
 
 	$controlPane.append($conicDiv);
@@ -172,34 +178,73 @@ function addEllipseControl($controlPane)
 	$conicDiv.addClass('conic');
 	$conicDiv.addClass('ellipse');
 
-	var $conicForm = $('<form/>');
-	$conicForm.addClass('conic');
-	$conicForm.addClass('ellipse');
-
 	var $radiusXDiv = $('<div/>');
 	var $radiusXInput = $('<input/>');
+	$radiusXDiv.text('Radius X');
 	$radiusXInput.addClass('radiusX');
 	$radiusXInput.attr('type','text');
 	$radiusXInput.attr('name','radiusX');
+	$radiusXDiv.append($radiusXInput);
 
 	var $radiusYDiv = $('<div/>');
 	var $radiusYInput = $('<input/>');
+	$radiusYDiv.text('Radius Y');
 	$radiusYInput.addClass('radiusY');
 	$radiusYInput.attr('type','text');
 	$radiusYInput.attr('name','radiusY');
-
-	$radiusXDiv.text('Radius X');
-	$radiusXDiv.append($radiusXInput);
-	$radiusYDiv.text('Radius Y');
 	$radiusYDiv.append($radiusYInput);
-	$conicForm.append($radiusXDiv);
-	$conicForm.append($radiusYDiv);
-	$conicForm.append(colorControl());
-	$conicDiv.append($conicForm);
+
+	$conicDiv.append($radiusXDiv);
+	$conicDiv.append($radiusYDiv);
+	$conicDiv.append(colorControl());
 	$conicDiv.hide();
 
 	$controlPane.append($conicDiv);
 	$conicDiv.slideDown();
+}
+
+function addLineControl($controlPane,lineID)
+{
+	var $conicDiv = $('<div/>');
+	$conicDiv.addClass('conic'); // ok, so maybe a line isn't a conic section
+	$conicDiv.addClass('line');
+	$conicDiv.attr('id','line'+lineID);
+
+	var $startDiv = $('<div/>');
+	var $startXInput = $('<input/>');
+	var $startYInput = $('<input/>');
+	$startDiv.text('Start');
+	$startXInput.addClass('startX');
+	$startYInput.addClass('startY');
+	$startXInput.attr('type','text');
+	$startYInput.attr('type','text');
+	$startXInput.attr('name','startX');
+	$startYInput.attr('name','startY');
+	$startDiv.append($startXInput);
+	$startDiv.append($startYInput);
+
+	var $endDiv = $('<div/>');
+	var $endXInput = $('<input/>');
+	var $endYInput = $('<input/>');
+	$endDiv.text('End');
+	$endXInput.addClass('endX');
+	$endYInput.addClass('endY');
+	$endXInput.attr('type','text');
+	$endYInput.attr('type','text');
+	$endXInput.attr('name','endX');
+	$endYInput.attr('name','endY');
+	$endDiv.append($endXInput);
+	$endDiv.append($endYInput);
+
+	$conicDiv.append($startDiv);
+	$conicDiv.append($endDiv);
+	$conicDiv.append(colorControl());
+	$conicDiv.hide();
+
+	$controlPane.append($conicDiv);
+	$conicDiv.slideDown();
+
+	return $conicDiv;
 }
 
 function cartesianPlane()
@@ -234,12 +279,12 @@ cartesianPlane.prototype.moveOriginY = function(delta)
 
 cartesianPlane.prototype.getX = function(x)
 {
-	return (Math.floor(x/this.scale)) - (Math.floor(canvas.width/(2*this.scale)));
+	return Math.round((x - this.getOriginX()) / this.scale);
 }
 
 cartesianPlane.prototype.getY = function(y)
 {
-	return (Math.floor(canvas.height/(2*this.scale))) - (Math.floor(y/this.scale));
+	return Math.round((this.getOriginY() - y) / this.scale);
 }
 
 cartesianPlane.prototype.fill = function(row,col,color)
@@ -346,72 +391,121 @@ points.prototype.draw = function()
 	});
 }
 
-function line(x0,y0,x1,y1,color)
+function line($lineControl)
 {
-	this.x0 = x0;
-	this.y0 = y0;
-	this.x1 = x1;
-	this.y1 = y1;
-	this.color = color;
+	this.x0;
+	this.y0;
+	this.x1;
+	this.y1;
+	this.color = "rgba(0,0,0,1)";
+	this.$lineControl = $lineControl;
+}
+
+line.prototype.updateStartX = function(newX)
+{
+	var testNum = parseInt(newX);
+
+	if (!isNaN(testNum))
+		this.x0 = testNum;
+
+	this.$lineControl.find('input.startX').val(this.x0);
+}
+
+line.prototype.updateStartY = function(newY)
+{
+	var testNum = parseInt(newY);
+
+	if (!isNaN(testNum))
+		this.y0 = testNum;
+
+	this.$lineControl.find('input.startY').val(this.y0);
+}
+
+line.prototype.updateEndX = function(newX)
+{
+	var testNum = parseInt(newX);
+
+	if (!isNaN(testNum))
+		this.x1 = testNum;
+
+	this.$lineControl.find('input.endX').val(this.x1);
+}
+
+line.prototype.updateEndY = function(newY)
+{
+	var testNum = parseInt(newY);
+
+	if (!isNaN(testNum))
+		this.y1 = testNum;
+
+	this.$lineControl.find('input.endY').val(this.y1);
+}
+
+line.prototype.updateColor = function(newColor)
+{
+	this.color = newColor;
 }
 
 // Bresenham's line algorithm
 line.prototype.draw = function()
 {
-	var x0 = this.x0;
-	var x1 = this.x1;
-	var y0 = this.y0;
-	var y1 = this.y1;
-
-	var steep = false;
-	if (Math.abs(y1-y0) > Math.abs(x1-x0))
-		steep = true;
-
-	if (steep)
+	if ((this.x0 != null) && (this.y0 != null) && (this.x1 != null) && (this.y1 != null))
 	{
-		var temp = x0;
-		x0 = y0;
-		y0 = temp;
+		var x0 = this.x0;
+		var x1 = this.x1;
+		var y0 = this.y0;
+		var y1 = this.y1;
 
-		temp = x1;
-		x1 = y1;
-		y1 = temp;
-	}
+		var steep = false;
+		if (Math.abs(y1-y0) > Math.abs(x1-x0))
+			steep = true;
 
-	if (x0 > x1)
-	{
-		var temp = x0;
-		x0 = x1;
-		x1 = temp;
-
-		temp = y0;
-		y0 = y1;
-		y1 = temp;
-	}
-
-	var deltaX = x1 - x0;
-	var deltaY = Math.abs(y1 - y0);
-	var error = deltaX / 2;
-	var y = y0;
-
-	var yStep;
-	if (y0 < y1)
-		yStep = 1;
-	else
-		yStep = -1;
-
-	for (var x=x0; x<=x1; x++)
-	{
 		if (steep)
-			graph.plot(y,x,this.color);
-		else
-			graph.plot(x,y,this.color);
-
-		error -= deltaY;
-		if (error < 0)
 		{
-			y += yStep;
-			error += deltaX;
+			var temp = x0;
+			x0 = y0;
+			y0 = temp;
+
+			temp = x1;
+			x1 = y1;
+			y1 = temp;
+		}
+
+		if (x0 > x1)
+		{
+			var temp = x0;
+			x0 = x1;
+			x1 = temp;
+
+			temp = y0;
+			y0 = y1;
+			y1 = temp;
+		}
+
+		var deltaX = x1 - x0;
+		var deltaY = Math.abs(y1 - y0);
+		var error = deltaX / 2;
+		var y = y0;
+
+		var yStep;
+		if (y0 < y1)
+			yStep = 1;
+		else
+			yStep = -1;
+
+		for (var x=x0; x<=x1; x++)
+		{
+			if (steep)
+				graph.plot(y,x,this.color);
+			else
+				graph.plot(x,y,this.color);
+
+			error -= deltaY;
+			if (error < 0)
+			{
+				y += yStep;
+				error += deltaX;
+			}
 		}
 	}
 }
@@ -421,9 +515,39 @@ function lines()
 	this.lineList = [];
 }
 
-lines.prototype.addLine = function(x0,y0,x1,y1,color)
+lines.prototype.addLine = function($controlPane)
 {
-	this.lineList = this.lineList.concat(new line(x0,y0,x1,y1,color));
+	var newLineIndex = this.lineList.length;
+
+	var $newLineControl = addLineControl($controlPane,newLineIndex);
+	this.lineList = this.lineList.concat(new line($newLineControl));
+
+	return newLineIndex;
+}
+
+lines.prototype.updateLineStartX = function(lineIndex,newX)
+{
+	this.lineList[lineIndex].updateStartX(newX);
+}
+
+lines.prototype.updateLineStartY = function(lineIndex,newY)
+{
+	this.lineList[lineIndex].updateStartY(newY);
+}
+
+lines.prototype.updateLineEndX = function(line,newX)
+{
+	this.lineList[line].updateEndX(newX);
+}
+
+lines.prototype.updateLineEndY = function(line,newY)
+{
+	this.lineList[line].updateEndY(newY);
+}
+
+lines.prototype.updateLineColor = function(line,newColor)
+{
+	this.lineList[line].updateColor(newColor);
 }
 
 lines.prototype.draw = function()
@@ -669,23 +793,91 @@ $(document).ready(function()
 	// display the initial graph
 	setInterval(draw,100);
 
-	$('input.newCircle').live('click',function(event)
+	$('input.newCircle').click(function(event)
 	{
 		addCircleControl($controlPane);
 	});
 
-	$('input.newEllipse').live('click',function(event)
+	$('input.newEllipse').click(function(event)
 	{
 		addEllipseControl($controlPane);
+	});
+
+	$('input.newLine').click(function(event)
+	{
+		curLine = lines.addLine($controlPane);
+		drawingLine = true;
+	});
+
+	$('input.startX').live('change',function()
+	{
+		var $startX = $(this);
+		var lineID = $startX.closest('div.line').attr('id').replace('line','');
+
+		lines.updateLineStartX(lineID,$startX.val());
+	});
+
+	$('input.startY').live('change',function()
+	{
+		var $startY = $(this);
+		var lineID = $startY.closest('div.line').attr('id').replace('line','');
+
+		lines.updateLineStartY(lineID,$startY.val());
+	});
+
+	$('input.endX').live('change',function()
+	{
+		var $endX = $(this);
+		var lineID = $endX.closest('div.line').attr('id').replace('line','');
+
+		lines.updateLineEndX(lineID,$endX.val());
+	});
+
+	$('input.endY').live('change',function()
+	{
+		var $endY = $(this);
+		var lineID = $endY.closest('div.line').attr('id').replace('line','');
+
+		lines.updateLineEndY(lineID,$endY.val());
+	});
+
+	$('div.colorSelector').live('change',function()
+	{
+		var $conic = $(this).closest('div.conic');
+
+		if ($($conic).is('.circle'))
+		{
+		}
+		else if ($($conic).is('.ellipse'))
+		{
+		}
+		else if ($($conic).is('.line'))
+		{
+			var lineID = $conic.attr('id').replace('line','');
+
+			lines.updateLineColor(lineID,$($conic).find('input.color:checked').val());
+		}
 	});
 
 	$('#canvas').mousedown(function(event)
 	{
 		clicking = true;
-// 		startX = graph.getX(canvas.getX(event.pageX));
-// 		startY = graph.getY(canvas.getY(event.pageY));
-		startX = canvas.getX(event.pageX);
-		startY = canvas.getY(event.pageY);
+
+		if (drawingLine)
+		{
+			startX = graph.getX(canvas.getX(event.pageX));
+			startY = graph.getY(canvas.getY(event.pageY));
+
+			lines.updateLineStartX(curLine,startX);
+			lines.updateLineStartY(curLine,startY);
+			lines.updateLineEndX(curLine,startX);
+			lines.updateLineEndY(curLine,startY);
+		}
+		else // click and drag panning
+		{
+			startX = canvas.getX(event.pageX);
+			startY = canvas.getY(event.pageY);
+		}
 	});
 
 	$('#canvas').mousemove(function(event)
@@ -693,25 +885,50 @@ $(document).ready(function()
 		if (!clicking)
 			return;
 
-		var newX = canvas.getX(event.pageX);
-		var newY = canvas.getY(event.pageY);
+		if (drawingLine)
+		{
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
 
-		graph.moveOriginX(newX - startX);
-		graph.moveOriginY(newY - startY);
+			lines.updateLineEndX(curLine,curX);
+			lines.updateLineEndY(curLine,curY);
+		}
+		else // click and drag panning
+		{
+			var curX = canvas.getX(event.pageX);
+			var curY = canvas.getY(event.pageY);
 
-		startX = newX;
-		startY = newY
+			graph.moveOriginX(curX - startX);
+			graph.moveOriginY(curY - startY);
+
+			startX = curX;
+			startY = curY
+		}
 	});
 
-	$('#canvas').mouseout(function()
+	$(document).mouseup(function(event)
 	{
-		clicking = false;
-	});
+ 		if (!clicking)
+			return;
 
-	$('#canvas').mouseup(function(event)
-	{
-// 		if (clicking)
-// 			lines.addLine(startX,startY,graph.getX(canvas.getX(event.pageX)), graph.getY(canvas.getY(event.pageY)), "rgba(32,32,192,1)");
+		if (drawingLine)
+		{
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
+
+			lines.updateLineEndX(curLine,curX);
+			lines.updateLineEndY(curLine,curY);
+
+			drawingLine = false;
+		}
+		else // click and drag panning
+		{
+			var curX = canvas.getX(event.pageX);
+			var curY = canvas.getY(event.pageY);
+
+			graph.moveOriginX(curX - startX);
+			graph.moveOriginY(curY - startY);
+		}
 
 		clicking = false;
 	});
