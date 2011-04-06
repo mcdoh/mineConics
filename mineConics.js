@@ -12,6 +12,9 @@ var startY;
 var drawingLine = false;
 var curLine;
 
+var drawingCircle = false;
+var curCircle;
+
 function canvasHandler()
 {
 	this.$canvas = $('#canvas');
@@ -127,6 +130,11 @@ function newConicControl()
 	var $newConicForm = $('<form/>');
 	$newConicForm.addClass('newConic');
 
+	var $newLineButton = $('<input/>');
+	$newLineButton.addClass('newLine');
+	$newLineButton.attr('type','button');
+	$newLineButton.attr('value','add line');
+
 	var $newCircleButton = $('<input/>');
 	$newCircleButton.addClass('newCircle');
 	$newCircleButton.attr('type','button');
@@ -137,70 +145,12 @@ function newConicControl()
 	$newEllipseButton.attr('type','button');
 	$newEllipseButton.attr('value','add ellipse');
 
-	var $newLineButton = $('<input/>');
-	$newLineButton.addClass('newLine');
-	$newLineButton.attr('type','button');
-	$newLineButton.attr('value','add line');
-
+	$newConicForm.append($newLineButton);
 	$newConicForm.append($newCircleButton);
 	$newConicForm.append($newEllipseButton);
-	$newConicForm.append($newLineButton);
 	$newConicDiv.append($newConicForm);
 
 	return $newConicDiv;
-}
-
-function addCircleControl($controlPane)
-{
-	var $conicDiv = $('<div/>');
-	$conicDiv.addClass('conic');
-	$conicDiv.addClass('circle');
-
-	var $radiusDiv = $('<div/>');
-	var $radiusInput = $('<input/>');
-	$radiusDiv.text('radius');
-	$radiusInput.addClass('radius');
-	$radiusInput.attr('type','text');
-	$radiusInput.attr('name','radius');
-	$radiusDiv.append($radiusInput);
-
-	$conicDiv.append($radiusDiv);
-	$conicDiv.append(colorControl());
-	$conicDiv.hide();
-
-	$controlPane.append($conicDiv);
-	$conicDiv.slideDown();
-}
-
-function addEllipseControl($controlPane)
-{
-	var $conicDiv = $('<div/>');
-	$conicDiv.addClass('conic');
-	$conicDiv.addClass('ellipse');
-
-	var $radiusXDiv = $('<div/>');
-	var $radiusXInput = $('<input/>');
-	$radiusXDiv.text('Radius X');
-	$radiusXInput.addClass('radiusX');
-	$radiusXInput.attr('type','text');
-	$radiusXInput.attr('name','radiusX');
-	$radiusXDiv.append($radiusXInput);
-
-	var $radiusYDiv = $('<div/>');
-	var $radiusYInput = $('<input/>');
-	$radiusYDiv.text('Radius Y');
-	$radiusYInput.addClass('radiusY');
-	$radiusYInput.attr('type','text');
-	$radiusYInput.attr('name','radiusY');
-	$radiusYDiv.append($radiusYInput);
-
-	$conicDiv.append($radiusXDiv);
-	$conicDiv.append($radiusYDiv);
-	$conicDiv.append(colorControl());
-	$conicDiv.hide();
-
-	$controlPane.append($conicDiv);
-	$conicDiv.slideDown();
 }
 
 function addLineControl($controlPane,lineID)
@@ -245,6 +195,76 @@ function addLineControl($controlPane,lineID)
 	$conicDiv.slideDown();
 
 	return $conicDiv;
+}
+
+function addCircleControl($controlPane,circleID)
+{
+	var $conicDiv = $('<div/>');
+	$conicDiv.addClass('conic');
+	$conicDiv.addClass('circle');
+	$conicDiv.attr('id','circle'+circleID);
+
+	var $centerDiv = $('<div/>');
+	var $centerXInput = $('<input/>');
+	var $centerYInput = $('<input/>');
+	$centerDiv.text('Center');
+	$centerXInput.addClass('centerX');
+	$centerYInput.addClass('centerY');
+	$centerXInput.attr('type','text');
+	$centerYInput.attr('type','text');
+	$centerXInput.attr('name','centerX');
+	$centerYInput.attr('name','centerY');
+	$centerDiv.append($centerXInput);
+	$centerDiv.append($centerYInput);
+
+	var $radiusDiv = $('<div/>');
+	var $radiusInput = $('<input/>');
+	$radiusDiv.text('radius');
+	$radiusInput.addClass('radius');
+	$radiusInput.attr('type','text');
+	$radiusInput.attr('name','radius');
+	$radiusDiv.append($radiusInput);
+
+	$conicDiv.append($centerDiv);
+	$conicDiv.append($radiusDiv);
+	$conicDiv.append(colorControl());
+	$conicDiv.hide();
+
+	$controlPane.append($conicDiv);
+	$conicDiv.slideDown();
+
+	return $conicDiv;
+}
+
+function addEllipseControl($controlPane)
+{
+	var $conicDiv = $('<div/>');
+	$conicDiv.addClass('conic');
+	$conicDiv.addClass('ellipse');
+
+	var $radiusXDiv = $('<div/>');
+	var $radiusXInput = $('<input/>');
+	$radiusXDiv.text('Radius X');
+	$radiusXInput.addClass('radiusX');
+	$radiusXInput.attr('type','text');
+	$radiusXInput.attr('name','radiusX');
+	$radiusXDiv.append($radiusXInput);
+
+	var $radiusYDiv = $('<div/>');
+	var $radiusYInput = $('<input/>');
+	$radiusYDiv.text('Radius Y');
+	$radiusYInput.addClass('radiusY');
+	$radiusYInput.attr('type','text');
+	$radiusYInput.attr('name','radiusY');
+	$radiusYDiv.append($radiusYInput);
+
+	$conicDiv.append($radiusXDiv);
+	$conicDiv.append($radiusYDiv);
+	$conicDiv.append(colorControl());
+	$conicDiv.hide();
+
+	$controlPane.append($conicDiv);
+	$conicDiv.slideDown();
 }
 
 function cartesianPlane()
@@ -535,19 +555,19 @@ lines.prototype.updateLineStartY = function(lineIndex,newY)
 	this.lineList[lineIndex].updateStartY(newY);
 }
 
-lines.prototype.updateLineEndX = function(line,newX)
+lines.prototype.updateLineEndX = function(lineIndex,newX)
 {
-	this.lineList[line].updateEndX(newX);
+	this.lineList[lineIndex].updateEndX(newX);
 }
 
-lines.prototype.updateLineEndY = function(line,newY)
+lines.prototype.updateLineEndY = function(lineIndex,newY)
 {
-	this.lineList[line].updateEndY(newY);
+	this.lineList[lineIndex].updateEndY(newY);
 }
 
-lines.prototype.updateLineColor = function(line,newColor)
+lines.prototype.updateLineColor = function(lineIndex,newColor)
 {
-	this.lineList[line].updateColor(newColor);
+	this.lineList[lineIndex].updateColor(newColor);
 }
 
 lines.prototype.draw = function()
@@ -558,12 +578,48 @@ lines.prototype.draw = function()
 	});
 }
 
-function circle(centerX,centerY,radius,color)
+function circle($circleControl)
 {
-	this.centerX = centerX;
-	this.centerY = centerY;
-	this.radius = radius;
-	this.color = color;
+	this.centerX;
+	this.centerY;
+	this.radius;
+	this.color = "rgba(0,0,0,1)";
+	this.$circleControl = $circleControl;
+}
+
+circle.prototype.updateCenterX = function(newX)
+{
+	var testNum = parseInt(newX);
+
+	if (!isNaN(testNum))
+		this.centerX = testNum;
+
+	this.$circleControl.find('input.centerX').val(this.centerX);
+}
+
+circle.prototype.updateCenterY = function(newY)
+{
+	var testNum = parseInt(newY);
+
+	if (!isNaN(testNum))
+		this.centerY = testNum;
+
+	this.$circleControl.find('input.centerY').val(this.centerY);
+}
+
+circle.prototype.updateRadius = function(newRadius)
+{
+	var testNum = parseInt(newRadius);
+
+	if (!isNaN(testNum))
+		this.radius = testNum;
+
+	this.$circleControl.find('input.radius').val(this.radius);
+}
+
+circle.prototype.updateColor = function(newColor)
+{
+	this.color = newColor;
 }
 
 // helper for midpoint circle algorithm
@@ -593,21 +649,24 @@ circle.prototype.plotEightPoints = function(x,y)
 // midpoint circle algorithm
 circle.prototype.draw = function()
 {
-	var x = this.radius;
-	var y = 0;
-	var error = -x;
-
-	while (x >= y)
+	if ((this.centerX != null) && (this.centerY != null) && (this.radius != null))
 	{
-		this.plotEightPoints(x,y);
-		
-		error += (2 * y) + 1;
-		y++;
+		var x = this.radius;
+		var y = 0;
+		var error = -x;
 
-		if (error >= 0)
+		while (x >= y)
 		{
-			x--;
-			error -= 2 * x;
+			this.plotEightPoints(x,y);
+
+			error += (2 * y) + 1;
+			y++;
+
+			if (error >= 0)
+			{
+				x--;
+				error -= 2 * x;
+			}
 		}
 	}
 }
@@ -617,14 +676,34 @@ function circles()
 	this.circleList = [];
 }
 
-circles.prototype.clear = function()
+circles.prototype.addCircle = function($controlPane)
 {
-	this.circleList.splice(0,this.circleList.length);
+	var newCircleIndex = this.circleList.length;
+
+	var $newCircleControl = addCircleControl($controlPane,newCircleIndex);
+	this.circleList = this.circleList.concat(new circle($newCircleControl));
+
+	return newCircleIndex;
 }
 
-circles.prototype.addCircle = function(radius,color)
+circles.prototype.updateCircleCenterX = function(circleIndex,newX)
 {
-	this.circleList = this.circleList.concat(new circle(0,0,radius,color));
+	this.circleList[circleIndex].updateCenterX(newX);
+}
+
+circles.prototype.updateCircleCenterY = function(circleIndex,newY)
+{
+	this.circleList[circleIndex].updateCenterY(newY);
+}
+
+circles.prototype.updateCircleRadius = function(circleIndex,newRadius)
+{
+	this.circleList[circleIndex].updateRadius(newRadius);
+}
+
+circles.prototype.updateCircleColor = function(circle,newColor)
+{
+	this.circleList[circle].updateColor(newColor);
 }
 
 circles.prototype.draw = function()
@@ -736,21 +815,13 @@ ellipses.prototype.draw = function()
 
 function draw()
 {
-	circles.clear();
 	ellipses.clear();
 
 	var $conics = $('div.conic');
 
 	$($conics).each(function(index,$conic)
 	{
-		if ($($conic).is('.circle'))
-		{
-			var radius = parseInt($($conic).find('input.radius').val());
-
-			if (radius)
-				circles.addCircle(radius,$($conic).find('input.color:checked').val());
-		}
-		else if ($($conic).is('.ellipse'))
+		if ($($conic).is('.ellipse'))
 		{
 			var radiusX = parseInt($($conic).find('input.radiusX').val());
 			var radiusY = parseInt($($conic).find('input.radiusY').val());
@@ -793,9 +864,16 @@ $(document).ready(function()
 	// display the initial graph
 	setInterval(draw,100);
 
+	$('input.newLine').click(function(event)
+	{
+		curLine = lines.addLine($controlPane);
+		drawingLine = true;
+	});
+
 	$('input.newCircle').click(function(event)
 	{
-		addCircleControl($controlPane);
+		curCircle = circles.addCircle($controlPane);
+		drawingCircle = true;
 	});
 
 	$('input.newEllipse').click(function(event)
@@ -803,12 +881,7 @@ $(document).ready(function()
 		addEllipseControl($controlPane);
 	});
 
-	$('input.newLine').click(function(event)
-	{
-		curLine = lines.addLine($controlPane);
-		drawingLine = true;
-	});
-
+	// handle updates to line start X values
 	$('input.startX').live('change',function()
 	{
 		var $startX = $(this);
@@ -817,6 +890,7 @@ $(document).ready(function()
 		lines.updateLineStartX(lineID,$startX.val());
 	});
 
+	// handle updates to line start Y values
 	$('input.startY').live('change',function()
 	{
 		var $startY = $(this);
@@ -825,6 +899,7 @@ $(document).ready(function()
 		lines.updateLineStartY(lineID,$startY.val());
 	});
 
+	// handle updates to line end X values
 	$('input.endX').live('change',function()
 	{
 		var $endX = $(this);
@@ -833,6 +908,7 @@ $(document).ready(function()
 		lines.updateLineEndX(lineID,$endX.val());
 	});
 
+	// handle updates to line end Y values
 	$('input.endY').live('change',function()
 	{
 		var $endY = $(this);
@@ -841,21 +917,51 @@ $(document).ready(function()
 		lines.updateLineEndY(lineID,$endY.val());
 	});
 
+	// handle updates to circle center X values
+	$('input.centerX').live('change',function()
+	{
+		var $centerX = $(this);
+		var circleID = $centerX.closest('div.circle').attr('id').replace('circle','');
+
+		circles.updateCircleCenterX(circleID,$centerX.val());
+	});
+
+	// handle updates to circle center Y values
+	$('input.centerY').live('change',function()
+	{
+		var $centerY = $(this);
+		var circleID = $centerY.closest('div.circle').attr('id').replace('circle','');
+
+		circles.updateCircleCenterY(circleID,$centerY.val());
+	});
+
+	// handle updates to circle radius values
+	$('input.radius').live('change',function()
+	{
+		var $radius = $(this);
+		var circleID = $radius.closest('div.circle').attr('id').replace('circle','');
+
+		circles.updateCircleRadius(circleID,$radius.val());
+	});
+
 	$('div.colorSelector').live('change',function()
 	{
 		var $conic = $(this).closest('div.conic');
 
-		if ($($conic).is('.circle'))
-		{
-		}
-		else if ($($conic).is('.ellipse'))
-		{
-		}
-		else if ($($conic).is('.line'))
+		if ($($conic).is('.line'))
 		{
 			var lineID = $conic.attr('id').replace('line','');
 
 			lines.updateLineColor(lineID,$($conic).find('input.color:checked').val());
+		}
+		else if ($($conic).is('.circle'))
+		{
+			var circleID = $conic.attr('id').replace('circle','');
+
+			circles.updateCircleColor(circleID,$($conic).find('input.color:checked').val());
+		}
+		else if ($($conic).is('.ellipse'))
+		{
 		}
 	});
 
@@ -872,6 +978,15 @@ $(document).ready(function()
 			lines.updateLineStartY(curLine,startY);
 			lines.updateLineEndX(curLine,startX);
 			lines.updateLineEndY(curLine,startY);
+		}
+		else if (drawingCircle)
+		{
+			startX = graph.getX(canvas.getX(event.pageX));
+			startY = graph.getY(canvas.getY(event.pageY));
+
+			circles.updateCircleCenterX(curCircle,startX);
+			circles.updateCircleCenterY(curCircle,startY);
+			circles.updateCircleRadius(curCircle,0);
 		}
 		else // click and drag panning
 		{
@@ -892,6 +1007,13 @@ $(document).ready(function()
 
 			lines.updateLineEndX(curLine,curX);
 			lines.updateLineEndY(curLine,curY);
+		}
+		else if (drawingCircle)
+		{
+			var deltaX = startX - graph.getX(canvas.getX(event.pageX));
+			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
+
+			circles.updateCircleRadius(curCircle,Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 		}
 		else // click and drag panning
 		{
@@ -920,6 +1042,15 @@ $(document).ready(function()
 			lines.updateLineEndY(curLine,curY);
 
 			drawingLine = false;
+		}
+		else if (drawingCircle)
+		{
+			var deltaX = startX - graph.getX(canvas.getX(event.pageX));
+			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
+
+			circles.updateCircleRadius(curCircle,Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+
+			drawingCircle = false;
 		}
 		else // click and drag panning
 		{
