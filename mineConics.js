@@ -15,6 +15,9 @@ var curLine;
 var drawingCircle = false;
 var curCircle;
 
+var drawingEllipse = false;
+var curEllipse;
+
 function canvasHandler()
 {
 	this.$canvas = $('#canvas');
@@ -205,17 +208,17 @@ function addCircleControl($controlPane,circleID)
 	$conicDiv.attr('id','circle'+circleID);
 
 	var $centerDiv = $('<div/>');
-	var $centerXInput = $('<input/>');
-	var $centerYInput = $('<input/>');
+	var $circleXInput = $('<input/>');
+	var $circleYInput = $('<input/>');
 	$centerDiv.text('Center');
-	$centerXInput.addClass('centerX');
-	$centerYInput.addClass('centerY');
-	$centerXInput.attr('type','text');
-	$centerYInput.attr('type','text');
-	$centerXInput.attr('name','centerX');
-	$centerYInput.attr('name','centerY');
-	$centerDiv.append($centerXInput);
-	$centerDiv.append($centerYInput);
+	$circleXInput.addClass('circleX');
+	$circleYInput.addClass('circleY');
+	$circleXInput.attr('type','text');
+	$circleYInput.attr('type','text');
+	$circleXInput.attr('name','circleX');
+	$circleYInput.attr('name','circleY');
+	$centerDiv.append($circleXInput);
+	$centerDiv.append($circleYInput);
 
 	var $radiusDiv = $('<div/>');
 	var $radiusInput = $('<input/>');
@@ -236,11 +239,25 @@ function addCircleControl($controlPane,circleID)
 	return $conicDiv;
 }
 
-function addEllipseControl($controlPane)
+function addEllipseControl($controlPane,ellipseID)
 {
 	var $conicDiv = $('<div/>');
 	$conicDiv.addClass('conic');
 	$conicDiv.addClass('ellipse');
+	$conicDiv.attr('id','ellipse'+ellipseID);
+
+	var $centerDiv = $('<div/>');
+	var $ellipseXInput = $('<input/>');
+	var $ellipseYInput = $('<input/>');
+	$centerDiv.text('Center');
+	$ellipseXInput.addClass('ellipseX');
+	$ellipseYInput.addClass('ellipseY');
+	$ellipseXInput.attr('type','text');
+	$ellipseYInput.attr('type','text');
+	$ellipseXInput.attr('name','ellipseX');
+	$ellipseYInput.attr('name','ellipseY');
+	$centerDiv.append($ellipseXInput);
+	$centerDiv.append($ellipseYInput);
 
 	var $radiusXDiv = $('<div/>');
 	var $radiusXInput = $('<input/>');
@@ -258,6 +275,7 @@ function addEllipseControl($controlPane)
 	$radiusYInput.attr('name','radiusY');
 	$radiusYDiv.append($radiusYInput);
 
+	$conicDiv.append($centerDiv);
 	$conicDiv.append($radiusXDiv);
 	$conicDiv.append($radiusYDiv);
 	$conicDiv.append(colorControl());
@@ -265,6 +283,8 @@ function addEllipseControl($controlPane)
 
 	$controlPane.append($conicDiv);
 	$conicDiv.slideDown();
+
+	return $conicDiv;
 }
 
 function cartesianPlane()
@@ -594,7 +614,7 @@ circle.prototype.updateCenterX = function(newX)
 	if (!isNaN(testNum))
 		this.centerX = testNum;
 
-	this.$circleControl.find('input.centerX').val(this.centerX);
+	this.$circleControl.find('input.circleX').val(this.centerX);
 }
 
 circle.prototype.updateCenterY = function(newY)
@@ -604,12 +624,12 @@ circle.prototype.updateCenterY = function(newY)
 	if (!isNaN(testNum))
 		this.centerY = testNum;
 
-	this.$circleControl.find('input.centerY').val(this.centerY);
+	this.$circleControl.find('input.circleY').val(this.centerY);
 }
 
 circle.prototype.updateRadius = function(newRadius)
 {
-	var testNum = parseInt(newRadius);
+	var testNum = Math.abs(parseInt(newRadius));
 
 	if (!isNaN(testNum))
 		this.radius = testNum;
@@ -714,13 +734,59 @@ circles.prototype.draw = function()
 	});
 }
 
-function ellipse(centerX,centerY,radiusX,radiusY,color)
+function ellipse($ellipseControl)
 {
-	this.centerX = centerX;
-	this.centerY = centerY;
-	this.radiusX = radiusX;
-	this.radiusY = radiusY;
-	this.color = color;
+	this.centerX;
+	this.centerY;
+	this.radiusX;
+	this.radiusY;
+	this.color = "rgba(0,0,0,1)";
+	this.$ellipseControl = $ellipseControl;
+}
+
+ellipse.prototype.updateCenterX = function(newX)
+{
+	var testNum = parseInt(newX);
+
+	if (!isNaN(testNum))
+		this.centerX = testNum;
+
+	this.$ellipseControl.find('input.ellipseX').val(this.centerX);
+}
+
+ellipse.prototype.updateCenterY = function(newY)
+{
+	var testNum = parseInt(newY);
+
+	if (!isNaN(testNum))
+		this.centerY = testNum;
+
+	this.$ellipseControl.find('input.ellipseY').val(this.centerY);
+}
+
+ellipse.prototype.updateRadiusX = function(newRadiusX)
+{
+	var testNum = Math.abs(parseInt(newRadiusX));
+
+	if (testNum)
+		this.radiusX = testNum;
+
+	this.$ellipseControl.find('input.radiusX').val(this.radiusX);
+}
+
+ellipse.prototype.updateRadiusY = function(newRadiusY)
+{
+	var testNum = Math.abs(parseInt(newRadiusY));
+
+	if (testNum)
+		this.radiusY = testNum;
+
+	this.$ellipseControl.find('input.radiusY').val(this.radiusY);
+}
+
+ellipse.prototype.updateColor = function(newColor)
+{
+	this.color = newColor;
 }
 
 // helper for midpoint ellipse algorithm
@@ -735,57 +801,60 @@ ellipse.prototype.plotFourPoints = function(x,y)
 // midpoint ellipse algorithm
 ellipse.prototype.draw = function()
 {
-	var x = this.radiusX;
-	var y = 0;
-	var twoASquare = 2 * this.radiusX * this.radiusX;
-	var twoBSquare = 2 * this.radiusY * this.radiusY;
-	var changeX = this.radiusY * this.radiusY * (1 - (2 * this.radiusX));
-	var changeY = this.radiusX * this.radiusX;
-	var stoppingX = twoBSquare * this.radiusX;
-	var stoppingY = 0;
-	var error = 0;
-
-	while (stoppingX >= stoppingY)
+	if ((this.centerX != null) && (this.centerY != null) && this.radiusX && this.radiusY)
 	{
-		this.plotFourPoints(x,y);
+		var x = this.radiusX;
+		var y = 0;
+		var twoASquare = 2 * this.radiusX * this.radiusX;
+		var twoBSquare = 2 * this.radiusY * this.radiusY;
+		var changeX = this.radiusY * this.radiusY * (1 - (2 * this.radiusX));
+		var changeY = this.radiusX * this.radiusX;
+		var stoppingX = twoBSquare * this.radiusX;
+		var stoppingY = 0;
+		var error = 0;
 
-		y++;
-		stoppingY += twoASquare;
-		error += changeY;
-		changeY += twoASquare;
-
-		if (((2 * error) + changeX) > 0)
+		while (stoppingX >= stoppingY)
 		{
-			x--;
-			stoppingX -= twoBSquare;
-			error += changeX;
-			changeX += twoBSquare;
-		}
-	}
+			this.plotFourPoints(x,y);
 
-	x = 0;
-	y = this.radiusY;
-	changeX = this.radiusY * this.radiusY;
-	changeY = this.radiusX * this.radiusX * (1 - (2 * this.radiusY));
-	stoppingX = 0;
-	stoppingY = twoASquare * this.radiusY;
-	error = 0;
-
-	while (stoppingX <= stoppingY)
-	{
-		this.plotFourPoints(x,y);
-
-		x++;
-		stoppingX += twoBSquare;
-		error += changeX;
-		changeX += twoBSquare;
-
-		if (((2 * error) + changeY) > 0)
-		{
-			y--;
-			stoppingY -= twoASquare;
+			y++;
+			stoppingY += twoASquare;
 			error += changeY;
 			changeY += twoASquare;
+
+			if (((2 * error) + changeX) > 0)
+			{
+				x--;
+				stoppingX -= twoBSquare;
+				error += changeX;
+				changeX += twoBSquare;
+			}
+		}
+
+		x = 0;
+		y = this.radiusY;
+		changeX = this.radiusY * this.radiusY;
+		changeY = this.radiusX * this.radiusX * (1 - (2 * this.radiusY));
+		stoppingX = 0;
+		stoppingY = twoASquare * this.radiusY;
+		error = 0;
+
+		while (stoppingX <= stoppingY)
+		{
+			this.plotFourPoints(x,y);
+
+			x++;
+			stoppingX += twoBSquare;
+			error += changeX;
+			changeX += twoBSquare;
+
+			if (((2 * error) + changeY) > 0)
+			{
+				y--;
+				stoppingY -= twoASquare;
+				error += changeY;
+				changeY += twoASquare;
+			}
 		}
 	}
 }
@@ -795,14 +864,39 @@ function ellipses()
 	this.ellipseList = [];
 }
 
-ellipses.prototype.clear = function()
+ellipses.prototype.addEllipse = function($controlPane)
 {
-	this.ellipseList.splice(0,this.ellipseList.length);
+	var newEllipseIndex = this.ellipseList.length;
+
+	var $newEllipseControl = addEllipseControl($controlPane,newEllipseIndex);
+	this.ellipseList = this.ellipseList.concat(new ellipse($newEllipseControl));
+
+	return newEllipseIndex;
 }
 
-ellipses.prototype.addEllipse = function(radiusX,radiusY,color)
+ellipses.prototype.updateEllipseCenterX = function(ellipseIndex,newX)
 {
-	this.ellipseList = this.ellipseList.concat(new ellipse(0,0,radiusX,radiusY,color));
+	this.ellipseList[ellipseIndex].updateCenterX(newX);
+}
+
+ellipses.prototype.updateEllipseCenterY = function(ellipseIndex,newY)
+{
+	this.ellipseList[ellipseIndex].updateCenterY(newY);
+}
+
+ellipses.prototype.updateEllipseRadiusX = function(ellipseIndex,newRadiusX)
+{
+	this.ellipseList[ellipseIndex].updateRadiusX(newRadiusX);
+}
+
+ellipses.prototype.updateEllipseRadiusY = function(ellipseIndex,newRadiusY)
+{
+	this.ellipseList[ellipseIndex].updateRadiusY(newRadiusY);
+}
+
+ellipses.prototype.updateEllipseColor = function(ellipseIndex,newColor)
+{
+	this.ellipseList[ellipseIndex].updateColor(newColor);
 }
 
 ellipses.prototype.draw = function()
@@ -815,22 +909,6 @@ ellipses.prototype.draw = function()
 
 function draw()
 {
-	ellipses.clear();
-
-	var $conics = $('div.conic');
-
-	$($conics).each(function(index,$conic)
-	{
-		if ($($conic).is('.ellipse'))
-		{
-			var radiusX = parseInt($($conic).find('input.radiusX').val());
-			var radiusY = parseInt($($conic).find('input.radiusY').val());
-
-			if (radiusX && radiusY)
-				ellipses.addEllipse(radiusX,radiusY,$($conic).find('input.color:checked').val());
-		}
-	});
-
 	canvas.clear();
 
 	graph.draw();
@@ -878,7 +956,8 @@ $(document).ready(function()
 
 	$('input.newEllipse').click(function(event)
 	{
-		addEllipseControl($controlPane);
+		curEllipse = ellipses.addEllipse($controlPane);
+		drawingEllipse = true;
 	});
 
 	// handle updates to line start X values
@@ -918,21 +997,21 @@ $(document).ready(function()
 	});
 
 	// handle updates to circle center X values
-	$('input.centerX').live('change',function()
+	$('input.circleX').live('change',function()
 	{
-		var $centerX = $(this);
-		var circleID = $centerX.closest('div.circle').attr('id').replace('circle','');
+		var $circleX = $(this);
+		var circleID = $circleX.closest('div.circle').attr('id').replace('circle','');
 
-		circles.updateCircleCenterX(circleID,$centerX.val());
+		circles.updateCircleCenterX(circleID,$circleX.val());
 	});
 
 	// handle updates to circle center Y values
-	$('input.centerY').live('change',function()
+	$('input.circleY').live('change',function()
 	{
-		var $centerY = $(this);
-		var circleID = $centerY.closest('div.circle').attr('id').replace('circle','');
+		var $circleY = $(this);
+		var circleID = $circleY.closest('div.circle').attr('id').replace('circle','');
 
-		circles.updateCircleCenterY(circleID,$centerY.val());
+		circles.updateCircleCenterY(circleID,$circleY.val());
 	});
 
 	// handle updates to circle radius values
@@ -942,6 +1021,42 @@ $(document).ready(function()
 		var circleID = $radius.closest('div.circle').attr('id').replace('circle','');
 
 		circles.updateCircleRadius(circleID,$radius.val());
+	});
+
+	// handle updates to ellipse center X values
+	$('input.ellipseX').live('change',function()
+	{
+		var $ellipseX = $(this);
+		var ellipseID = $ellipseX.closest('div.ellipse').attr('id').replace('ellipse','');
+
+		ellipses.updateEllipseCenterX(ellipseID,$ellipseX.val());
+	});
+
+	// handle updates to ellipse center Y values
+	$('input.ellipseY').live('change',function()
+	{
+		var $ellipseY = $(this);
+		var ellipseID = $ellipseY.closest('div.ellipse').attr('id').replace('ellipse','');
+
+		ellipses.updateEllipseCenterY(ellipseID,$ellipseY.val());
+	});
+
+	// handle updates to ellipse radius X values
+	$('input.radiusX').live('change',function()
+	{
+		var $radiusX = $(this);
+		var ellipseID = $radiusX.closest('div.ellipse').attr('id').replace('ellipse','');
+
+		ellipses.updateEllipseRadiusX(ellipseID,$radiusX.val());
+	});
+
+	// handle updates to ellipse radius Y values
+	$('input.radiusY').live('change',function()
+	{
+		var $radiusY = $(this);
+		var ellipseID = $radiusY.closest('div.ellipse').attr('id').replace('ellipse','');
+
+		ellipses.updateEllipseRadiusY(ellipseID,$radiusY.val());
 	});
 
 	$('div.colorSelector').live('change',function()
@@ -962,6 +1077,9 @@ $(document).ready(function()
 		}
 		else if ($($conic).is('.ellipse'))
 		{
+			var ellipseID = $conic.attr('id').replace('ellipse','');
+
+			ellipses.updateEllipseColor(ellipseID,$($conic).find('input.color:checked').val());
 		}
 	});
 
@@ -987,6 +1105,16 @@ $(document).ready(function()
 			circles.updateCircleCenterX(curCircle,startX);
 			circles.updateCircleCenterY(curCircle,startY);
 			circles.updateCircleRadius(curCircle,0);
+		}
+		else if (drawingEllipse)
+		{
+			startX = graph.getX(canvas.getX(event.pageX));
+			startY = graph.getY(canvas.getY(event.pageY));
+
+			ellipses.updateEllipseCenterX(curEllipse,startX);
+			ellipses.updateEllipseCenterY(curEllipse,startY);
+			ellipses.updateEllipseRadiusX(curEllipse,1);
+			ellipses.updateEllipseRadiusY(curEllipse,1);
 		}
 		else // click and drag panning
 		{
@@ -1014,6 +1142,14 @@ $(document).ready(function()
 			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
 
 			circles.updateCircleRadius(curCircle,Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+		}
+		else if (drawingEllipse)
+		{
+			var deltaX = Math.abs(startX - graph.getX(canvas.getX(event.pageX)));
+			var deltaY = Math.abs(startY - graph.getY(canvas.getY(event.pageY)));
+
+			ellipses.updateEllipseRadiusX(curEllipse,deltaX);
+			ellipses.updateEllipseRadiusY(curEllipse,deltaY);
 		}
 		else // click and drag panning
 		{
@@ -1051,6 +1187,16 @@ $(document).ready(function()
 			circles.updateCircleRadius(curCircle,Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 
 			drawingCircle = false;
+		}
+		else if (drawingEllipse)
+		{
+			var deltaX = Math.abs(startX - graph.getX(canvas.getX(event.pageX)));
+			var deltaY = Math.abs(startY - graph.getY(canvas.getY(event.pageY)));
+
+			ellipses.updateEllipseRadiusX(curEllipse,deltaX);
+			ellipses.updateEllipseRadiusY(curEllipse,deltaY);
+
+			drawingEllipse = false;
 		}
 		else // click and drag panning
 		{
