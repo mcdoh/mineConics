@@ -62,37 +62,47 @@ function colorControl()
 	var $colorForm = $('<form/>');
 	$colorDiv.addClass('colorSelector');
 
-	var $blueLabel = $('<label/>');
-	var $blueInput = $('<input/>');
-	$blueInput.addClass('color');
-	$blueInput.attr('type','radio');
-	$blueInput.attr('name','color');
-	$blueInput.attr('value','rgba(32,32,128,1)');
-	$blueLabel.append($blueInput);
-	$blueLabel.append('blue');
-
-	var $greenLabel = $('<label/>');
-	var $greenInput = $('<input/>');
-	$greenInput.addClass('color');
-	$greenInput.attr('type','radio');
-	$greenInput.attr('name','color');
-	$greenInput.attr('value','rgba(32,128,32,1)');
-	$greenInput.attr('checked','checked');
-	$greenLabel.append($greenInput);
-	$greenLabel.append('green');
+	var $blackLabel = $('<label/>');
+	var $blackInput = $('<input/>');
+	$blackInput.addClass('color');
+	$blackInput.attr('type','radio');
+	$blackInput.attr('name','color');
+	$blackInput.attr('value','rgba(32,32,32,0.75)');
+	$blackInput.attr('checked','checked');
+	$blackLabel.append($blackInput);
+	$blackLabel.append('black');
 
 	var $redLabel = $('<label/>');
 	var $redInput = $('<input/>');
 	$redInput.addClass('color');
 	$redInput.attr('type','radio');
 	$redInput.attr('name','color');
-	$redInput.attr('value','rgba(128,32,32,1)');
+	$redInput.attr('value','rgba(128,32,32,0.75)');
 	$redLabel.append($redInput);
 	$redLabel.append('red');
 
-	$colorForm.append($blueLabel);
-	$colorForm.append($greenLabel);
+	var $greenLabel = $('<label/>');
+	var $greenInput = $('<input/>');
+	$greenInput.addClass('color');
+	$greenInput.attr('type','radio');
+	$greenInput.attr('name','color');
+	$greenInput.attr('value','rgba(32,128,32,0.75)');
+	$greenLabel.append($greenInput);
+	$greenLabel.append('green');
+
+	var $blueLabel = $('<label/>');
+	var $blueInput = $('<input/>');
+	$blueInput.addClass('color');
+	$blueInput.attr('type','radio');
+	$blueInput.attr('name','color');
+	$blueInput.attr('value','rgba(32,32,128,0.75)');
+	$blueLabel.append($blueInput);
+	$blueLabel.append('blue');
+
+	$colorForm.append($blackLabel);
 	$colorForm.append($redLabel);
+	$colorForm.append($greenLabel);
+	$colorForm.append($blueLabel);
 	$colorDiv.append($colorForm);
 
 	return $colorDiv;
@@ -437,7 +447,7 @@ function line($lineControl)
 	this.y0;
 	this.x1;
 	this.y1;
-	this.color = "rgba(0,0,0,1)";
+	this.color = "rgba(0,0,0,0.75)";
 	this.$lineControl = $lineControl;
 }
 
@@ -603,7 +613,7 @@ function circle($circleControl)
 	this.centerX;
 	this.centerY;
 	this.radius;
-	this.color = "rgba(0,0,0,1)";
+	this.color = "rgba(0,0,0,0.75)";
 	this.$circleControl = $circleControl;
 }
 
@@ -740,7 +750,7 @@ function ellipse($ellipseControl)
 	this.centerY;
 	this.radiusX;
 	this.radiusY;
-	this.color = "rgba(0,0,0,1)";
+	this.color = "rgba(0,0,0,0.75)";
 	this.$ellipseControl = $ellipseControl;
 }
 
