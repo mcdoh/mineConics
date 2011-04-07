@@ -166,7 +166,7 @@ function newConicControl()
 	return $newConicDiv;
 }
 
-function addLineControl($controlPane,lineID)
+function addLineControl($shapeControls,lineID)
 {
 	var $conicDiv = $('<div/>');
 	$conicDiv.addClass('conic'); // ok, so maybe a line isn't a conic section
@@ -204,13 +204,13 @@ function addLineControl($controlPane,lineID)
 	$conicDiv.append(colorControl());
 	$conicDiv.hide();
 
-	$controlPane.append($conicDiv);
+	$shapeControls.prepend($conicDiv);
 	$conicDiv.slideDown();
 
 	return $conicDiv;
 }
 
-function addCircleControl($controlPane,circleID)
+function addCircleControl($shapeControls,circleID)
 {
 	var $conicDiv = $('<div/>');
 	$conicDiv.addClass('conic');
@@ -243,13 +243,13 @@ function addCircleControl($controlPane,circleID)
 	$conicDiv.append(colorControl());
 	$conicDiv.hide();
 
-	$controlPane.append($conicDiv);
+	$shapeControls.prepend($conicDiv);
 	$conicDiv.slideDown();
 
 	return $conicDiv;
 }
 
-function addEllipseControl($controlPane,ellipseID)
+function addEllipseControl($shapeControls,ellipseID)
 {
 	var $conicDiv = $('<div/>');
 	$conicDiv.addClass('conic');
@@ -291,7 +291,7 @@ function addEllipseControl($controlPane,ellipseID)
 	$conicDiv.append(colorControl());
 	$conicDiv.hide();
 
-	$controlPane.append($conicDiv);
+	$shapeControls.prepend($conicDiv);
 	$conicDiv.slideDown();
 
 	return $conicDiv;
@@ -565,11 +565,11 @@ function lines()
 	this.lineList = [];
 }
 
-lines.prototype.addLine = function($controlPane)
+lines.prototype.addLine = function($shapeControls)
 {
 	var newLineIndex = this.lineList.length;
 
-	var $newLineControl = addLineControl($controlPane,newLineIndex);
+	var $newLineControl = addLineControl($shapeControls,newLineIndex);
 	this.lineList = this.lineList.concat(new line($newLineControl));
 
 	return newLineIndex;
@@ -706,11 +706,11 @@ function circles()
 	this.circleList = [];
 }
 
-circles.prototype.addCircle = function($controlPane)
+circles.prototype.addCircle = function($shapeControls)
 {
 	var newCircleIndex = this.circleList.length;
 
-	var $newCircleControl = addCircleControl($controlPane,newCircleIndex);
+	var $newCircleControl = addCircleControl($shapeControls,newCircleIndex);
 	this.circleList = this.circleList.concat(new circle($newCircleControl));
 
 	return newCircleIndex;
@@ -874,11 +874,11 @@ function ellipses()
 	this.ellipseList = [];
 }
 
-ellipses.prototype.addEllipse = function($controlPane)
+ellipses.prototype.addEllipse = function($shapeControls)
 {
 	var newEllipseIndex = this.ellipseList.length;
 
-	var $newEllipseControl = addEllipseControl($controlPane,newEllipseIndex);
+	var $newEllipseControl = addEllipseControl($shapeControls,newEllipseIndex);
 	this.ellipseList = this.ellipseList.concat(new ellipse($newEllipseControl));
 
 	return newEllipseIndex;
@@ -938,35 +938,39 @@ $(document).ready(function()
 	ellipses = new ellipses();
 	
 	// add conic form to config div
-	var $controls = $('<div/>');
-	$controls.addClass('controls');
-	$controls.hide();
+	var $pageControls = $('<div/>');
+	$pageControls.addClass('controls');
+	$pageControls.hide();
 
-	$controls.append(graphControl());
-	$controls.append(newConicControl());
+	$pageControls.append(graphControl());
+	$pageControls.append(newConicControl());
 
 	var $controlPane = $('#controlPane');
-	$controlPane.append($controls);
-	$controls.slideDown();
+	$controlPane.append($pageControls);
+	$pageControls.slideDown();
+
+	// add div for shape controls
+	var $shapeControls = $('<div/>');
+	$controlPane.append($shapeControls);
 
 	// display the initial graph
 	setInterval(draw,100);
 
 	$('input.newLine').click(function(event)
 	{
-		curLine = lines.addLine($controlPane);
+		curLine = lines.addLine($shapeControls);
 		drawingLine = true;
 	});
 
 	$('input.newCircle').click(function(event)
 	{
-		curCircle = circles.addCircle($controlPane);
+		curCircle = circles.addCircle($shapeControls);
 		drawingCircle = true;
 	});
 
 	$('input.newEllipse').click(function(event)
 	{
-		curEllipse = ellipses.addEllipse($controlPane);
+		curEllipse = ellipses.addEllipse($shapeControls);
 		drawingEllipse = true;
 	});
 
