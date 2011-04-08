@@ -56,6 +56,22 @@ canvasHandler.prototype.clear = function()
 	this.context.clearRect(0,0,this.width,this.height);
 }
 
+function titleBar(title)
+{
+	var $titleBarDiv = $('<div/>');
+	var $closeDiv = $('<div/>');
+	var $titleDiv = $('<div/>');
+	$titleBarDiv.addClass('titleBar');
+	$closeDiv.addClass('close');
+	$closeDiv.append('[X]');
+	$titleDiv.addClass('title');
+	$titleDiv.append(title);
+	$titleBarDiv.append($closeDiv);
+	$titleBarDiv.append($titleDiv);
+
+	return $titleBarDiv;
+}
+
 function colorControl()
 {
 	var $colorDiv = $('<div/>');
@@ -139,29 +155,26 @@ function newConicControl()
 {
 	var $newConicDiv = $('<div/>');
 	$newConicDiv.addClass('control');
+	$newConicDiv.addClass('newConics');
 
-	var $newConicForm = $('<form/>');
-	$newConicForm.addClass('newConic');
-
-	var $newLineButton = $('<input/>');
+	var $newLineButton = $('<div/>');
+	$newLineButton.addClass('newConic');
 	$newLineButton.addClass('newLine');
-	$newLineButton.attr('type','button');
-	$newLineButton.attr('value','add line');
+	$newLineButton.text('[add line]');
 
-	var $newCircleButton = $('<input/>');
+	var $newCircleButton = $('<div/>');
+	$newCircleButton.addClass('newConic');
 	$newCircleButton.addClass('newCircle');
-	$newCircleButton.attr('type','button');
-	$newCircleButton.attr('value','add cirlce');
+	$newCircleButton.text('[add cirlce]');
 
-	var $newEllipseButton = $('<input/>');
+	var $newEllipseButton = $('<div/>');
+	$newEllipseButton.addClass('newConic');
 	$newEllipseButton.addClass('newEllipse');
-	$newEllipseButton.attr('type','button');
-	$newEllipseButton.attr('value','add ellipse');
+	$newEllipseButton.text('[add ellipse]');
 
-	$newConicForm.append($newLineButton);
-	$newConicForm.append($newCircleButton);
-	$newConicForm.append($newEllipseButton);
-	$newConicDiv.append($newConicForm);
+	$newConicDiv.append($newLineButton);
+	$newConicDiv.append($newCircleButton);
+	$newConicDiv.append($newEllipseButton);
 
 	return $newConicDiv;
 }
@@ -173,35 +186,52 @@ function addLineControl($shapeControls,lineID)
 	$conicDiv.addClass('line');
 	$conicDiv.attr('id','line'+lineID);
 
+	var $controlDiv = $('<div/>');
+	$controlDiv.addClass('conicControl');
+
 	var $startDiv = $('<div/>');
+	var $startTitle = $('<div/>');
 	var $startXInput = $('<input/>');
 	var $startYInput = $('<input/>');
-	$startDiv.text('Start');
+	$startDiv.addClass('field');
+	$startTitle.addClass('fieldTitle');
+	$startTitle.text('start');
+	$startXInput.addClass('fieldValue');
 	$startXInput.addClass('startX');
+	$startYInput.addClass('fieldValue');
 	$startYInput.addClass('startY');
 	$startXInput.attr('type','text');
 	$startYInput.attr('type','text');
 	$startXInput.attr('name','startX');
 	$startYInput.attr('name','startY');
+	$startDiv.append($startTitle);
 	$startDiv.append($startXInput);
 	$startDiv.append($startYInput);
 
 	var $endDiv = $('<div/>');
+	var $endTitle = $('<div/>');
 	var $endXInput = $('<input/>');
 	var $endYInput = $('<input/>');
-	$endDiv.text('End');
+	$endDiv.addClass('field');
+	$endTitle.addClass('fieldTitle');
+	$endTitle.text('end');
+	$endXInput.addClass('fieldValue');
 	$endXInput.addClass('endX');
+	$endYInput.addClass('fieldValue');
 	$endYInput.addClass('endY');
 	$endXInput.attr('type','text');
 	$endYInput.attr('type','text');
 	$endXInput.attr('name','endX');
 	$endYInput.attr('name','endY');
+	$endDiv.append($endTitle);
 	$endDiv.append($endXInput);
 	$endDiv.append($endYInput);
 
-	$conicDiv.append($startDiv);
-	$conicDiv.append($endDiv);
-	$conicDiv.append(colorControl());
+	$controlDiv.append($startDiv);
+	$controlDiv.append($endDiv);
+	$controlDiv.append(colorControl());
+	$conicDiv.append(titleBar('line'));
+	$conicDiv.append($controlDiv);
 	$conicDiv.hide();
 
 	$shapeControls.prepend($conicDiv);
@@ -217,30 +247,46 @@ function addCircleControl($shapeControls,circleID)
 	$conicDiv.addClass('circle');
 	$conicDiv.attr('id','circle'+circleID);
 
+	var $controlDiv = $('<div/>');
+	$controlDiv.addClass('conicControl');
+
 	var $centerDiv = $('<div/>');
+	var $centerTitle = $('<div/>');
 	var $circleXInput = $('<input/>');
 	var $circleYInput = $('<input/>');
-	$centerDiv.text('Center');
+	$centerDiv.addClass('field');
+	$centerTitle.addClass('fieldTitle');
+	$centerTitle.text('center');
+	$circleXInput.addClass('fieldValue');
 	$circleXInput.addClass('circleX');
+	$circleYInput.addClass('fieldValue');
 	$circleYInput.addClass('circleY');
 	$circleXInput.attr('type','text');
 	$circleYInput.attr('type','text');
 	$circleXInput.attr('name','circleX');
 	$circleYInput.attr('name','circleY');
+	$centerDiv.append($centerTitle);
 	$centerDiv.append($circleXInput);
 	$centerDiv.append($circleYInput);
 
 	var $radiusDiv = $('<div/>');
+	var $radiusTitle = $('<div/>');
 	var $radiusInput = $('<input/>');
-	$radiusDiv.text('radius');
+	$radiusDiv.addClass('field');
+	$radiusTitle.addClass('fieldTitle');
+	$radiusTitle.text('radius');
+	$radiusInput.addClass('fieldValue');
 	$radiusInput.addClass('radius');
 	$radiusInput.attr('type','text');
 	$radiusInput.attr('name','radius');
+	$radiusDiv.append($radiusTitle);
 	$radiusDiv.append($radiusInput);
 
-	$conicDiv.append($centerDiv);
-	$conicDiv.append($radiusDiv);
-	$conicDiv.append(colorControl());
+	$controlDiv.append($centerDiv);
+	$controlDiv.append($radiusDiv);
+	$controlDiv.append(colorControl());
+	$conicDiv.append(titleBar('circle'));
+	$conicDiv.append($controlDiv);
 	$conicDiv.hide();
 
 	$shapeControls.prepend($conicDiv);
@@ -256,39 +302,52 @@ function addEllipseControl($shapeControls,ellipseID)
 	$conicDiv.addClass('ellipse');
 	$conicDiv.attr('id','ellipse'+ellipseID);
 
+	var $controlDiv = $('<div/>');
+	$controlDiv.addClass('conicControl');
+
 	var $centerDiv = $('<div/>');
+	var $centerTitle = $('<div/>');
 	var $ellipseXInput = $('<input/>');
 	var $ellipseYInput = $('<input/>');
-	$centerDiv.text('Center');
+	$centerDiv.addClass('field');
+	$centerTitle.addClass('fieldTitle');
+	$centerTitle.text('center');
+	$ellipseXInput.addClass('fieldValue');
 	$ellipseXInput.addClass('ellipseX');
+	$ellipseYInput.addClass('fieldValue');
 	$ellipseYInput.addClass('ellipseY');
 	$ellipseXInput.attr('type','text');
 	$ellipseYInput.attr('type','text');
 	$ellipseXInput.attr('name','ellipseX');
 	$ellipseYInput.attr('name','ellipseY');
+	$centerDiv.append($centerTitle);
 	$centerDiv.append($ellipseXInput);
 	$centerDiv.append($ellipseYInput);
 
-	var $radiusXDiv = $('<div/>');
+	var $radiusDiv = $('<div/>');
+	var $radiusTitle = $('<div/>');
 	var $radiusXInput = $('<input/>');
-	$radiusXDiv.text('Radius X');
-	$radiusXInput.addClass('radiusX');
-	$radiusXInput.attr('type','text');
-	$radiusXInput.attr('name','radiusX');
-	$radiusXDiv.append($radiusXInput);
-
-	var $radiusYDiv = $('<div/>');
 	var $radiusYInput = $('<input/>');
-	$radiusYDiv.text('Radius Y');
+	$radiusDiv.addClass('field');
+	$radiusTitle.addClass('fieldTitle');
+	$radiusTitle.text('radius');
+	$radiusXInput.addClass('fieldValue');
+	$radiusXInput.addClass('radiusX');
+	$radiusYInput.addClass('fieldValue');
 	$radiusYInput.addClass('radiusY');
+	$radiusXInput.attr('type','text');
 	$radiusYInput.attr('type','text');
+	$radiusXInput.attr('name','radiusX');
 	$radiusYInput.attr('name','radiusY');
-	$radiusYDiv.append($radiusYInput);
+	$radiusDiv.append($radiusTitle);
+	$radiusDiv.append($radiusXInput);
+	$radiusDiv.append($radiusYInput);
 
-	$conicDiv.append($centerDiv);
-	$conicDiv.append($radiusXDiv);
-	$conicDiv.append($radiusYDiv);
-	$conicDiv.append(colorControl());
+	$controlDiv.append($centerDiv);
+	$controlDiv.append($radiusDiv);
+	$controlDiv.append(colorControl());
+	$conicDiv.append(titleBar('ellipse'));
+	$conicDiv.append($controlDiv);
 	$conicDiv.hide();
 
 	$shapeControls.prepend($conicDiv);
@@ -451,6 +510,11 @@ function line($lineControl)
 	this.$lineControl = $lineControl;
 }
 
+line.prototype.delete = function()
+{
+	this.$lineControl.slideUp().remove();
+}
+
 line.prototype.updateStartX = function(newX)
 {
 	var testNum = parseInt(newX);
@@ -575,6 +639,12 @@ lines.prototype.addLine = function($shapeControls)
 	return newLineIndex;
 }
 
+lines.prototype.deleteLine = function(lineIndex)
+{
+	this.lineList[lineIndex].delete();
+	this.lineList.splice(lineIndex,1);
+}
+
 lines.prototype.updateLineStartX = function(lineIndex,newX)
 {
 	this.lineList[lineIndex].updateStartX(newX);
@@ -615,6 +685,11 @@ function circle($circleControl)
 	this.radius;
 	this.color = "rgba(0,0,0,0.75)";
 	this.$circleControl = $circleControl;
+}
+
+circle.prototype.delete = function()
+{
+	this.$circleControl.slideUp().remove();
 }
 
 circle.prototype.updateCenterX = function(newX)
@@ -716,6 +791,12 @@ circles.prototype.addCircle = function($shapeControls)
 	return newCircleIndex;
 }
 
+circles.prototype.deleteCircle = function(circleIndex)
+{
+	this.circleList[circleIndex].delete();
+	this.circleList.splice(circleIndex,1);
+}
+
 circles.prototype.updateCircleCenterX = function(circleIndex,newX)
 {
 	this.circleList[circleIndex].updateCenterX(newX);
@@ -752,6 +833,11 @@ function ellipse($ellipseControl)
 	this.radiusY;
 	this.color = "rgba(0,0,0,0.75)";
 	this.$ellipseControl = $ellipseControl;
+}
+
+ellipse.prototype.delete = function()
+{
+	this.$ellipseControl.slideUp().remove();
 }
 
 ellipse.prototype.updateCenterX = function(newX)
@@ -884,6 +970,12 @@ ellipses.prototype.addEllipse = function($shapeControls)
 	return newEllipseIndex;
 }
 
+ellipses.prototype.deleteEllipse = function(ellipseIndex)
+{
+	this.ellipseList[ellipseIndex].delete();
+	this.ellipseList.splice(ellipseIndex,1);
+}
+
 ellipses.prototype.updateEllipseCenterX = function(ellipseIndex,newX)
 {
 	this.ellipseList[ellipseIndex].updateCenterX(newX);
@@ -937,38 +1029,39 @@ $(document).ready(function()
 	circles = new circles();
 	ellipses = new ellipses();
 	
+	// resize controlPane to prevent lengthening of page
+	var $controlPane = $('#controlPane');
+	$controlPane.height(canvas.height);
+	
 	// add conic form to config div
 	var $pageControls = $('<div/>');
 	$pageControls.addClass('controls');
-	$pageControls.hide();
-
 	$pageControls.append(graphControl());
 	$pageControls.append(newConicControl());
-
-	var $controlPane = $('#controlPane');
 	$controlPane.append($pageControls);
-	$pageControls.slideDown();
 
 	// add div for shape controls
 	var $shapeControls = $('<div/>');
+	$shapeControls.addClass('shapeControls');
 	$controlPane.append($shapeControls);
+	$shapeControls.height($controlPane.height() - $pageControls.outerHeight(true));
 
 	// display the initial graph
 	setInterval(draw,100);
 
-	$('input.newLine').click(function(event)
+	$('div.newLine').click(function(event)
 	{
 		curLine = lines.addLine($shapeControls);
 		drawingLine = true;
 	});
 
-	$('input.newCircle').click(function(event)
+	$('div.newCircle').click(function(event)
 	{
 		curCircle = circles.addCircle($shapeControls);
 		drawingCircle = true;
 	});
 
-	$('input.newEllipse').click(function(event)
+	$('div.newEllipse').click(function(event)
 	{
 		curEllipse = ellipses.addEllipse($shapeControls);
 		drawingEllipse = true;
@@ -1094,6 +1187,30 @@ $(document).ready(function()
 			var ellipseID = $conic.attr('id').replace('ellipse','');
 
 			ellipses.updateEllipseColor(ellipseID,$($conic).find('input.color:checked').val());
+		}
+	});
+
+	$('.close').live('click',function()
+	{
+		var $conic = $(this).closest('div.conic');
+
+		if ($($conic).is('.line'))
+		{
+			var lineID = $conic.attr('id').replace('line','');
+
+			lines.deleteLine(lineID);
+		}
+		else if ($($conic).is('.circle'))
+		{
+			var circleID = $conic.attr('id').replace('circle','');
+
+			circles.deleteCircle(circleID);
+		}
+		else if ($($conic).is('.ellipse'))
+		{
+			var ellipseID = $conic.attr('id').replace('ellipse','');
+
+			ellipses.deleteEllipse(ellipseID);
 		}
 	});
 

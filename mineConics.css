@@ -42,13 +42,31 @@ ul
 #controlPane
 {
 	width: 25%;
-	height: 100%;
 	float: left;
+}
+
+div.newConics
+{
+	width: 18em;
+	margin-left: auto;
+	margin-right: auto;
+	overflow: hidden;
+}
+
+div.newConic
+{
+	float: left;
+	cursor: pointer;
+}
+
+div.shapeControls
+{
+	overflow: auto;
 }
 
 div.controls
 {
-	border: 1px solid black;
+	border: 2px solid;
 	margin: 2px;
 	padding: 2px;
 
@@ -59,13 +77,66 @@ div.controls
 
 div.conic
 {
-	border: 1px solid black;
+	border: 2px solid;
 	margin: 2px;
 	padding: 2px;
 
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
+
+	overflow: hidden;
+}
+
+div.titleBar
+{
+	width: 100%;
+	margin-bottom: 3px;
+}
+
+div.conicControl
+{
+	width: 100%;
+}
+
+div.colorSelector
+{
+	float: left;
+}
+
+div.close
+{
+	float: left;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+div.title
+{
+	width: 90%;
+	text-align: center;
+	font-weight: bold;
+}
+
+div.field
+{
+	float: left;
+}
+
+div.fieldTitle
+{
+	float: left;
+	width: 4em;
+	padding-right: 1em;
+	text-align: right;
+	height: 1em;
+}
+
+input.fieldValue
+{
+	float: left;
+	width: 2em;
+	height: 1em;
 }
 
 #graphPane
