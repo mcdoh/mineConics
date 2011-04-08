@@ -113,9 +113,10 @@ div.close
 
 div.title
 {
-	width: 90%;
+	width: 95%;
 	text-align: center;
 	font-weight: bold;
+	cursor: pointer;
 }
 
 div.field
@@ -127,7 +128,7 @@ div.fieldTitle
 {
 	float: left;
 	width: 4em;
-	padding-right: 1em;
+	padding-right: 0.5em;
 	text-align: right;
 	height: 1em;
 }

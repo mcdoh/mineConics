@@ -1199,6 +1199,13 @@ $(document).ready(function()
 		}
 	});
 
+	$('.title').live('click',function()
+	{
+		var $conic = $(this).closest('div.conic');
+
+		$conic.find('.conicControl').slideToggle();
+	});
+
 	$('.close').live('click',function()
 	{
 		drawingLine = false;
