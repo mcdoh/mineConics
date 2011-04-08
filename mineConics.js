@@ -1192,6 +1192,10 @@ $(document).ready(function()
 
 	$('.close').live('click',function()
 	{
+		drawingLine = false;
+		drawingCircle = false;
+		drawingEllipse = false;
+
 		var $conic = $(this).closest('div.conic');
 
 		if ($($conic).is('.line'))
