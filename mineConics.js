@@ -76,46 +76,36 @@ function colorControl()
 {
 	var $colorDiv = $('<div/>');
 	var $colorForm = $('<form/>');
+	var $colorTitle = $('<div/>');
 	$colorDiv.addClass('colorSelector');
-
-	var $blackLabel = $('<label/>');
-	var $blackInput = $('<input/>');
-	$blackInput.addClass('color');
-	$blackInput.attr('type','radio');
-	$blackInput.attr('name','color');
-	$blackInput.attr('value','rgba(32,32,32,0.75)');
-	$blackInput.attr('checked','checked');
-	$blackLabel.append($blackInput);
-	$blackLabel.append('black');
+	$colorTitle.addClass('fieldTitle');
+	$colorTitle.text('rgb');
 
 	var $redLabel = $('<label/>');
 	var $redInput = $('<input/>');
 	$redInput.addClass('color');
-	$redInput.attr('type','radio');
+	$redInput.addClass('red');
+	$redInput.attr('type','checkbox');
 	$redInput.attr('name','color');
-	$redInput.attr('value','rgba(128,32,32,0.75)');
 	$redLabel.append($redInput);
-	$redLabel.append('red');
 
 	var $greenLabel = $('<label/>');
 	var $greenInput = $('<input/>');
 	$greenInput.addClass('color');
-	$greenInput.attr('type','radio');
+	$greenInput.addClass('green');
+	$greenInput.attr('type','checkbox');
 	$greenInput.attr('name','color');
-	$greenInput.attr('value','rgba(32,128,32,0.75)');
 	$greenLabel.append($greenInput);
-	$greenLabel.append('green');
 
 	var $blueLabel = $('<label/>');
 	var $blueInput = $('<input/>');
 	$blueInput.addClass('color');
-	$blueInput.attr('type','radio');
+	$blueInput.addClass('blue');
+	$blueInput.attr('type','checkbox');
 	$blueInput.attr('name','color');
-	$blueInput.attr('value','rgba(32,32,128,0.75)');
 	$blueLabel.append($blueInput);
-	$blueLabel.append('blue');
 
-	$colorForm.append($blackLabel);
+	$colorForm.append($colorTitle);
 	$colorForm.append($redLabel);
 	$colorForm.append($greenLabel);
 	$colorForm.append($blueLabel);
@@ -1170,23 +1160,42 @@ $(document).ready(function()
 	{
 		var $conic = $(this).closest('div.conic');
 
+		color = "rgba(";
+
+		if ($($conic).find('input.red').is(':checked'))
+			color += "255,";
+		else
+			color += "0,";
+
+		if ($($conic).find('input.green').is(':checked'))
+			color += "255,";
+		else
+			color += "0,";
+
+		if ($($conic).find('input.blue').is(':checked'))
+			color += "255,";
+		else
+			color += "0,";
+
+		color += "0.75)";
+
 		if ($($conic).is('.line'))
 		{
 			var lineID = $conic.attr('id').replace('line','');
 
-			lines.updateLineColor(lineID,$($conic).find('input.color:checked').val());
+			lines.updateLineColor(lineID,color);
 		}
 		else if ($($conic).is('.circle'))
 		{
 			var circleID = $conic.attr('id').replace('circle','');
 
-			circles.updateCircleColor(circleID,$($conic).find('input.color:checked').val());
+			circles.updateCircleColor(circleID,color);
 		}
 		else if ($($conic).is('.ellipse'))
 		{
 			var ellipseID = $conic.attr('id').replace('ellipse','');
 
-			ellipses.updateEllipseColor(ellipseID,$($conic).find('input.color:checked').val());
+			ellipses.updateEllipseColor(ellipseID,color);
 		}
 	});
 
