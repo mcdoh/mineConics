@@ -59,13 +59,16 @@ canvasHandler.prototype.clear = function()
 function titleBar(title)
 {
 	var $titleBarDiv = $('<div/>');
-	var $closeDiv = $('<div/>');
-	var $titleDiv = $('<div/>');
 	$titleBarDiv.addClass('titleBar');
+
+	var $closeDiv = $('<div/>');
 	$closeDiv.addClass('close');
 	$closeDiv.append('[X]');
+
+	var $titleDiv = $('<div/>');
 	$titleDiv.addClass('title');
 	$titleDiv.append(title);
+
 	$titleBarDiv.append($closeDiv);
 	$titleBarDiv.append($titleDiv);
 
@@ -75,9 +78,11 @@ function titleBar(title)
 function colorControl()
 {
 	var $colorDiv = $('<div/>');
+	$colorDiv.addClass('colorSelector');
+
 	var $colorForm = $('<form/>');
 	var $colorTitle = $('<div/>');
-	$colorDiv.addClass('colorSelector');
+	$colorForm.addClass('field');
 	$colorTitle.addClass('fieldTitle');
 	$colorTitle.text('rgb');
 
@@ -109,7 +114,20 @@ function colorControl()
 	$colorForm.append($redLabel);
 	$colorForm.append($greenLabel);
 	$colorForm.append($blueLabel);
+
+	var $hexDiv = $('<div/>');
+	var $hexTitle = $('<div/>');
+	var $hexInput = $('<input/>');
+	$hexDiv.addClass('field');
+	$hexTitle.addClass('fieldTitle');
+	$hexTitle.text('hex');
+	$hexInput.addClass('hexColor');
+	$hexInput.val('#000000');
+	$hexDiv.append($hexTitle);
+	$hexDiv.append($hexInput);
+
 	$colorDiv.append($colorForm);
+	$colorDiv.append($hexDiv);
 
 	return $colorDiv;
 }
@@ -1156,28 +1174,49 @@ $(document).ready(function()
 		ellipses.updateEllipseRadiusY(ellipseID,$radiusY.val());
 	});
 
-	$('div.colorSelector').live('change',function()
+	$('input.color').live('change',function()
 	{
 		var $conic = $(this).closest('div.conic');
 
 		color = "rgba(";
+		hex = "#";
 
 		if ($($conic).find('input.red').is(':checked'))
+		{
 			color += "255,";
+			hex += "FF";
+		}
 		else
+		{
 			color += "0,";
+			hex += "00";
+		}
 
 		if ($($conic).find('input.green').is(':checked'))
+		{
 			color += "255,";
+			hex += "FF";
+		}
 		else
+		{
 			color += "0,";
+			hex += "00";
+		}
 
 		if ($($conic).find('input.blue').is(':checked'))
+		{
 			color += "255,";
+			hex += "FF";
+		}
 		else
+		{
 			color += "0,";
+			hex += "00";
+		}
 
 		color += "0.75)";
+
+		$conic.find('input.hexColor').val(hex);
 
 		if ($($conic).is('.line'))
 		{
@@ -1196,6 +1235,50 @@ $(document).ready(function()
 			var ellipseID = $conic.attr('id').replace('ellipse','');
 
 			ellipses.updateEllipseColor(ellipseID,color);
+		}
+	});
+
+	$('input.hexColor').live('change',function()
+	{
+		var $hexInput = $(this);
+		var hexString = $hexInput.val();
+		var $conic = $(this).closest('div.conic');
+
+		if (hexString.charAt(0) == '#')
+			hexString = hexString.substring(1,7);
+
+		var redInt = parseInt(hexString.substring(0,2), 16);
+		var greenInt = parseInt(hexString.substring(2,4), 16);
+		var blueInt = parseInt(hexString.substring(4,6), 16);
+
+		$conic.find('input.color').attr('checked',false);
+
+		if (!isNaN(redInt) && !isNaN(greenInt) && !isNaN(blueInt))
+		{
+			var color = "rgba(" + redInt + "," + greenInt + "," + blueInt + ",0.75)";
+
+			if ($($conic).is('.line'))
+			{
+				var lineID = $conic.attr('id').replace('line','');
+
+				lines.updateLineColor(lineID,color);
+			}
+			else if ($($conic).is('.circle'))
+			{
+				var circleID = $conic.attr('id').replace('circle','');
+
+				circles.updateCircleColor(circleID,color);
+			}
+			else if ($($conic).is('.ellipse'))
+			{
+				var ellipseID = $conic.attr('id').replace('ellipse','');
+
+				ellipses.updateEllipseColor(ellipseID,color);
+			}
+		}
+		else
+		{
+			$hexInput.val('');
 		}
 	});
 

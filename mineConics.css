@@ -92,22 +92,6 @@ div.titleBar
 {
 	width: 100%;
 	margin-bottom: 3px;
-}
-
-div.conicControl
-{
-	width: 100%;
-}
-
-div.colorSelector
-{
-	float: left;
-}
-
-div.close
-{
-	float: left;
-	cursor: pointer;
 	font-weight: bold;
 }
 
@@ -115,13 +99,46 @@ div.title
 {
 	width: 95%;
 	text-align: center;
-	font-weight: bold;
 	cursor: pointer;
 }
 
-div.field
+div.close
 {
 	float: left;
+	cursor: pointer;
+}
+
+div.conicControl
+{
+	width: 100%;
+	float: left;
+}
+
+div.colorSelector
+{
+	width: 100%;
+	float: left;
+	overflow: hidden;
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+
+input.color
+{
+	margin-top: 4px;
+}
+
+input.hexColor
+{
+	width: 5em;
+	height: 1em;
+}
+
+.field
+{
+	float: left;
+	width: 50%;
+	text-align: bottom;
 }
 
 div.fieldTitle
@@ -131,6 +148,7 @@ div.fieldTitle
 	padding-right: 0.5em;
 	text-align: right;
 	height: 1em;
+	padding-top: 4px;
 }
 
 input.fieldValue
@@ -138,6 +156,7 @@ input.fieldValue
 	float: left;
 	width: 2em;
 	height: 1em;
+	margin-right: 0.5em;
 }
 
 #graphPane
