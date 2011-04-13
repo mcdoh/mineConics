@@ -1,6 +1,5 @@
 var canvas;
 var graph;
-var points;
 var lines;
 var circles;
 var ellipses;
@@ -997,7 +996,6 @@ function draw()
 	canvas.clear();
 
 	graph.draw();
-	points.draw();
 	lines.draw();
 	circles.draw();
 	ellipses.draw();
@@ -1007,7 +1005,6 @@ $(document).ready(function()
 {
 	canvas = new canvasHandler();
 	graph = new cartesianPlane();
-	points = new points();
 	lines = new lines();
 	circles = new circles();
 	ellipses = new ellipses();
