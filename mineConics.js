@@ -483,31 +483,6 @@ cartesianPlane.prototype.draw = function()
 	}
 }
 
-function point(x,y,color)
-{
-	this.x = x;
-	this.y = y;
-	this.color = color;
-}
-
-function points()
-{
-	this.pointList = [];
-}
-
-points.prototype.addPoint = function(x,y,color)
-{
-	this.pointList = this.pointList.concat(new point(x,y,color));
-}
-
-points.prototype.draw = function()
-{
-	$.each(this.pointList,function(index,point)
-	{
-		graph.plot(point.x,point.y,point.color);
-	});
-}
-
 function line($lineControl)
 {
 	this.x0;
