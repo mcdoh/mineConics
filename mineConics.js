@@ -482,14 +482,16 @@ cartesianPlane.prototype.draw = function()
 	}
 }
 
-function line($lineControl)
+function line(id,$lineControl)
 {
+	this.id = id;
+	this.$lineControl = $lineControl;
+
 	this.x0;
 	this.y0;
 	this.x1;
 	this.y1;
 	this.color = "rgba(0,0,0,0.75)";
-	this.$lineControl = $lineControl;
 }
 
 line.prototype.delete = function()
@@ -608,48 +610,42 @@ line.prototype.draw = function()
 
 function lines()
 {
+	this.idPool = 0;
 	this.lineList = [];
 }
 
 lines.prototype.addLine = function($shapeControls)
 {
-	var newLineIndex = this.lineList.length;
+	var newLineID = this.idPool++;
 
-	var $newLineControl = addLineControl($shapeControls,newLineIndex);
-	this.lineList = this.lineList.concat(new line($newLineControl));
+	var $newLineControl = addLineControl($shapeControls,newLineID);
+	var newLine = new line(newLineID,$newLineControl);
+	this.lineList = this.lineList.concat(newLine);
 
-	return newLineIndex;
+	return newLine;
 }
 
-lines.prototype.deleteLine = function(lineIndex)
+lines.prototype.getLine = function(lineID)
 {
-	this.lineList[lineIndex].delete();
-	this.lineList.splice(lineIndex,1);
+	for (var i = 0; i<this.lineList.length; i++)
+	{
+		if (this.lineList[i].id == lineID)
+			return this.lineList[i];
+	}
 }
 
-lines.prototype.updateLineStartX = function(lineIndex,newX)
+lines.prototype.deleteLine = function(lineID)
 {
-	this.lineList[lineIndex].updateStartX(newX);
-}
+	for (var i = 0; i<this.lineList.length; i++)
+	{
+		if (this.lineList[i].id == lineID)
+		{
+			this.lineList[i].delete();
+			this.lineList.splice(i,1);
 
-lines.prototype.updateLineStartY = function(lineIndex,newY)
-{
-	this.lineList[lineIndex].updateStartY(newY);
-}
-
-lines.prototype.updateLineEndX = function(lineIndex,newX)
-{
-	this.lineList[lineIndex].updateEndX(newX);
-}
-
-lines.prototype.updateLineEndY = function(lineIndex,newY)
-{
-	this.lineList[lineIndex].updateEndY(newY);
-}
-
-lines.prototype.updateLineColor = function(lineIndex,newColor)
-{
-	this.lineList[lineIndex].updateColor(newColor);
+			break;
+		}
+	}
 }
 
 lines.prototype.draw = function()
@@ -660,13 +656,15 @@ lines.prototype.draw = function()
 	});
 }
 
-function circle($circleControl)
+function circle(id,$circleControl)
 {
+	this.id = id;
+	this.$circleControl = $circleControl;
+
 	this.centerX;
 	this.centerY;
 	this.radius;
 	this.color = "rgba(0,0,0,0.75)";
-	this.$circleControl = $circleControl;
 }
 
 circle.prototype.delete = function()
@@ -760,43 +758,42 @@ circle.prototype.draw = function()
 
 function circles()
 {
+	this.idPool = 0;
 	this.circleList = [];
 }
 
 circles.prototype.addCircle = function($shapeControls)
 {
-	var newCircleIndex = this.circleList.length;
+	var newCircleID = this.idPool++;
 
-	var $newCircleControl = addCircleControl($shapeControls,newCircleIndex);
-	this.circleList = this.circleList.concat(new circle($newCircleControl));
+	var $newCircleControl = addCircleControl($shapeControls,newCircleID);
+	var newCircle = new circle(newCircleID,$newCircleControl);
+	this.circleList = this.circleList.concat(newCircle);
 
-	return newCircleIndex;
+	return newCircle;
 }
 
-circles.prototype.deleteCircle = function(circleIndex)
+circles.prototype.getCircle = function(circleID)
 {
-	this.circleList[circleIndex].delete();
-	this.circleList.splice(circleIndex,1);
+	for (var i = 0; i<this.circleList.length; i++)
+	{
+		if (this.circleList[i].id == circleID)
+			return this.circleList[i];
+	}
 }
 
-circles.prototype.updateCircleCenterX = function(circleIndex,newX)
+circles.prototype.deleteCircle = function(circleID)
 {
-	this.circleList[circleIndex].updateCenterX(newX);
-}
+	for (var i = 0; i<this.circleList.length; i++)
+	{
+		if (this.circleList[i].id == circleID)
+		{
+			this.circleList[i].delete();
+			this.circleList.splice(i,1);
 
-circles.prototype.updateCircleCenterY = function(circleIndex,newY)
-{
-	this.circleList[circleIndex].updateCenterY(newY);
-}
-
-circles.prototype.updateCircleRadius = function(circleIndex,newRadius)
-{
-	this.circleList[circleIndex].updateRadius(newRadius);
-}
-
-circles.prototype.updateCircleColor = function(circle,newColor)
-{
-	this.circleList[circle].updateColor(newColor);
+			break;
+		}
+	}
 }
 
 circles.prototype.draw = function()
@@ -807,14 +804,16 @@ circles.prototype.draw = function()
 	});
 }
 
-function ellipse($ellipseControl)
+function ellipse(id,$ellipseControl)
 {
+	this.id = id;
+	this.$ellipseControl = $ellipseControl;
+
 	this.centerX;
 	this.centerY;
 	this.radiusX;
 	this.radiusY;
 	this.color = "rgba(0,0,0,0.75)";
-	this.$ellipseControl = $ellipseControl;
 }
 
 ellipse.prototype.delete = function()
@@ -939,48 +938,42 @@ ellipse.prototype.draw = function()
 
 function ellipses()
 {
+	this.idPool = 0;
 	this.ellipseList = [];
 }
 
 ellipses.prototype.addEllipse = function($shapeControls)
 {
-	var newEllipseIndex = this.ellipseList.length;
+	var newEllipseID = this.idPool++;
 
-	var $newEllipseControl = addEllipseControl($shapeControls,newEllipseIndex);
-	this.ellipseList = this.ellipseList.concat(new ellipse($newEllipseControl));
+	var $newEllipseControl = addEllipseControl($shapeControls,newEllipseID);
+	var newEllipse = new ellipse(newEllipseID,$newEllipseControl);
+	this.ellipseList = this.ellipseList.concat(newEllipse);
 
-	return newEllipseIndex;
+	return newEllipse;
 }
 
-ellipses.prototype.deleteEllipse = function(ellipseIndex)
+ellipses.prototype.getEllipse = function(ellipseID)
 {
-	this.ellipseList[ellipseIndex].delete();
-	this.ellipseList.splice(ellipseIndex,1);
+	for (var i = 0; i<this.ellipseList.length; i++)
+	{
+		if (this.ellipseList[i].id == ellipseID)
+			return this.ellipseList[i];
+	}
 }
 
-ellipses.prototype.updateEllipseCenterX = function(ellipseIndex,newX)
+ellipses.prototype.deleteEllipse = function(ellipseID)
 {
-	this.ellipseList[ellipseIndex].updateCenterX(newX);
-}
+	for (var i = 0; i<this.ellipseList.length; i++)
+	{
+		if (this.ellipseList[i].id == ellipseID)
+		{
+			this.ellipseList[i].delete();
+			this.ellipseList.splice(i,1);
 
-ellipses.prototype.updateEllipseCenterY = function(ellipseIndex,newY)
-{
-	this.ellipseList[ellipseIndex].updateCenterY(newY);
-}
-
-ellipses.prototype.updateEllipseRadiusX = function(ellipseIndex,newRadiusX)
-{
-	this.ellipseList[ellipseIndex].updateRadiusX(newRadiusX);
-}
-
-ellipses.prototype.updateEllipseRadiusY = function(ellipseIndex,newRadiusY)
-{
-	this.ellipseList[ellipseIndex].updateRadiusY(newRadiusY);
-}
-
-ellipses.prototype.updateEllipseColor = function(ellipseIndex,newColor)
-{
-	this.ellipseList[ellipseIndex].updateColor(newColor);
+			break;
+		}
+	}
 }
 
 ellipses.prototype.draw = function()
@@ -1053,7 +1046,7 @@ $(document).ready(function()
 		var $startX = $(this);
 		var lineID = $startX.closest('div.line').attr('id').replace('line','');
 
-		lines.updateLineStartX(lineID,$startX.val());
+		lines.getLine(lineID).updateStartX($startX.val());
 	});
 
 	// handle updates to line start Y values
@@ -1062,7 +1055,7 @@ $(document).ready(function()
 		var $startY = $(this);
 		var lineID = $startY.closest('div.line').attr('id').replace('line','');
 
-		lines.updateLineStartY(lineID,$startY.val());
+		lines.getLine(lineID).updateStartY($startY.val());
 	});
 
 	// handle updates to line end X values
@@ -1071,7 +1064,7 @@ $(document).ready(function()
 		var $endX = $(this);
 		var lineID = $endX.closest('div.line').attr('id').replace('line','');
 
-		lines.updateLineEndX(lineID,$endX.val());
+		lines.getLine(lineID).updateEndX($endX.val());
 	});
 
 	// handle updates to line end Y values
@@ -1080,7 +1073,7 @@ $(document).ready(function()
 		var $endY = $(this);
 		var lineID = $endY.closest('div.line').attr('id').replace('line','');
 
-		lines.updateLineEndY(lineID,$endY.val());
+		lines.getLine(lineID).updateEndY($endY.val());
 	});
 
 	// handle updates to circle center X values
@@ -1089,7 +1082,7 @@ $(document).ready(function()
 		var $circleX = $(this);
 		var circleID = $circleX.closest('div.circle').attr('id').replace('circle','');
 
-		circles.updateCircleCenterX(circleID,$circleX.val());
+		circles.getCircle(circleID).updateCenterX($circleX.val());
 	});
 
 	// handle updates to circle center Y values
@@ -1098,7 +1091,7 @@ $(document).ready(function()
 		var $circleY = $(this);
 		var circleID = $circleY.closest('div.circle').attr('id').replace('circle','');
 
-		circles.updateCircleCenterY(circleID,$circleY.val());
+		circles.getCircle(circleID).updateCenterY($circleY.val());
 	});
 
 	// handle updates to circle radius values
@@ -1107,7 +1100,7 @@ $(document).ready(function()
 		var $radius = $(this);
 		var circleID = $radius.closest('div.circle').attr('id').replace('circle','');
 
-		circles.updateCircleRadius(circleID,$radius.val());
+		circles.getCircle(circleID).updateRadius($radius.val());
 	});
 
 	// handle updates to ellipse center X values
@@ -1116,7 +1109,7 @@ $(document).ready(function()
 		var $ellipseX = $(this);
 		var ellipseID = $ellipseX.closest('div.ellipse').attr('id').replace('ellipse','');
 
-		ellipses.updateEllipseCenterX(ellipseID,$ellipseX.val());
+		ellipses.getEllipse(ellipseID).updateCenterX($ellipseX.val());
 	});
 
 	// handle updates to ellipse center Y values
@@ -1125,7 +1118,7 @@ $(document).ready(function()
 		var $ellipseY = $(this);
 		var ellipseID = $ellipseY.closest('div.ellipse').attr('id').replace('ellipse','');
 
-		ellipses.updateEllipseCenterY(ellipseID,$ellipseY.val());
+		ellipses.getEllipse(ellipseID).updateCenterY($ellipseY.val());
 	});
 
 	// handle updates to ellipse radius X values
@@ -1134,7 +1127,7 @@ $(document).ready(function()
 		var $radiusX = $(this);
 		var ellipseID = $radiusX.closest('div.ellipse').attr('id').replace('ellipse','');
 
-		ellipses.updateEllipseRadiusX(ellipseID,$radiusX.val());
+		ellipses.getEllipse(ellipseID).updateRadiusX($radiusX.val());
 	});
 
 	// handle updates to ellipse radius Y values
@@ -1143,7 +1136,7 @@ $(document).ready(function()
 		var $radiusY = $(this);
 		var ellipseID = $radiusY.closest('div.ellipse').attr('id').replace('ellipse','');
 
-		ellipses.updateEllipseRadiusY(ellipseID,$radiusY.val());
+		ellipses.getEllipse(ellipseID).updateRadiusY($radiusY.val());
 	});
 
 	$('input.color').live('change',function()
@@ -1194,19 +1187,19 @@ $(document).ready(function()
 		{
 			var lineID = $conic.attr('id').replace('line','');
 
-			lines.updateLineColor(lineID,color);
+			lines.getLine(lineID).updateColor(color);
 		}
 		else if ($($conic).is('.circle'))
 		{
 			var circleID = $conic.attr('id').replace('circle','');
 
-			circles.updateCircleColor(circleID,color);
+			circles.getCircle(circleID).updateColor(color);
 		}
 		else if ($($conic).is('.ellipse'))
 		{
 			var ellipseID = $conic.attr('id').replace('ellipse','');
 
-			ellipses.updateEllipseColor(ellipseID,color);
+			ellipses.getEllipse(ellipseID).updateColor(color);
 		}
 	});
 
@@ -1233,19 +1226,19 @@ $(document).ready(function()
 			{
 				var lineID = $conic.attr('id').replace('line','');
 
-				lines.updateLineColor(lineID,color);
+				lines.getLine(lineID).updateColor(color);
 			}
 			else if ($($conic).is('.circle'))
 			{
 				var circleID = $conic.attr('id').replace('circle','');
 
-				circles.updateCircleColor(circleID,color);
+				circles.getCircle(circleID).updateColor(color);
 			}
 			else if ($($conic).is('.ellipse'))
 			{
 				var ellipseID = $conic.attr('id').replace('ellipse','');
 
-				ellipses.updateEllipseColor(ellipseID,color);
+				ellipses.getEllipse(ellipseID).updateColor(color);
 			}
 		}
 		else
@@ -1298,29 +1291,29 @@ $(document).ready(function()
 			startX = graph.getX(canvas.getX(event.pageX));
 			startY = graph.getY(canvas.getY(event.pageY));
 
-			lines.updateLineStartX(curLine,startX);
-			lines.updateLineStartY(curLine,startY);
-			lines.updateLineEndX(curLine,startX);
-			lines.updateLineEndY(curLine,startY);
+			curLine.updateStartX(startX);
+			curLine.updateStartY(startY);
+			curLine.updateEndX(startX);
+			curLine.updateEndY(startY);
 		}
 		else if (drawingCircle)
 		{
 			startX = graph.getX(canvas.getX(event.pageX));
 			startY = graph.getY(canvas.getY(event.pageY));
 
-			circles.updateCircleCenterX(curCircle,startX);
-			circles.updateCircleCenterY(curCircle,startY);
-			circles.updateCircleRadius(curCircle,0);
+			curCircle.updateCenterX(startX);
+			curCircle.updateCenterY(startY);
+			curCircle.updateRadius(0);
 		}
 		else if (drawingEllipse)
 		{
 			startX = graph.getX(canvas.getX(event.pageX));
 			startY = graph.getY(canvas.getY(event.pageY));
 
-			ellipses.updateEllipseCenterX(curEllipse,startX);
-			ellipses.updateEllipseCenterY(curEllipse,startY);
-			ellipses.updateEllipseRadiusX(curEllipse,1);
-			ellipses.updateEllipseRadiusY(curEllipse,1);
+			curEllipse.updateCenterX(startX);
+			curEllipse.updateCenterY(startY);
+			curEllipse.updateRadiusX(1);
+			curEllipse.updateRadiusY(1);
 		}
 		else // click and drag panning
 		{
@@ -1339,23 +1332,23 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			lines.updateLineEndX(curLine,curX);
-			lines.updateLineEndY(curLine,curY);
+			curLine.updateEndX(curX);
+			curLine.updateEndY(curY);
 		}
 		else if (drawingCircle)
 		{
 			var deltaX = startX - graph.getX(canvas.getX(event.pageX));
 			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
 
-			circles.updateCircleRadius(curCircle,Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+			curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 		}
 		else if (drawingEllipse)
 		{
 			var deltaX = Math.abs(startX - graph.getX(canvas.getX(event.pageX)));
 			var deltaY = Math.abs(startY - graph.getY(canvas.getY(event.pageY)));
 
-			ellipses.updateEllipseRadiusX(curEllipse,deltaX);
-			ellipses.updateEllipseRadiusY(curEllipse,deltaY);
+			curEllipse.updateRadiusX(deltaX);
+			curEllipse.updateRadiusY(deltaY);
 		}
 		else // click and drag panning
 		{
@@ -1380,8 +1373,8 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			lines.updateLineEndX(curLine,curX);
-			lines.updateLineEndY(curLine,curY);
+			curLine.updateEndX(curX);
+			curLine.updateEndY(curY);
 
 			drawingLine = false;
 		}
@@ -1390,7 +1383,7 @@ $(document).ready(function()
 			var deltaX = startX - graph.getX(canvas.getX(event.pageX));
 			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
 
-			circles.updateCircleRadius(curCircle,Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+			curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 
 			drawingCircle = false;
 		}
@@ -1399,8 +1392,8 @@ $(document).ready(function()
 			var deltaX = Math.abs(startX - graph.getX(canvas.getX(event.pageX)));
 			var deltaY = Math.abs(startY - graph.getY(canvas.getY(event.pageY)));
 
-			ellipses.updateEllipseRadiusX(curEllipse,deltaX);
-			ellipses.updateEllipseRadiusY(curEllipse,deltaY);
+			curEllipse.updateRadiusX(deltaX);
+			curEllipse.updateRadiusY(deltaY);
 
 			drawingEllipse = false;
 		}
