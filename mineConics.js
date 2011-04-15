@@ -28,6 +28,23 @@ function canvasHandler()
 
 	this.height = this.$canvas.height();
 	this.width = this.$canvas.width();
+
+	this.cursorOpenHand();
+}
+
+canvasHandler.prototype.cursorOpenHand = function()
+{
+	this.$canvas.css('cursor','url(openhand.cur),move');
+}
+
+canvasHandler.prototype.cursorClosedHand = function()
+{
+	this.$canvas.css('cursor','url(closedhand.cur),move');
+}
+
+canvasHandler.prototype.cursorCrosshair = function()
+{
+	this.$canvas.css('cursor','crosshair');
 }
 
 canvasHandler.prototype.offsetLeft = function()
@@ -890,7 +907,7 @@ ellipse.prototype.draw = function()
 		var stoppingY = 0;
 		var error = 0;
 
-		while (stoppingX >= stoppingY)
+		while (stoppingX > stoppingY)
 		{
 			this.plotFourPoints(x,y);
 
@@ -916,7 +933,7 @@ ellipse.prototype.draw = function()
 		stoppingY = twoASquare * this.radiusY;
 		error = 0;
 
-		while (stoppingX <= stoppingY)
+		while (stoppingX < stoppingY)
 		{
 			this.plotFourPoints(x,y);
 
@@ -1024,18 +1041,24 @@ $(document).ready(function()
 
 	$('div.newLine').click(function(event)
 	{
+		canvas.cursorCrosshair();
+
 		curLine = lines.addLine($shapeControls);
 		drawingLine = true;
 	});
 
 	$('div.newCircle').click(function(event)
 	{
+		canvas.cursorCrosshair();
+
 		curCircle = circles.addCircle($shapeControls);
 		drawingCircle = true;
 	});
 
 	$('div.newEllipse').click(function(event)
 	{
+		canvas.cursorCrosshair();
+
 		curEllipse = ellipses.addEllipse($shapeControls);
 		drawingEllipse = true;
 	});
@@ -1317,6 +1340,8 @@ $(document).ready(function()
 		}
 		else // click and drag panning
 		{
+			canvas.cursorClosedHand();
+
 			startX = canvas.getX(event.pageX);
 			startY = canvas.getY(event.pageY);
 		}
@@ -1367,6 +1392,8 @@ $(document).ready(function()
 	{
  		if (!clicking)
 			return;
+
+		canvas.cursorOpenHand();
 
 		if (drawingLine)
 		{
