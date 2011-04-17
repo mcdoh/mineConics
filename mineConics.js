@@ -1616,14 +1616,14 @@ $(document).ready(function()
 					curLine.updateStartX(curX);
 					curLine.updateStartY(curY);
 
-					editintLineStart = false;
+					editingLineStart = false;
 				}
 				else if (editingLineEnd)
 				{
 					curLine.updateEndX(curX);
 					curLine.updateEndY(curY);
 
-					editintLineEnd = false;
+					editingLineEnd = false;
 				}
 			}
 			else
