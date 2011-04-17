@@ -88,23 +88,36 @@ div.conic
 	overflow: hidden;
 }
 
+.selected
+{
+	color: #333;
+}
+
 div.titleBar
 {
 	width: 100%;
 	margin-bottom: 3px;
 	font-weight: bold;
+	overflow: hidden;
 }
 
 div.title
 {
-	width: 95%;
+	width: 80%;
 	text-align: center;
 	cursor: pointer;
+	float: left;
 }
 
 div.close
 {
 	float: left;
+	cursor: pointer;
+}
+
+div.edit
+{
+	float: right;
 	cursor: pointer;
 }
 

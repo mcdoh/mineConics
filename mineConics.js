@@ -5,16 +5,23 @@ var circles;
 var ellipses;
 
 var clicking = false;
+var editing = false;
 var startX;
 var startY;
 
 var drawingLine = false;
+var editingLineStart = false;
+var editingLineEnd = false;
 var curLine;
 
 var drawingCircle = false;
+var editingCircleCenter = false;
+var editingCircleRadius = false;
 var curCircle;
 
 var drawingEllipse = false;
+var editingEllipseCenter = false;
+var editingEllipseRadius = false;
 var curEllipse;
 
 function canvasHandler()
@@ -30,6 +37,11 @@ function canvasHandler()
 	this.width = this.$canvas.width();
 
 	this.cursorOpenHand();
+}
+
+canvasHandler.prototype.cursorDefault = function()
+{
+	this.$canvas.css('cursor','default');
 }
 
 canvasHandler.prototype.cursorOpenHand = function()
@@ -85,8 +97,13 @@ function titleBar(title)
 	$titleDiv.addClass('title');
 	$titleDiv.append(title);
 
+	var $editDiv = $('<div/>');
+	$editDiv.addClass('edit');
+	$editDiv.text('[+]');
+
 	$titleBarDiv.append($closeDiv);
 	$titleBarDiv.append($titleDiv);
+	$titleBarDiv.append($editDiv);
 
 	return $titleBarDiv;
 }
@@ -504,10 +521,10 @@ function line(id,$lineControl)
 	this.id = id;
 	this.$lineControl = $lineControl;
 
-	this.x0;
-	this.y0;
-	this.x1;
-	this.y1;
+	this.startX;
+	this.startY;
+	this.endX;
+	this.endY;
 	this.color = "rgba(0,0,0,0.75)";
 }
 
@@ -521,9 +538,9 @@ line.prototype.updateStartX = function(newX)
 	var testNum = parseInt(newX);
 
 	if (!isNaN(testNum))
-		this.x0 = testNum;
+		this.startX = testNum;
 
-	this.$lineControl.find('input.startX').val(this.x0);
+	this.$lineControl.find('input.startX').val(this.startX);
 }
 
 line.prototype.updateStartY = function(newY)
@@ -531,9 +548,9 @@ line.prototype.updateStartY = function(newY)
 	var testNum = parseInt(newY);
 
 	if (!isNaN(testNum))
-		this.y0 = testNum;
+		this.startY = testNum;
 
-	this.$lineControl.find('input.startY').val(this.y0);
+	this.$lineControl.find('input.startY').val(this.startY);
 }
 
 line.prototype.updateEndX = function(newX)
@@ -541,9 +558,9 @@ line.prototype.updateEndX = function(newX)
 	var testNum = parseInt(newX);
 
 	if (!isNaN(testNum))
-		this.x1 = testNum;
+		this.endX = testNum;
 
-	this.$lineControl.find('input.endX').val(this.x1);
+	this.$lineControl.find('input.endX').val(this.endX);
 }
 
 line.prototype.updateEndY = function(newY)
@@ -551,9 +568,9 @@ line.prototype.updateEndY = function(newY)
 	var testNum = parseInt(newY);
 
 	if (!isNaN(testNum))
-		this.y1 = testNum;
+		this.endY = testNum;
 
-	this.$lineControl.find('input.endY').val(this.y1);
+	this.$lineControl.find('input.endY').val(this.endY);
 }
 
 line.prototype.updateColor = function(newColor)
@@ -564,51 +581,51 @@ line.prototype.updateColor = function(newColor)
 // Bresenham's line algorithm
 line.prototype.draw = function()
 {
-	if ((this.x0 != null) && (this.y0 != null) && (this.x1 != null) && (this.y1 != null))
+	if ((this.startX != null) && (this.startY != null) && (this.endX != null) && (this.endY != null))
 	{
-		var x0 = this.x0;
-		var x1 = this.x1;
-		var y0 = this.y0;
-		var y1 = this.y1;
+		var startX = this.startX;
+		var endX = this.endX;
+		var startY = this.startY;
+		var endY = this.endY;
 
 		var steep = false;
-		if (Math.abs(y1-y0) > Math.abs(x1-x0))
+		if (Math.abs(endY-startY) > Math.abs(endX-startX))
 			steep = true;
 
 		if (steep)
 		{
-			var temp = x0;
-			x0 = y0;
-			y0 = temp;
+			var temp = startX;
+			startX = startY;
+			startY = temp;
 
-			temp = x1;
-			x1 = y1;
-			y1 = temp;
+			temp = endX;
+			endX = endY;
+			endY = temp;
 		}
 
-		if (x0 > x1)
+		if (startX > endX)
 		{
-			var temp = x0;
-			x0 = x1;
-			x1 = temp;
+			var temp = startX;
+			startX = endX;
+			endX = temp;
 
-			temp = y0;
-			y0 = y1;
-			y1 = temp;
+			temp = startY;
+			startY = endY;
+			endY = temp;
 		}
 
-		var deltaX = x1 - x0;
-		var deltaY = Math.abs(y1 - y0);
+		var deltaX = endX - startX;
+		var deltaY = Math.abs(endY - startY);
 		var error = deltaX / 2;
-		var y = y0;
+		var y = startY;
 
 		var yStep;
-		if (y0 < y1)
+		if (startY < endY)
 			yStep = 1;
 		else
 			yStep = -1;
 
-		for (var x=x0; x<=x1; x++)
+		for (var x=startX; x<=endX; x++)
 		{
 			if (steep)
 				graph.plot(y,x,this.color);
@@ -907,7 +924,7 @@ ellipse.prototype.draw = function()
 		var stoppingY = 0;
 		var error = 0;
 
-		while (stoppingX > stoppingY)
+		while (stoppingX >= stoppingY)
 		{
 			this.plotFourPoints(x,y);
 
@@ -933,7 +950,7 @@ ellipse.prototype.draw = function()
 		stoppingY = twoASquare * this.radiusY;
 		error = 0;
 
-		while (stoppingX < stoppingY)
+		while (stoppingX <= stoppingY)
 		{
 			this.plotFourPoints(x,y);
 
@@ -1279,11 +1296,11 @@ $(document).ready(function()
 
 	$('.close').live('click',function()
 	{
+		var $conic = $(this).closest('div.conic');
+
 		drawingLine = false;
 		drawingCircle = false;
 		drawingEllipse = false;
-
-		var $conic = $(this).closest('div.conic');
 
 		if ($($conic).is('.line'))
 		{
@@ -1305,38 +1322,145 @@ $(document).ready(function()
 		}
 	});
 
+	$('.edit').live('click',function()
+	{
+		var $editIcon = $(this);
+		var $conic = $(this).closest('div.conic');
+
+		if ($($conic).is('.selected'))
+		{
+			$conic.removeClass('selected');
+			$editIcon.text('[+]');
+
+			editing = false;
+			drawingLine = false;
+			drawingCircle = false;
+			drawingEllipse = false;
+
+			canvas.cursorOpenHand();
+		}
+		else
+		{
+			$conic.addClass('selected');
+			$conic.siblings().removeClass('selected');
+			$editIcon.text('[-]');
+
+			if ($($conic).is('.line'))
+			{
+				var lineID = $conic.attr('id').replace('line','');
+
+				editing = true;
+				drawingLine = true;
+				drawingCircle = false;
+				drawingEllipse = false;
+
+				curLine = lines.getLine(lineID);
+			}
+			else if ($($conic).is('.circle'))
+			{
+				var circleID = $conic.attr('id').replace('circle','');
+
+				editing = true;
+				drawingLine = false;
+				drawingCircle = true;
+				drawingEllipse = false;
+
+				curCircle = circles.getCircle(circleID);
+			}
+			else if ($($conic).is('.ellipse'))
+			{
+				var ellipseID = $conic.attr('id').replace('ellipse','');
+
+				editing = true;
+				drawingLine = false
+				drawingCircle = false;
+				drawingEllipse = true;
+
+				curEllipse = ellipses.getEllipse(ellipseID);
+			}
+		}
+	});
+
 	$('#canvas').mousedown(function(event)
 	{
 		clicking = true;
 
+		var curX = graph.getX(canvas.getX(event.pageX));
+		var curY = graph.getY(canvas.getY(event.pageY));
+
 		if (drawingLine)
 		{
-			startX = graph.getX(canvas.getX(event.pageX));
-			startY = graph.getY(canvas.getY(event.pageY));
+			if (editing)
+			{
+				if ((curX == curLine.startX) && (curY == curLine.startY))
+					editingLineStart = true;
+				else if ((curX == curLine.endX) && (curY == curLine.endY))
+					editingLineEnd = true;
+			}
+			else
+			{
+				startX = curX;
+				startY = curY;
 
-			curLine.updateStartX(startX);
-			curLine.updateStartY(startY);
-			curLine.updateEndX(startX);
-			curLine.updateEndY(startY);
+				curLine.updateStartX(curX);
+				curLine.updateStartY(curY);
+				curLine.updateEndX(curX);
+				curLine.updateEndY(curY);
+			}
 		}
 		else if (drawingCircle)
 		{
-			startX = graph.getX(canvas.getX(event.pageX));
-			startY = graph.getY(canvas.getY(event.pageY));
+			if (editing)
+			{
+				if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
+					editingCircleCenter = true;
+				else
+				{
+					editingCircleRadius = true;
 
-			curCircle.updateCenterX(startX);
-			curCircle.updateCenterY(startY);
-			curCircle.updateRadius(0);
+					var deltaX = curCircle.centerX - curX;
+					var deltaY = curCircle.centerY - curY;
+
+					curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+				}
+			}
+			else
+			{
+				startX = curX;
+				startY = curY;
+
+				curCircle.updateCenterX(curX);
+				curCircle.updateCenterY(curY);
+				curCircle.updateRadius(0);
+			}
 		}
 		else if (drawingEllipse)
 		{
-			startX = graph.getX(canvas.getX(event.pageX));
-			startY = graph.getY(canvas.getY(event.pageY));
+			if (editing)
+			{
+				if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
+					editingEllipseCenter = true;
+				else
+				{
+					editingEllipseRadius = true;
 
-			curEllipse.updateCenterX(startX);
-			curEllipse.updateCenterY(startY);
-			curEllipse.updateRadiusX(1);
-			curEllipse.updateRadiusY(1);
+					var deltaX = Math.abs(curEllipse.centerX - curX);
+					var deltaY = Math.abs(curEllipse.centerY - curY);
+
+					curEllipse.updateRadiusX(deltaX);
+					curEllipse.updateRadiusY(deltaY);
+				}
+			}
+			else
+			{
+				startX = curX;
+				startY = curY;
+
+				curEllipse.updateCenterX(curX);
+				curEllipse.updateCenterY(curY);
+				curEllipse.updateRadiusX(1);
+				curEllipse.updateRadiusY(1);
+			}
 		}
 		else // click and drag panning
 		{
@@ -1349,6 +1473,34 @@ $(document).ready(function()
 
 	$('#canvas').mousemove(function(event)
 	{
+		if (editing)
+		{
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
+
+			if (drawingLine)
+			{
+				if (((curX == curLine.startX) && (curY == curLine.startY)) || ((curX == curLine.endX) && (curY == curLine.endY)))
+					canvas.cursorCrosshair();
+				else
+					canvas.cursorDefault();
+			}
+			else if (drawingCircle)
+			{
+				if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
+					canvas.cursorOpenHand();
+				else
+					canvas.cursorCrosshair();
+			}
+			else if (drawingEllipse)
+			{
+				if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
+					canvas.cursorOpenHand();
+				else
+					canvas.cursorCrosshair();
+			}
+		}
+
 		if (!clicking)
 			return;
 
@@ -1357,23 +1509,82 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			curLine.updateEndX(curX);
-			curLine.updateEndY(curY);
+			if (editing)
+			{
+				if (editingLineStart)
+				{
+					curLine.updateStartX(curX);
+					curLine.updateStartY(curY);
+				}
+				else if (editingLineEnd)
+				{
+					curLine.updateEndX(curX);
+					curLine.updateEndY(curY);
+				}
+			}
+			else
+			{
+				curLine.updateEndX(curX);
+				curLine.updateEndY(curY);
+			}
 		}
 		else if (drawingCircle)
 		{
-			var deltaX = startX - graph.getX(canvas.getX(event.pageX));
-			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
 
-			curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+			if (editing)
+			{
+				if (editingCircleCenter)
+				{
+					curCircle.updateCenterX(curX);
+					curCircle.updateCenterY(curY);
+				}
+				else if (editingCircleRadius)
+				{
+					var deltaX = curCircle.centerX - curX;
+					var deltaY = curCircle.centerY - curY;
+
+					curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+				}
+			}
+			else
+			{
+				var deltaX = startX - curX;
+				var deltaY = startY - curY;
+
+				curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+			}
 		}
 		else if (drawingEllipse)
 		{
-			var deltaX = Math.abs(startX - graph.getX(canvas.getX(event.pageX)));
-			var deltaY = Math.abs(startY - graph.getY(canvas.getY(event.pageY)));
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
 
-			curEllipse.updateRadiusX(deltaX);
-			curEllipse.updateRadiusY(deltaY);
+			if (editing)
+			{
+				if (editingEllipseCenter)
+				{
+					curEllipse.updateCenterX(curX);
+					curEllipse.updateCenterY(curY);
+				}
+				else if (editingEllipseRadius)
+				{
+					var deltaX = Math.abs(curEllipse.centerX - curX);
+					var deltaY = Math.abs(curEllipse.centerY - curY);
+
+					curEllipse.updateRadiusX(deltaX);
+					curEllipse.updateRadiusY(deltaY);
+				}
+			}
+			else
+			{
+				var deltaX = Math.abs(startX - curX);
+				var deltaY = Math.abs(startY - curY);
+
+				curEllipse.updateRadiusX(deltaX);
+				curEllipse.updateRadiusY(deltaY);
+			}
 		}
 		else // click and drag panning
 		{
@@ -1393,36 +1604,108 @@ $(document).ready(function()
  		if (!clicking)
 			return;
 
-		canvas.cursorOpenHand();
-
 		if (drawingLine)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			curLine.updateEndX(curX);
-			curLine.updateEndY(curY);
+			if (editing)
+			{
+				if (editingLineStart)
+				{
+					curLine.updateStartX(curX);
+					curLine.updateStartY(curY);
 
-			drawingLine = false;
+					editintLineStart = false;
+				}
+				else if (editingLineEnd)
+				{
+					curLine.updateEndX(curX);
+					curLine.updateEndY(curY);
+
+					editintLineEnd = false;
+				}
+			}
+			else
+			{
+				curLine.updateEndX(curX);
+				curLine.updateEndY(curY);
+
+				drawingLine = false;
+				canvas.cursorOpenHand();
+			}
 		}
 		else if (drawingCircle)
 		{
-			var deltaX = startX - graph.getX(canvas.getX(event.pageX));
-			var deltaY = startY - graph.getY(canvas.getY(event.pageY));
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
 
-			curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+			if (editing)
+			{
+				if (editingCircleCenter)
+				{
+					curCircle.updateCenterX(curX);
+					curCircle.updateCenterY(curY);
 
-			drawingCircle = false;
+					editingCircleCenter = false;
+				}
+				else if (editingCircleRadius)
+				{
+					var deltaX = curCircle.centerX - curX;
+					var deltaY = curCircle.centerY - curY;
+
+					curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+
+					editingCircleRadius = false;
+				}
+			}
+			else
+			{
+				var deltaX = startX - curX;
+				var deltaY = startY - curY;
+
+				curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+
+				drawingCircle = false;
+				canvas.cursorOpenHand();
+			}
 		}
 		else if (drawingEllipse)
 		{
-			var deltaX = Math.abs(startX - graph.getX(canvas.getX(event.pageX)));
-			var deltaY = Math.abs(startY - graph.getY(canvas.getY(event.pageY)));
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
 
-			curEllipse.updateRadiusX(deltaX);
-			curEllipse.updateRadiusY(deltaY);
+			if (editing)
+			{
+				if (editingEllipseCenter)
+				{
+					curEllipse.updateCenterX(curX);
+					curEllipse.updateCenterY(curY);
 
-			drawingEllipse = false;
+					editingEllipseCenter = false;
+				}
+				else if (editingEllipseRadius)
+				{
+					var deltaX = Math.abs(curEllipse.centerX - curX);
+					var deltaY = Math.abs(curEllipse.centerY - curY);
+
+					curEllipse.updateRadiusX(deltaX);
+					curEllipse.updateRadiusY(deltaY);
+
+					editingEllipseRadius = false;
+				}
+			}
+			else
+			{
+				var deltaX = Math.abs(startX - curX);
+				var deltaY = Math.abs(startY - curY);
+
+				curEllipse.updateRadiusX(deltaX);
+				curEllipse.updateRadiusY(deltaY);
+
+				drawingEllipse = false;
+				canvas.cursorOpenHand();
+			}
 		}
 		else // click and drag panning
 		{
@@ -1431,6 +1714,8 @@ $(document).ready(function()
 
 			graph.moveOriginX(curX - startX);
 			graph.moveOriginY(curY - startY);
+
+			canvas.cursorOpenHand();
 		}
 
 		clicking = false;
