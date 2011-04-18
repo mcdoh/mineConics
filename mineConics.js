@@ -1058,26 +1058,47 @@ $(document).ready(function()
 
 	$('div.newLine').click(function(event)
 	{
-		canvas.cursorCrosshair();
-
 		curLine = lines.addLine($shapeControls);
+
+		curLine.$lineControl.addClass('selected');
+		curLine.$lineControl.siblings().removeClass('selected');
+
+		canvas.cursorCrosshair();
 		drawingLine = true;
+
+		drawingCircle = false;
+		drawingEllipse = false;
+		editing = false;
 	});
 
 	$('div.newCircle').click(function(event)
 	{
-		canvas.cursorCrosshair();
-
 		curCircle = circles.addCircle($shapeControls);
+
+		curCircle.$circleControl.addClass('selected');
+		curCircle.$circleControl.siblings().removeClass('selected');
+
+		canvas.cursorCrosshair();
 		drawingCircle = true;
+
+		drawingLine = false;
+		drawingEllipse = false;
+		editing = false;
 	});
 
 	$('div.newEllipse').click(function(event)
 	{
-		canvas.cursorCrosshair();
-
 		curEllipse = ellipses.addEllipse($shapeControls);
+
+		curEllipse.$ellipseControl.addClass('selected');
+		curEllipse.$ellipseControl.siblings().removeClass('selected');
+
+		canvas.cursorCrosshair();
 		drawingEllipse = true;
+
+		drawingLine = false;
+		drawingCircle = false;
+		editing = false;
 	});
 
 	// handle updates to line start X values
@@ -1298,13 +1319,16 @@ $(document).ready(function()
 	{
 		var $conic = $(this).closest('div.conic');
 
-		drawingLine = false;
-		drawingCircle = false;
-		drawingEllipse = false;
-
 		if ($($conic).is('.line'))
 		{
 			var lineID = $conic.attr('id').replace('line','');
+
+			if (drawingLine && (curLine.id == lineID))
+			{
+				drawingLine = false;
+				editing = false;
+				canvas.cursorOpenHand();
+			}
 
 			lines.deleteLine(lineID);
 		}
@@ -1312,11 +1336,25 @@ $(document).ready(function()
 		{
 			var circleID = $conic.attr('id').replace('circle','');
 
+			if (drawingCircle && (curCircle.id == circleID))
+			{
+				drawingCircle = false;
+				editing = false;
+				canvas.cursorOpenHand();
+			}
+
 			circles.deleteCircle(circleID);
 		}
 		else if ($($conic).is('.ellipse'))
 		{
 			var ellipseID = $conic.attr('id').replace('ellipse','');
+
+			if (drawingEllipse && (curEllipse.id == ellipseID))
+			{
+				drawingEllipse = false;
+				editing = false;
+				canvas.cursorOpenHand();
+			}
 
 			ellipses.deleteEllipse(ellipseID);
 		}
@@ -1631,6 +1669,7 @@ $(document).ready(function()
 				curLine.updateEndX(curX);
 				curLine.updateEndY(curY);
 
+				curLine.$lineControl.removeClass('selected');
 				drawingLine = false;
 				canvas.cursorOpenHand();
 			}
@@ -1666,6 +1705,7 @@ $(document).ready(function()
 
 				curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 
+				curCircle.$circleControl.removeClass('selected');
 				drawingCircle = false;
 				canvas.cursorOpenHand();
 			}
@@ -1703,6 +1743,7 @@ $(document).ready(function()
 				curEllipse.updateRadiusX(deltaX);
 				curEllipse.updateRadiusY(deltaY);
 
+				curEllipse.$ellipseControl.removeClass('selected');
 				drawingEllipse = false;
 				canvas.cursorOpenHand();
 			}
