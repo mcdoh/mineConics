@@ -879,7 +879,7 @@ ellipse.prototype.updateRadiusX = function(newRadiusX)
 {
 	var testNum = Math.abs(parseInt(newRadiusX));
 
-	if (testNum)
+	if (!isNaN(testNum))
 		this.radiusX = testNum;
 
 	this.$ellipseControl.find('input.radiusX').val(this.radiusX);
@@ -889,7 +889,7 @@ ellipse.prototype.updateRadiusY = function(newRadiusY)
 {
 	var testNum = Math.abs(parseInt(newRadiusY));
 
-	if (testNum)
+	if (!isNaN(testNum))
 		this.radiusY = testNum;
 
 	this.$ellipseControl.find('input.radiusY').val(this.radiusY);
@@ -904,68 +904,57 @@ ellipse.prototype.updateColor = function(newColor)
 ellipse.prototype.plotFourPoints = function(x,y)
 {
 	graph.plot(this.centerX+x,this.centerY+y,this.color);
-	graph.plot(this.centerX-x,this.centerY+y,this.color);
-	graph.plot(this.centerX-x,this.centerY-y,this.color);
-	graph.plot(this.centerX+x,this.centerY-y,this.color);
+
+	if (x != 0)
+		graph.plot(this.centerX-x,this.centerY+y,this.color);
+
+	if (y != 0)
+		graph.plot(this.centerX+x,this.centerY-y,this.color);
+
+	if ((x != 0) && (y != 0))
+		graph.plot(this.centerX-x,this.centerY-y,this.color);
 }
 
 // midpoint ellipse algorithm
 ellipse.prototype.draw = function()
 {
-	if ((this.centerX != null) && (this.centerY != null) && this.radiusX && this.radiusY)
+	if ((this.centerX != null) && (this.centerY != null) && (this.radiusX != null) && (this.radiusY != null))
 	{
-		var x = this.radiusX;
+		var x = -this.radiusX;
 		var y = 0;
-		var twoASquare = 2 * this.radiusX * this.radiusX;
-		var twoBSquare = 2 * this.radiusY * this.radiusY;
-		var changeX = this.radiusY * this.radiusY * (1 - (2 * this.radiusX));
-		var changeY = this.radiusX * this.radiusX;
-		var stoppingX = twoBSquare * this.radiusX;
-		var stoppingY = 0;
-		var error = 0;
+		var twoASquare = 2 * (this.radiusX * this.radiusX);
+		var twoBSquare = 2 * (this.radiusY * this.radiusY);
+		var deltaX = (1 - (2 * this.radiusX)) * (this.radiusY * this.radiusY);
+		var deltaY = this.radiusX * this.radiusX;
+		var error = deltaX + deltaY;
+		var errorDoubled;
 
-		while (stoppingX >= stoppingY)
+		do
 		{
 			this.plotFourPoints(x,y);
 
-			y++;
-			stoppingY += twoASquare;
-			error += changeY;
-			changeY += twoASquare;
+			errorDoubled = 2 * error;
 
-			if (((2 * error) + changeX) > 0)
+			if (errorDoubled >= deltaX)
 			{
-				x--;
-				stoppingX -= twoBSquare;
-				error += changeX;
-				changeX += twoBSquare;
+				x++;
+				deltaX += twoBSquare;
+				error += deltaX;
 			}
-		}
 
-		x = 0;
-		y = this.radiusY;
-		changeX = this.radiusY * this.radiusY;
-		changeY = this.radiusX * this.radiusX * (1 - (2 * this.radiusY));
-		stoppingX = 0;
-		stoppingY = twoASquare * this.radiusY;
-		error = 0;
+			if (errorDoubled <= deltaY)
+			{
+				y++;
+				deltaY += twoASquare;
+				error += deltaY;
+			}
+		} while (x <= 0);
 
-		while (stoppingX <= stoppingY)
+		// for flat ellipses with radiusX = 1
+		while (y++ < this.radiusY)
 		{
-			this.plotFourPoints(x,y);
-
-			x++;
-			stoppingX += twoBSquare;
-			error += changeX;
-			changeX += twoBSquare;
-
-			if (((2 * error) + changeY) > 0)
-			{
-				y--;
-				stoppingY -= twoASquare;
-				error += changeY;
-				changeY += twoASquare;
-			}
+			graph.plot(this.centerX, (this.centerY + y)); // draw the tip of the ellipse
+			graph.plot(this.centerX, (this.centerY - y));
 		}
 	}
 }
@@ -1535,8 +1524,8 @@ $(document).ready(function()
 
 				curEllipse.updateCenterX(curX);
 				curEllipse.updateCenterY(curY);
-				curEllipse.updateRadiusX(1);
-				curEllipse.updateRadiusY(1);
+				curEllipse.updateRadiusX(0);
+				curEllipse.updateRadiusY(0);
 			}
 		}
 		else // click and drag panning
