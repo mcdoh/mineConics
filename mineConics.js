@@ -97,13 +97,13 @@ function titleBar(title)
 	$titleDiv.addClass('title');
 	$titleDiv.append(title);
 
-	var $editDiv = $('<div/>');
-	$editDiv.addClass('edit');
-	$editDiv.text('[+]');
+	var $hideDiv = $('<div/>');
+	$hideDiv.addClass('hide');
+	$hideDiv.text('[-]');
 
 	$titleBarDiv.append($closeDiv);
 	$titleBarDiv.append($titleDiv);
-	$titleBarDiv.append($editDiv);
+	$titleBarDiv.append($hideDiv);
 
 	return $titleBarDiv;
 }
@@ -1311,8 +1311,63 @@ $(document).ready(function()
 	$('.title').live('click',function()
 	{
 		var $conic = $(this).closest('div.conic');
+		var $conicControl = $conic.find('.conicControl');
 
-		$conic.find('.conicControl').slideToggle();
+		if ($($conic).is('.selected'))
+		{
+			$conic.removeClass('selected');
+
+			editing = false;
+			drawingLine = false;
+			drawingCircle = false;
+			drawingEllipse = false;
+
+			canvas.cursorOpenHand();
+		}
+		else if (!$($conicControl).is(':visible'))
+		{
+			$conic.find('.hide').text('[-]');
+			$conicControl.slideDown();
+		}
+		else
+		{
+			$conic.addClass('selected');
+			$conic.siblings().removeClass('selected');
+
+			if ($($conic).is('.line'))
+			{
+				var lineID = $conic.attr('id').replace('line','');
+
+				editing = true;
+				drawingLine = true;
+				drawingCircle = false;
+				drawingEllipse = false;
+
+				curLine = lines.getLine(lineID);
+			}
+			else if ($($conic).is('.circle'))
+			{
+				var circleID = $conic.attr('id').replace('circle','');
+
+				editing = true;
+				drawingLine = false;
+				drawingCircle = true;
+				drawingEllipse = false;
+
+				curCircle = circles.getCircle(circleID);
+			}
+			else if ($($conic).is('.ellipse'))
+			{
+				var ellipseID = $conic.attr('id').replace('ellipse','');
+
+				editing = true;
+				drawingLine = false
+				drawingCircle = false;
+				drawingEllipse = true;
+
+				curEllipse = ellipses.getEllipse(ellipseID);
+			}
+		}
 	});
 
 	$('.close').live('click',function()
@@ -1360,62 +1415,34 @@ $(document).ready(function()
 		}
 	});
 
-	$('.edit').live('click',function()
+	$('.hide').live('click',function()
 	{
-		var $editIcon = $(this);
+		var $hideIcon = $(this);
 		var $conic = $(this).closest('div.conic');
+		var $conicControl = $conic.find('.conicControl');
 
-		if ($($conic).is('.selected'))
+		if ($($conicControl).is(':visible'))
 		{
-			$conic.removeClass('selected');
-			$editIcon.text('[+]');
+			$hideIcon.text('[+]');
+			$conicControl.slideUp();
 
-			editing = false;
-			drawingLine = false;
-			drawingCircle = false;
-			drawingEllipse = false;
+			if ($($conic).is('.selected'))
+			{
+				$conic.removeClass('selected');
+				$hideIcon.text('[+]');
 
-			canvas.cursorOpenHand();
+				editing = false;
+				drawingLine = false;
+				drawingCircle = false;
+				drawingEllipse = false;
+
+				canvas.cursorOpenHand();
+			}
 		}
 		else
 		{
-			$conic.addClass('selected');
-			$conic.siblings().removeClass('selected');
-			$editIcon.text('[-]');
-
-			if ($($conic).is('.line'))
-			{
-				var lineID = $conic.attr('id').replace('line','');
-
-				editing = true;
-				drawingLine = true;
-				drawingCircle = false;
-				drawingEllipse = false;
-
-				curLine = lines.getLine(lineID);
-			}
-			else if ($($conic).is('.circle'))
-			{
-				var circleID = $conic.attr('id').replace('circle','');
-
-				editing = true;
-				drawingLine = false;
-				drawingCircle = true;
-				drawingEllipse = false;
-
-				curCircle = circles.getCircle(circleID);
-			}
-			else if ($($conic).is('.ellipse'))
-			{
-				var ellipseID = $conic.attr('id').replace('ellipse','');
-
-				editing = true;
-				drawingLine = false
-				drawingCircle = false;
-				drawingEllipse = true;
-
-				curEllipse = ellipses.getEllipse(ellipseID);
-			}
+			$hideIcon.text('[-]');
+			$conicControl.slideDown();
 		}
 	});
 
@@ -1431,9 +1458,15 @@ $(document).ready(function()
 			if (editing)
 			{
 				if ((curX == curLine.startX) && (curY == curLine.startY))
+				{
+					canvas.cursorClosedHand();
 					editingLineStart = true;
+				}
 				else if ((curX == curLine.endX) && (curY == curLine.endY))
+				{
+					canvas.cursorClosedHand();
 					editingLineEnd = true;
+				}
 			}
 			else
 			{
@@ -1451,7 +1484,10 @@ $(document).ready(function()
 			if (editing)
 			{
 				if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
+				{
+					canvas.cursorClosedHand();
 					editingCircleCenter = true;
+				}
 				else
 				{
 					editingCircleRadius = true;
@@ -1477,7 +1513,10 @@ $(document).ready(function()
 			if (editing)
 			{
 				if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
+				{
+					canvas.cursorClosedHand();
 					editingEllipseCenter = true;
+				}
 				else
 				{
 					editingEllipseRadius = true;
@@ -1518,21 +1557,27 @@ $(document).ready(function()
 
 			if (drawingLine)
 			{
-				if (((curX == curLine.startX) && (curY == curLine.startY)) || ((curX == curLine.endX) && (curY == curLine.endY)))
-					canvas.cursorCrosshair();
+				if (editingLineStart || editingLineEnd)
+					canvas.cursorClosedHand();
+				else if (((curX == curLine.startX) && (curY == curLine.startY)) || ((curX == curLine.endX) && (curY == curLine.endY)))
+					canvas.cursorOpenHand();
 				else
 					canvas.cursorDefault();
 			}
 			else if (drawingCircle)
 			{
-				if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
+				if (editingCircleCenter)
+					canvas.cursorClosedHand();
+				else if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
 					canvas.cursorOpenHand();
 				else
 					canvas.cursorCrosshair();
 			}
 			else if (drawingEllipse)
 			{
-				if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
+				if (editingEllipseCenter)
+					canvas.cursorClosedHand();
+				else if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
 					canvas.cursorOpenHand();
 				else
 					canvas.cursorCrosshair();
