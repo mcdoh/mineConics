@@ -14,12 +14,6 @@ var editingLineStart = false;
 var editingLineEnd = false;
 var curLine;
 
-
-var drawingEllipse = false;
-var editingEllipseCenter = false;
-var editingEllipseRadius = false;
-var curEllipse;
-
 function canvasHandler()
 {
 	this.$canvas = $('#canvas');
@@ -785,10 +779,10 @@ circle.prototype.draw = function()
 				error -= 2 * x;
 			}
 		}
-	}
 
-	if (this.showCenter)
-		graph.plot(this.centerX,this.centerY);
+		if (this.showCenter)
+			graph.plot(this.centerX,this.centerY);
+	}
 }
 
 function circles()
@@ -809,6 +803,7 @@ circles.prototype.addCircle = function($shapeControls)
 	var $newCircleControl = addCircleControl($shapeControls,newCircleID);
 	this.curCircle = new circle(newCircleID,$newCircleControl);
 	this.circleList = this.circleList.concat(this.curCircle);
+
 	this.curCircle.showCenter = true;
 	this.drawingCircle = true;
 }
@@ -839,7 +834,9 @@ circles.prototype.isCurCircleCenter = function(x,y)
 
 circles.prototype.stopEditing = function()
 {
-	this.curCircle.showCenter = false;
+	if (this.curCircle)
+		this.curCircle.showCenter = false;
+
 	this.drawingCircle = false;
 	this.editingCircleCenter = false;
 	this.editingCircleRadius = false;
@@ -876,7 +873,9 @@ function ellipse(id,$ellipseControl)
 	this.centerY;
 	this.radiusX;
 	this.radiusY;
+
 	this.color = "rgba(0,0,0,0.75)";
+	this.showCenter = false;
 }
 
 ellipse.prototype.delete = function()
@@ -985,6 +984,9 @@ ellipse.prototype.draw = function()
 			graph.plot(this.centerX, (this.centerY + y)); // draw the tip of the ellipse
 			graph.plot(this.centerX, (this.centerY - y));
 		}
+
+		if (this.showCenter)
+			graph.plot(this.centerX,this.centerY);
 	}
 }
 
@@ -992,6 +994,11 @@ function ellipses()
 {
 	this.idPool = 0;
 	this.ellipseList = [];
+
+	this.curEllipse;
+	this.drawingEllipse = false;
+	this.editingEllipseCenter = false;
+	this.editingEllipseRadius = false;
 }
 
 ellipses.prototype.addEllipse = function($shapeControls)
@@ -999,10 +1006,11 @@ ellipses.prototype.addEllipse = function($shapeControls)
 	var newEllipseID = this.idPool++;
 
 	var $newEllipseControl = addEllipseControl($shapeControls,newEllipseID);
-	var newEllipse = new ellipse(newEllipseID,$newEllipseControl);
-	this.ellipseList = this.ellipseList.concat(newEllipse);
+	this.curEllipse = new ellipse(newEllipseID,$newEllipseControl);
+	this.ellipseList = this.ellipseList.concat(this.curEllipse);
 
-	return newEllipse;
+	this.curEllipse.showCenter = true;
+	this.drawingEllipse = true;
 }
 
 ellipses.prototype.getEllipse = function(ellipseID)
@@ -1012,6 +1020,31 @@ ellipses.prototype.getEllipse = function(ellipseID)
 		if (this.ellipseList[i].id == ellipseID)
 			return this.ellipseList[i];
 	}
+}
+
+ellipses.prototype.setCurEllipse = function(ellipseID)
+{
+	this.curEllipse = this.getEllipse(ellipseID);
+	this.curEllipse.showCenter = true;
+	this.drawingEllipse = true;
+}
+
+ellipses.prototype.isCurEllipseCenter = function(x,y)
+{
+	if ((x == this.curEllipse.centerX) && (y == this.curEllipse.centerY))
+		return true;
+	else
+		return false;
+}
+
+ellipses.prototype.stopEditing = function()
+{
+	if (this.curEllipse)
+		this.curEllipse.showCenter = false;
+
+	this.drawingEllipse = false;
+	this.editingEllipseCenter = false;
+	this.editingEllipseRadius = false;
 }
 
 ellipses.prototype.deleteEllipse = function(ellipseID)
@@ -1076,6 +1109,10 @@ $(document).ready(function()
 
 	$('div.newLine').click(function(event)
 	{
+		circles.stopEditing();
+		ellipses.stopEditing();
+		editing = false;
+
 		curLine = lines.addLine($shapeControls);
 
 		curLine.$lineControl.addClass('selected');
@@ -1083,39 +1120,36 @@ $(document).ready(function()
 
 		canvas.cursorCrosshair();
 		drawingLine = true;
-
-		circles.stopEditing();
-		drawingEllipse = false;
-		editing = false;
 	});
 
 	$('div.newCircle').click(function(event)
 	{
+		drawingLine = false;
+		circles.stopEditing();
+		ellipses.stopEditing();
+		editing = false;
+
 		circles.addCircle($shapeControls);
 
 		circles.curCircle.$circleControl.addClass('selected');
 		circles.curCircle.$circleControl.siblings().removeClass('selected');
 
 		canvas.cursorCrosshair();
-
-		drawingLine = false;
-		drawingEllipse = false;
-		editing = false;
 	});
 
 	$('div.newEllipse').click(function(event)
 	{
-		curEllipse = ellipses.addEllipse($shapeControls);
-
-		curEllipse.$ellipseControl.addClass('selected');
-		curEllipse.$ellipseControl.siblings().removeClass('selected');
-
-		canvas.cursorCrosshair();
-		drawingEllipse = true;
-
 		drawingLine = false;
 		circles.stopEditing();
+		ellipses.stopEditing();
 		editing = false;
+
+		ellipses.addEllipse($shapeControls);
+
+		ellipses.curEllipse.$ellipseControl.addClass('selected');
+		ellipses.curEllipse.$ellipseControl.siblings().removeClass('selected');
+
+		canvas.cursorCrosshair();
 	});
 
 	// handle updates to line start X values
@@ -1337,7 +1371,7 @@ $(document).ready(function()
 			editing = false;
 			drawingLine = false;
 			circles.stopEditing();
-			drawingEllipse = false;
+			ellipses.stopEditing();
 
 			canvas.cursorOpenHand();
 		}
@@ -1358,7 +1392,7 @@ $(document).ready(function()
 				editing = true;
 				drawingLine = true;
 				circles.stopEditing();
-				drawingEllipse = false;
+				ellipses.stopEditing();
 
 				curLine = lines.getLine(lineID);
 			}
@@ -1368,7 +1402,8 @@ $(document).ready(function()
 
 				editing = true;
 				drawingLine = false;
-				drawingEllipse = false;
+				circles.stopEditing();
+				ellipses.stopEditing();
 
 				circles.setCurCircle(circleID);
 			}
@@ -1379,9 +1414,9 @@ $(document).ready(function()
 				editing = true;
 				drawingLine = false
 				circles.stopEditing();
-				drawingEllipse = true;
+				ellipses.stopEditing();
 
-				curEllipse = ellipses.getEllipse(ellipseID);
+				ellipses.setCurEllipse(ellipseID);
 			}
 		}
 	});
@@ -1420,9 +1455,9 @@ $(document).ready(function()
 		{
 			var ellipseID = $conic.attr('id').replace('ellipse','');
 
-			if (drawingEllipse && (curEllipse.id == ellipseID))
+			if (ellipses.drawingEllipse && (ellipses.curEllipse.id == ellipseID))
 			{
-				drawingEllipse = false;
+				ellipses.stopEditing();
 				editing = false;
 				canvas.cursorOpenHand();
 			}
@@ -1450,7 +1485,7 @@ $(document).ready(function()
 				editing = false;
 				drawingLine = false;
 				circles.stopEditing();
-				drawingEllipse = false;
+				ellipses.stopEditing();
 
 				canvas.cursorOpenHand();
 			}
@@ -1524,24 +1559,24 @@ $(document).ready(function()
 				circles.curCircle.updateRadius(0);
 			}
 		}
-		else if (drawingEllipse)
+		else if (ellipses.drawingEllipse)
 		{
 			if (editing)
 			{
-				if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
+				if (ellipses.isCurEllipseCenter(curX,curY))
 				{
 					canvas.cursorClosedHand();
-					editingEllipseCenter = true;
+					ellipses.editingEllipseCenter = true;
 				}
 				else
 				{
-					editingEllipseRadius = true;
+					ellipses.editingEllipseRadius = true;
 
-					var deltaX = Math.abs(curEllipse.centerX - curX);
-					var deltaY = Math.abs(curEllipse.centerY - curY);
+					var deltaX = Math.abs(ellipses.curEllipse.centerX - curX);
+					var deltaY = Math.abs(ellipses.curEllipse.centerY - curY);
 
-					curEllipse.updateRadiusX(deltaX);
-					curEllipse.updateRadiusY(deltaY);
+					ellipses.curEllipse.updateRadiusX(deltaX);
+					ellipses.curEllipse.updateRadiusY(deltaY);
 				}
 			}
 			else
@@ -1549,10 +1584,10 @@ $(document).ready(function()
 				startX = curX;
 				startY = curY;
 
-				curEllipse.updateCenterX(curX);
-				curEllipse.updateCenterY(curY);
-				curEllipse.updateRadiusX(0);
-				curEllipse.updateRadiusY(0);
+				ellipses.curEllipse.updateCenterX(curX);
+				ellipses.curEllipse.updateCenterY(curY);
+				ellipses.curEllipse.updateRadiusX(0);
+				ellipses.curEllipse.updateRadiusY(0);
 			}
 		}
 		else // click and drag panning
@@ -1589,11 +1624,11 @@ $(document).ready(function()
 				else
 					canvas.cursorCrosshair();
 			}
-			else if (drawingEllipse)
+			else if (ellipses.drawingEllipse)
 			{
-				if (editingEllipseCenter)
+				if (ellipses.editingEllipseCenter)
 					canvas.cursorClosedHand();
-				else if ((curX == curEllipse.centerX) && (curY == curEllipse.centerY))
+				else if (ellipses.isCurEllipseCenter(curX,curY))
 					canvas.cursorOpenHand();
 				else
 					canvas.cursorCrosshair();
@@ -1655,25 +1690,25 @@ $(document).ready(function()
 				circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 			}
 		}
-		else if (drawingEllipse)
+		else if (ellipses.drawingEllipse)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
 			if (editing)
 			{
-				if (editingEllipseCenter)
+				if (ellipses.editingEllipseCenter)
 				{
-					curEllipse.updateCenterX(curX);
-					curEllipse.updateCenterY(curY);
+					ellipses.curEllipse.updateCenterX(curX);
+					ellipses.curEllipse.updateCenterY(curY);
 				}
-				else if (editingEllipseRadius)
+				else if (ellipses.editingEllipseRadius)
 				{
-					var deltaX = Math.abs(curEllipse.centerX - curX);
-					var deltaY = Math.abs(curEllipse.centerY - curY);
+					var deltaX = Math.abs(ellipses.curEllipse.centerX - curX);
+					var deltaY = Math.abs(ellipses.curEllipse.centerY - curY);
 
-					curEllipse.updateRadiusX(deltaX);
-					curEllipse.updateRadiusY(deltaY);
+					ellipses.curEllipse.updateRadiusX(deltaX);
+					ellipses.curEllipse.updateRadiusY(deltaY);
 				}
 			}
 			else
@@ -1681,8 +1716,8 @@ $(document).ready(function()
 				var deltaX = Math.abs(startX - curX);
 				var deltaY = Math.abs(startY - curY);
 
-				curEllipse.updateRadiusX(deltaX);
-				curEllipse.updateRadiusY(deltaY);
+				ellipses.curEllipse.updateRadiusX(deltaX);
+				ellipses.curEllipse.updateRadiusY(deltaY);
 			}
 		}
 		else // click and drag panning
@@ -1771,29 +1806,29 @@ $(document).ready(function()
 				canvas.cursorOpenHand();
 			}
 		}
-		else if (drawingEllipse)
+		else if (ellipses.drawingEllipse)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
 			if (editing)
 			{
-				if (editingEllipseCenter)
+				if (ellipses.editingEllipseCenter)
 				{
-					curEllipse.updateCenterX(curX);
-					curEllipse.updateCenterY(curY);
+					ellipses.curEllipse.updateCenterX(curX);
+					ellipses.curEllipse.updateCenterY(curY);
 
-					editingEllipseCenter = false;
+					ellipses.editingEllipseCenter = false;
 				}
-				else if (editingEllipseRadius)
+				else if (ellipses.editingEllipseRadius)
 				{
-					var deltaX = Math.abs(curEllipse.centerX - curX);
-					var deltaY = Math.abs(curEllipse.centerY - curY);
+					var deltaX = Math.abs(ellipses.curEllipse.centerX - curX);
+					var deltaY = Math.abs(ellipses.curEllipse.centerY - curY);
 
-					curEllipse.updateRadiusX(deltaX);
-					curEllipse.updateRadiusY(deltaY);
+					ellipses.curEllipse.updateRadiusX(deltaX);
+					ellipses.curEllipse.updateRadiusY(deltaY);
 
-					editingEllipseRadius = false;
+					ellipses.editingEllipseRadius = false;
 				}
 			}
 			else
@@ -1801,11 +1836,11 @@ $(document).ready(function()
 				var deltaX = Math.abs(startX - curX);
 				var deltaY = Math.abs(startY - curY);
 
-				curEllipse.updateRadiusX(deltaX);
-				curEllipse.updateRadiusY(deltaY);
+				ellipses.curEllipse.updateRadiusX(deltaX);
+				ellipses.curEllipse.updateRadiusY(deltaY);
 
-				curEllipse.$ellipseControl.removeClass('selected');
-				drawingEllipse = false;
+				ellipses.curEllipse.$ellipseControl.removeClass('selected');
+				ellipses.stopEditing();
 				canvas.cursorOpenHand();
 			}
 		}
