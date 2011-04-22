@@ -5,7 +5,6 @@ var circles;
 var ellipses;
 
 var clicking = false;
-var editing = false;
 var startX;
 var startY;
 
@@ -505,6 +504,7 @@ function line(id,$lineControl)
 {
 	this.id = id;
 	this.$lineControl = $lineControl;
+	this.virgin = true;
 
 	this.startX;
 	this.startY;
@@ -516,6 +516,22 @@ function line(id,$lineControl)
 line.prototype.delete = function()
 {
 	this.$lineControl.slideUp().remove();
+}
+
+line.prototype.allSet = function()
+{
+	if (!isNaN(this.startX) && !isNaN(this.startY) && !isNaN(this.endX) && !isNaN(this.endY))
+		return true;
+	else
+		return false;
+}
+
+line.prototype.editing = function()
+{
+	if (!this.virgin && this.allSet())
+		return true;
+	else
+		return false;
 }
 
 line.prototype.updateStartX = function(newX)
@@ -678,6 +694,9 @@ lines.prototype.isCurLineEnd = function(x,y)
 
 lines.prototype.stopEditing = function()
 {
+	if (this.curLine && this.curLine.allSet())
+		this.curLine.virgin = false;
+
 	this.curLine = null;
 	this.editingLineCenter = false;
 	this.editingLineRadius = false;
@@ -709,6 +728,7 @@ function circle(id,$circleControl)
 {
 	this.id = id;
 	this.$circleControl = $circleControl;
+	this.virgin = true;
 
 	this.centerX;
 	this.centerY;
@@ -721,6 +741,22 @@ function circle(id,$circleControl)
 circle.prototype.delete = function()
 {
 	this.$circleControl.slideUp().remove();
+}
+
+circle.prototype.allSet = function()
+{
+	if (!isNaN(this.centerX) && !isNaN(this.centerY) && !isNaN(this.radius))
+		return true;
+	else
+		return false;
+}
+
+circle.prototype.editing = function()
+{
+	if (!this.virgin && this.allSet())
+		return true;
+	else
+		return false;
 }
 
 circle.prototype.updateCenterX = function(newX)
@@ -856,8 +892,11 @@ circles.prototype.isCurCircleCenter = function(x,y)
 
 circles.prototype.stopEditing = function()
 {
-	if (this.curCircle)
+	if (this.curCircle && this.curCircle.allSet())
+	{
+		this.curCircle.virgin = false;
 		this.curCircle.showCenter = false;
+	}
 
 	this.curCircle = null;
 	this.editingCircleCenter = false;
@@ -890,6 +929,7 @@ function ellipse(id,$ellipseControl)
 {
 	this.id = id;
 	this.$ellipseControl = $ellipseControl;
+	this.virgin = true;
 
 	this.centerX;
 	this.centerY;
@@ -903,6 +943,22 @@ function ellipse(id,$ellipseControl)
 ellipse.prototype.delete = function()
 {
 	this.$ellipseControl.slideUp().remove();
+}
+
+ellipse.prototype.allSet = function()
+{
+	if (!isNaN(this.centerX) && !isNaN(this.centerY) && !isNaN(this.radiusX) && !isNaN(this.radiusY))
+		return true;
+	else
+		return false;
+}
+
+ellipse.prototype.editing = function()
+{
+	if (!this.virgin && this.allSet())
+		return true;
+	else
+		return false;
 }
 
 ellipse.prototype.updateCenterX = function(newX)
@@ -1058,8 +1114,11 @@ ellipses.prototype.isCurEllipseCenter = function(x,y)
 
 ellipses.prototype.stopEditing = function()
 {
-	if (this.curEllipse)
+	if (this.curEllipse && this.curEllipse.allSet())
+	{
+		this.curEllipse.virgin = false;
 		this.curEllipse.showCenter = false;
+	}
 
 	this.curEllipse = null;
 	this.editingEllipseCenter = false;
@@ -1131,7 +1190,6 @@ $(document).ready(function()
 		lines.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
-		editing = false;
 
 		lines.addLine($shapeControls);
 
@@ -1146,7 +1204,6 @@ $(document).ready(function()
 		lines.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
-		editing = false;
 
 		circles.addCircle($shapeControls);
 
@@ -1161,7 +1218,6 @@ $(document).ready(function()
 		lines.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
-		editing = false;
 
 		ellipses.addEllipse($shapeControls);
 
@@ -1387,7 +1443,6 @@ $(document).ready(function()
 		{
 			$conic.removeClass('selected');
 
-			editing = false;
 			lines.stopEditing();
 			circles.stopEditing();
 			ellipses.stopEditing();
@@ -1404,38 +1459,39 @@ $(document).ready(function()
 			$conic.addClass('selected');
 			$conic.siblings().removeClass('selected');
 
+			lines.stopEditing();
+			circles.stopEditing();
+			ellipses.stopEditing();
+
 			if ($($conic).is('.line'))
 			{
 				var lineID = $conic.attr('id').replace('line','');
 
-				editing = true;
-				lines.stopEditing();
-				circles.stopEditing();
-				ellipses.stopEditing();
-
 				lines.setCurLine(lineID);
+
+				// if this line was never drawn in the first place
+				if (!lines.curLine.editing())
+					canvas.cursorCrosshair();
 			}
 			else if ($($conic).is('.circle'))
 			{
 				var circleID = $conic.attr('id').replace('circle','');
 
-				editing = true;
-				lines.stopEditing();
-				circles.stopEditing();
-				ellipses.stopEditing();
-
 				circles.setCurCircle(circleID);
+
+				// if this circle was never drawn in the first place
+				if (!circles.curCircle.editing())
+					canvas.cursorCrosshair();
 			}
 			else if ($($conic).is('.ellipse'))
 			{
 				var ellipseID = $conic.attr('id').replace('ellipse','');
 
-				editing = true;
-				lines.stopEditing();
-				circles.stopEditing();
-				ellipses.stopEditing();
-
 				ellipses.setCurEllipse(ellipseID);
+
+				// if this ellipse was never drawn in the first place
+				if (!ellipses.curEllipse.editing())
+					canvas.cursorCrosshair();
 			}
 		}
 	});
@@ -1451,7 +1507,6 @@ $(document).ready(function()
 			if (lines.curLine && (lines.curLine.id == lineID))
 			{
 				lines.stopEditing();
-				editing = false;
 				canvas.cursorOpenHand();
 			}
 
@@ -1464,7 +1519,6 @@ $(document).ready(function()
 			if (circles.curCircle && (circles.curCircle.id == circleID))
 			{
 				circles.stopEditing();
-				editing = false;
 				canvas.cursorOpenHand();
 			}
 
@@ -1477,7 +1531,6 @@ $(document).ready(function()
 			if (ellipses.curEllipse && (ellipses.curEllipse.id == ellipseID))
 			{
 				ellipses.stopEditing();
-				editing = false;
 				canvas.cursorOpenHand();
 			}
 
@@ -1501,7 +1554,6 @@ $(document).ready(function()
 				$conic.removeClass('selected');
 				$hideIcon.text('[+]');
 
-				editing = false;
 				lines.stopEditing();
 				circles.stopEditing();
 				ellipses.stopEditing();
@@ -1525,7 +1577,7 @@ $(document).ready(function()
 
 		if (lines.curLine)
 		{
-			if (editing)
+			if (lines.curLine.editing())
 			{
 				if (lines.isCurLineStart(curX,curY))
 				{
@@ -1551,7 +1603,7 @@ $(document).ready(function()
 		}
 		else if (circles.curCircle)
 		{
-			if (editing)
+			if (circles.curCircle.editing())
 			{
 				if (circles.isCurCircleCenter(curX,curY))
 				{
@@ -1580,7 +1632,7 @@ $(document).ready(function()
 		}
 		else if (ellipses.curEllipse)
 		{
-			if (editing)
+			if (ellipses.curEllipse.editing())
 			{
 				if (ellipses.isCurEllipseCenter(curX,curY))
 				{
@@ -1620,7 +1672,7 @@ $(document).ready(function()
 
 	$('#canvas').mousemove(function(event)
 	{
-		if (editing)
+		if ((lines.curLine && lines.curLine.editing()) || (circles.curCircle && circles.curCircle.editing()) || (ellipses.curEllipse && ellipses.curEllipse.editing()))
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
@@ -1662,7 +1714,7 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (editing)
+			if (lines.curLine.editing())
 			{
 				if (lines.editingLineStart)
 				{
@@ -1686,7 +1738,7 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (editing)
+			if (circles.curCircle.editing())
 			{
 				if (circles.editingCircleCenter)
 				{
@@ -1714,7 +1766,7 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (editing)
+			if (ellipses.curEllipse.editing())
 			{
 				if (ellipses.editingEllipseCenter)
 				{
@@ -1762,7 +1814,7 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (editing)
+			if (lines.curLine.editing())
 			{
 				if (lines.editingLineStart)
 				{
@@ -1794,7 +1846,7 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (editing)
+			if (circles.curCircle.editing())
 			{
 				if (circles.editingCircleCenter)
 				{
@@ -1830,7 +1882,7 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (editing)
+			if (ellipses.curEllipse.editing())
 			{
 				if (ellipses.editingEllipseCenter)
 				{
