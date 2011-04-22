@@ -14,10 +14,6 @@ var editingLineStart = false;
 var editingLineEnd = false;
 var curLine;
 
-var drawingCircle = false;
-var editingCircleCenter = false;
-var editingCircleRadius = false;
-var curCircle;
 
 var drawingEllipse = false;
 var editingEllipseCenter = false;
@@ -698,7 +694,9 @@ function circle(id,$circleControl)
 	this.centerX;
 	this.centerY;
 	this.radius;
+
 	this.color = "rgba(0,0,0,0.75)";
+	this.showCenter = false;
 }
 
 circle.prototype.delete = function()
@@ -788,12 +786,20 @@ circle.prototype.draw = function()
 			}
 		}
 	}
+
+	if (this.showCenter)
+		graph.plot(this.centerX,this.centerY);
 }
 
 function circles()
 {
 	this.idPool = 0;
 	this.circleList = [];
+
+	this.curCircle;
+	this.drawingCircle = false;
+	this.editingCircleCenter = false;
+	this.editingCircleRadius = false;
 }
 
 circles.prototype.addCircle = function($shapeControls)
@@ -801,10 +807,10 @@ circles.prototype.addCircle = function($shapeControls)
 	var newCircleID = this.idPool++;
 
 	var $newCircleControl = addCircleControl($shapeControls,newCircleID);
-	var newCircle = new circle(newCircleID,$newCircleControl);
-	this.circleList = this.circleList.concat(newCircle);
-
-	return newCircle;
+	this.curCircle = new circle(newCircleID,$newCircleControl);
+	this.circleList = this.circleList.concat(this.curCircle);
+	this.curCircle.showCenter = true;
+	this.drawingCircle = true;
 }
 
 circles.prototype.getCircle = function(circleID)
@@ -814,6 +820,29 @@ circles.prototype.getCircle = function(circleID)
 		if (this.circleList[i].id == circleID)
 			return this.circleList[i];
 	}
+}
+
+circles.prototype.setCurCircle = function(circleID)
+{
+	this.curCircle = this.getCircle(circleID);
+	this.curCircle.showCenter = true;
+	this.drawingCircle = true;
+}
+
+circles.prototype.isCurCircleCenter = function(x,y)
+{
+	if ((x == this.curCircle.centerX) && (y == this.curCircle.centerY))
+		return true;
+	else
+		return false;
+}
+
+circles.prototype.stopEditing = function()
+{
+	this.curCircle.showCenter = false;
+	this.drawingCircle = false;
+	this.editingCircleCenter = false;
+	this.editingCircleRadius = false;
 }
 
 circles.prototype.deleteCircle = function(circleID)
@@ -1055,20 +1084,19 @@ $(document).ready(function()
 		canvas.cursorCrosshair();
 		drawingLine = true;
 
-		drawingCircle = false;
+		circles.stopEditing();
 		drawingEllipse = false;
 		editing = false;
 	});
 
 	$('div.newCircle').click(function(event)
 	{
-		curCircle = circles.addCircle($shapeControls);
+		circles.addCircle($shapeControls);
 
-		curCircle.$circleControl.addClass('selected');
-		curCircle.$circleControl.siblings().removeClass('selected');
+		circles.curCircle.$circleControl.addClass('selected');
+		circles.curCircle.$circleControl.siblings().removeClass('selected');
 
 		canvas.cursorCrosshair();
-		drawingCircle = true;
 
 		drawingLine = false;
 		drawingEllipse = false;
@@ -1086,7 +1114,7 @@ $(document).ready(function()
 		drawingEllipse = true;
 
 		drawingLine = false;
-		drawingCircle = false;
+		circles.stopEditing();
 		editing = false;
 	});
 
@@ -1308,7 +1336,7 @@ $(document).ready(function()
 
 			editing = false;
 			drawingLine = false;
-			drawingCircle = false;
+			circles.stopEditing();
 			drawingEllipse = false;
 
 			canvas.cursorOpenHand();
@@ -1329,7 +1357,7 @@ $(document).ready(function()
 
 				editing = true;
 				drawingLine = true;
-				drawingCircle = false;
+				circles.stopEditing();
 				drawingEllipse = false;
 
 				curLine = lines.getLine(lineID);
@@ -1340,10 +1368,9 @@ $(document).ready(function()
 
 				editing = true;
 				drawingLine = false;
-				drawingCircle = true;
 				drawingEllipse = false;
 
-				curCircle = circles.getCircle(circleID);
+				circles.setCurCircle(circleID);
 			}
 			else if ($($conic).is('.ellipse'))
 			{
@@ -1351,7 +1378,7 @@ $(document).ready(function()
 
 				editing = true;
 				drawingLine = false
-				drawingCircle = false;
+				circles.stopEditing();
 				drawingEllipse = true;
 
 				curEllipse = ellipses.getEllipse(ellipseID);
@@ -1380,9 +1407,9 @@ $(document).ready(function()
 		{
 			var circleID = $conic.attr('id').replace('circle','');
 
-			if (drawingCircle && (curCircle.id == circleID))
+			if (circles.drawingCircle && (circles.curCircle.id == circleID))
 			{
-				drawingCircle = false;
+				circles.stopEditing();
 				editing = false;
 				canvas.cursorOpenHand();
 			}
@@ -1422,7 +1449,7 @@ $(document).ready(function()
 
 				editing = false;
 				drawingLine = false;
-				drawingCircle = false;
+				circles.stopEditing();
 				drawingEllipse = false;
 
 				canvas.cursorOpenHand();
@@ -1468,23 +1495,23 @@ $(document).ready(function()
 				curLine.updateEndY(curY);
 			}
 		}
-		else if (drawingCircle)
+		else if (circles.drawingCircle)
 		{
 			if (editing)
 			{
-				if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
+				if (circles.isCurCircleCenter(curX,curY))
 				{
 					canvas.cursorClosedHand();
-					editingCircleCenter = true;
+					circles.editingCircleCenter = true;
 				}
 				else
 				{
-					editingCircleRadius = true;
+					circles.editingCircleRadius = true;
 
-					var deltaX = curCircle.centerX - curX;
-					var deltaY = curCircle.centerY - curY;
+					var deltaX = circles.curCircle.centerX - curX;
+					var deltaY = circles.curCircle.centerY - curY;
 
-					curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+					circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 				}
 			}
 			else
@@ -1492,9 +1519,9 @@ $(document).ready(function()
 				startX = curX;
 				startY = curY;
 
-				curCircle.updateCenterX(curX);
-				curCircle.updateCenterY(curY);
-				curCircle.updateRadius(0);
+				circles.curCircle.updateCenterX(curX);
+				circles.curCircle.updateCenterY(curY);
+				circles.curCircle.updateRadius(0);
 			}
 		}
 		else if (drawingEllipse)
@@ -1553,11 +1580,11 @@ $(document).ready(function()
 				else
 					canvas.cursorDefault();
 			}
-			else if (drawingCircle)
+			else if (circles.drawingCircle)
 			{
-				if (editingCircleCenter)
+				if (circles.editingCircleCenter)
 					canvas.cursorClosedHand();
-				else if ((curX == curCircle.centerX) && (curY == curCircle.centerY))
+				else if (circles.isCurCircleCenter(curX,curY))
 					canvas.cursorOpenHand();
 				else
 					canvas.cursorCrosshair();
@@ -1600,24 +1627,24 @@ $(document).ready(function()
 				curLine.updateEndY(curY);
 			}
 		}
-		else if (drawingCircle)
+		else if (circles.drawingCircle)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
 			if (editing)
 			{
-				if (editingCircleCenter)
+				if (circles.editingCircleCenter)
 				{
-					curCircle.updateCenterX(curX);
-					curCircle.updateCenterY(curY);
+					circles.curCircle.updateCenterX(curX);
+					circles.curCircle.updateCenterY(curY);
 				}
-				else if (editingCircleRadius)
+				else if (circles.editingCircleRadius)
 				{
-					var deltaX = curCircle.centerX - curX;
-					var deltaY = curCircle.centerY - curY;
+					var deltaX = circles.curCircle.centerX - curX;
+					var deltaY = circles.curCircle.centerY - curY;
 
-					curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+					circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 				}
 			}
 			else
@@ -1625,7 +1652,7 @@ $(document).ready(function()
 				var deltaX = startX - curX;
 				var deltaY = startY - curY;
 
-				curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+				circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 			}
 		}
 		else if (drawingEllipse)
@@ -1708,28 +1735,28 @@ $(document).ready(function()
 				canvas.cursorOpenHand();
 			}
 		}
-		else if (drawingCircle)
+		else if (circles.drawingCircle)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
 			if (editing)
 			{
-				if (editingCircleCenter)
+				if (circles.editingCircleCenter)
 				{
-					curCircle.updateCenterX(curX);
-					curCircle.updateCenterY(curY);
+					circles.curCircle.updateCenterX(curX);
+					circles.curCircle.updateCenterY(curY);
 
-					editingCircleCenter = false;
+					circles.editingCircleCenter = false;
 				}
-				else if (editingCircleRadius)
+				else if (circles.editingCircleRadius)
 				{
-					var deltaX = curCircle.centerX - curX;
-					var deltaY = curCircle.centerY - curY;
+					var deltaX = circles.curCircle.centerX - curX;
+					var deltaY = circles.curCircle.centerY - curY;
 
-					curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+					circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 
-					editingCircleRadius = false;
+					circles.editingCircleRadius = false;
 				}
 			}
 			else
@@ -1737,10 +1764,10 @@ $(document).ready(function()
 				var deltaX = startX - curX;
 				var deltaY = startY - curY;
 
-				curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+				circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 
-				curCircle.$circleControl.removeClass('selected');
-				drawingCircle = false;
+				circles.curCircle.$circleControl.removeClass('selected');
+				circles.stopEditing();
 				canvas.cursorOpenHand();
 			}
 		}
