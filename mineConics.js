@@ -9,11 +9,6 @@ var editing = false;
 var startX;
 var startY;
 
-var drawingLine = false;
-var editingLineStart = false;
-var editingLineEnd = false;
-var curLine;
-
 function canvasHandler()
 {
 	this.$canvas = $('#canvas');
@@ -636,6 +631,11 @@ function lines()
 {
 	this.idPool = 0;
 	this.lineList = [];
+
+	this.curLine;
+	this.drawingLine = false;
+	this.editingLineStart = false;
+	this.editingLineEnd = false;
 }
 
 lines.prototype.addLine = function($shapeControls)
@@ -643,10 +643,9 @@ lines.prototype.addLine = function($shapeControls)
 	var newLineID = this.idPool++;
 
 	var $newLineControl = addLineControl($shapeControls,newLineID);
-	var newLine = new line(newLineID,$newLineControl);
-	this.lineList = this.lineList.concat(newLine);
-
-	return newLine;
+	this.curLine = new line(newLineID,$newLineControl);
+	this.lineList = this.lineList.concat(this.curLine);
+	this.drawingLine = true;
 }
 
 lines.prototype.getLine = function(lineID)
@@ -656,6 +655,35 @@ lines.prototype.getLine = function(lineID)
 		if (this.lineList[i].id == lineID)
 			return this.lineList[i];
 	}
+}
+
+lines.prototype.setCurLine = function(lineID)
+{
+	this.curLine = this.getLine(lineID);
+	this.drawingLine = true;
+}
+
+lines.prototype.isCurLineStart = function(x,y)
+{
+	if ((x == this.curLine.startX) && (y == this.curLine.startY))
+		return true;
+	else
+		return false;
+}
+
+lines.prototype.isCurLineEnd = function(x,y)
+{
+	if ((x == this.curLine.endX) && (y == this.curLine.endY))
+		return true;
+	else
+		return false;
+}
+
+lines.prototype.stopEditing = function()
+{
+	this.drawingLine = false;
+	this.editingLineCenter = false;
+	this.editingLineRadius = false;
 }
 
 lines.prototype.deleteLine = function(lineID)
@@ -1109,22 +1137,22 @@ $(document).ready(function()
 
 	$('div.newLine').click(function(event)
 	{
+		lines.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
 		editing = false;
 
-		curLine = lines.addLine($shapeControls);
+		lines.addLine($shapeControls);
 
-		curLine.$lineControl.addClass('selected');
-		curLine.$lineControl.siblings().removeClass('selected');
+		lines.curLine.$lineControl.addClass('selected');
+		lines.curLine.$lineControl.siblings().removeClass('selected');
 
 		canvas.cursorCrosshair();
-		drawingLine = true;
 	});
 
 	$('div.newCircle').click(function(event)
 	{
-		drawingLine = false;
+		lines.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
 		editing = false;
@@ -1139,7 +1167,7 @@ $(document).ready(function()
 
 	$('div.newEllipse').click(function(event)
 	{
-		drawingLine = false;
+		lines.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
 		editing = false;
@@ -1369,7 +1397,7 @@ $(document).ready(function()
 			$conic.removeClass('selected');
 
 			editing = false;
-			drawingLine = false;
+			lines.stopEditing();
 			circles.stopEditing();
 			ellipses.stopEditing();
 
@@ -1390,18 +1418,18 @@ $(document).ready(function()
 				var lineID = $conic.attr('id').replace('line','');
 
 				editing = true;
-				drawingLine = true;
+				lines.stopEditing();
 				circles.stopEditing();
 				ellipses.stopEditing();
 
-				curLine = lines.getLine(lineID);
+				lines.setCurLine(lineID);
 			}
 			else if ($($conic).is('.circle'))
 			{
 				var circleID = $conic.attr('id').replace('circle','');
 
 				editing = true;
-				drawingLine = false;
+				lines.stopEditing();
 				circles.stopEditing();
 				ellipses.stopEditing();
 
@@ -1412,7 +1440,7 @@ $(document).ready(function()
 				var ellipseID = $conic.attr('id').replace('ellipse','');
 
 				editing = true;
-				drawingLine = false
+				lines.stopEditing();
 				circles.stopEditing();
 				ellipses.stopEditing();
 
@@ -1429,9 +1457,9 @@ $(document).ready(function()
 		{
 			var lineID = $conic.attr('id').replace('line','');
 
-			if (drawingLine && (curLine.id == lineID))
+			if (lines.drawingLine && (lines.curLine.id == lineID))
 			{
-				drawingLine = false;
+				lines.stopEditing();
 				editing = false;
 				canvas.cursorOpenHand();
 			}
@@ -1483,7 +1511,7 @@ $(document).ready(function()
 				$hideIcon.text('[+]');
 
 				editing = false;
-				drawingLine = false;
+				lines.stopEditing();
 				circles.stopEditing();
 				ellipses.stopEditing();
 
@@ -1504,19 +1532,19 @@ $(document).ready(function()
 		var curX = graph.getX(canvas.getX(event.pageX));
 		var curY = graph.getY(canvas.getY(event.pageY));
 
-		if (drawingLine)
+		if (lines.drawingLine)
 		{
 			if (editing)
 			{
-				if ((curX == curLine.startX) && (curY == curLine.startY))
+				if (lines.isCurLineStart(curX,curY))
 				{
 					canvas.cursorClosedHand();
-					editingLineStart = true;
+					lines.editingLineStart = true;
 				}
-				else if ((curX == curLine.endX) && (curY == curLine.endY))
+				else if (lines.isCurLineEnd(curX,curY))
 				{
 					canvas.cursorClosedHand();
-					editingLineEnd = true;
+					lines.editingLineEnd = true;
 				}
 			}
 			else
@@ -1524,10 +1552,10 @@ $(document).ready(function()
 				startX = curX;
 				startY = curY;
 
-				curLine.updateStartX(curX);
-				curLine.updateStartY(curY);
-				curLine.updateEndX(curX);
-				curLine.updateEndY(curY);
+				lines.curLine.updateStartX(curX);
+				lines.curLine.updateStartY(curY);
+				lines.curLine.updateEndX(curX);
+				lines.curLine.updateEndY(curY);
 			}
 		}
 		else if (circles.drawingCircle)
@@ -1606,11 +1634,11 @@ $(document).ready(function()
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
-			if (drawingLine)
+			if (lines.drawingLine)
 			{
-				if (editingLineStart || editingLineEnd)
+				if (lines.editingLineStart || lines.editingLineEnd)
 					canvas.cursorClosedHand();
-				else if (((curX == curLine.startX) && (curY == curLine.startY)) || ((curX == curLine.endX) && (curY == curLine.endY)))
+				else if (lines.isCurLineStart(curX,curY) || lines.isCurLineEnd(curX,curY))
 					canvas.cursorOpenHand();
 				else
 					canvas.cursorDefault();
@@ -1638,28 +1666,28 @@ $(document).ready(function()
 		if (!clicking)
 			return;
 
-		if (drawingLine)
+		if (lines.drawingLine)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
 			if (editing)
 			{
-				if (editingLineStart)
+				if (lines.editingLineStart)
 				{
-					curLine.updateStartX(curX);
-					curLine.updateStartY(curY);
+					lines.curLine.updateStartX(curX);
+					lines.curLine.updateStartY(curY);
 				}
-				else if (editingLineEnd)
+				else if (lines.editingLineEnd)
 				{
-					curLine.updateEndX(curX);
-					curLine.updateEndY(curY);
+					lines.curLine.updateEndX(curX);
+					lines.curLine.updateEndY(curY);
 				}
 			}
 			else
 			{
-				curLine.updateEndX(curX);
-				curLine.updateEndY(curY);
+				lines.curLine.updateEndX(curX);
+				lines.curLine.updateEndY(curY);
 			}
 		}
 		else if (circles.drawingCircle)
@@ -1738,35 +1766,35 @@ $(document).ready(function()
  		if (!clicking)
 			return;
 
-		if (drawingLine)
+		if (lines.drawingLine)
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
 
 			if (editing)
 			{
-				if (editingLineStart)
+				if (lines.editingLineStart)
 				{
-					curLine.updateStartX(curX);
-					curLine.updateStartY(curY);
+					lines.curLine.updateStartX(curX);
+					lines.curLine.updateStartY(curY);
 
-					editingLineStart = false;
+					lines.editingLineStart = false;
 				}
-				else if (editingLineEnd)
+				else if (lines.editingLineEnd)
 				{
-					curLine.updateEndX(curX);
-					curLine.updateEndY(curY);
+					lines.curLine.updateEndX(curX);
+					lines.curLine.updateEndY(curY);
 
-					editingLineEnd = false;
+					lines.editingLineEnd = false;
 				}
 			}
 			else
 			{
-				curLine.updateEndX(curX);
-				curLine.updateEndY(curY);
+				lines.curLine.updateEndX(curX);
+				lines.curLine.updateEndY(curY);
 
-				curLine.$lineControl.removeClass('selected');
-				drawingLine = false;
+				lines.curLine.$lineControl.removeClass('selected');
+				lines.stopEditing();
 				canvas.cursorOpenHand();
 			}
 		}
