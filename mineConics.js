@@ -77,17 +77,20 @@ function titleBar(title)
 	$closeDiv.addClass('close');
 	$closeDiv.append('[X]');
 
+ 	var $titleWrapper = $('<div/>');
 	var $titleDiv = $('<div/>');
+ 	$titleWrapper.addClass('titleWrapper');
 	$titleDiv.addClass('title');
-	$titleDiv.append(title);
+	$titleDiv.text(title);
+ 	$titleWrapper.append($titleDiv);
 
 	var $hideDiv = $('<div/>');
 	$hideDiv.addClass('hide');
 	$hideDiv.text('[-]');
 
 	$titleBarDiv.append($closeDiv);
-	$titleBarDiv.append($titleDiv);
 	$titleBarDiv.append($hideDiv);
+	$titleBarDiv.append($titleWrapper);
 
 	return $titleBarDiv;
 }

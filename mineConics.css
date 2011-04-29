@@ -96,17 +96,26 @@ div.conic
 div.titleBar
 {
 	width: 100%;
+	float: left;
 	margin-bottom: 3px;
 	font-weight: bold;
 	overflow: hidden;
 }
 
+div.titleWrapper
+{
+	float: left;
+	position: relative;
+	left: 40%;
+	text-align: center;
+}
+
 div.title
 {
-	width: 80%;
-	text-align: center;
-	cursor: pointer;
 	float: left;
+	position: relative;
+	right: 50%;
+	cursor: pointer;
 }
 
 div.close
@@ -157,7 +166,7 @@ input.hexColor
 div.fieldTitle
 {
 	float: left;
-	width: 4em;
+	width: 3.5em;
 	padding-right: 0.5em;
 	text-align: right;
 	height: 1em;
