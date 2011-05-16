@@ -516,7 +516,7 @@ function line(id,$lineControl)
 	this.color = "rgba(0,0,0,0.75)";
 }
 
-line.prototype.delete = function()
+line.prototype.remove = function()
 {
 	this.$lineControl.slideUp().remove();
 }
@@ -711,7 +711,7 @@ lines.prototype.deleteLine = function(lineID)
 	{
 		if (this.lineList[i].id == lineID)
 		{
-			this.lineList[i].delete();
+			this.lineList[i].remove();
 			this.lineList.splice(i,1);
 
 			break;
@@ -741,7 +741,7 @@ function circle(id,$circleControl)
 	this.showCenter = false;
 }
 
-circle.prototype.delete = function()
+circle.prototype.remove = function()
 {
 	this.$circleControl.slideUp().remove();
 }
@@ -912,7 +912,7 @@ circles.prototype.deleteCircle = function(circleID)
 	{
 		if (this.circleList[i].id == circleID)
 		{
-			this.circleList[i].delete();
+			this.circleList[i].remove();
 			this.circleList.splice(i,1);
 
 			break;
@@ -943,7 +943,7 @@ function ellipse(id,$ellipseControl)
 	this.showCenter = false;
 }
 
-ellipse.prototype.delete = function()
+ellipse.prototype.remove = function()
 {
 	this.$ellipseControl.slideUp().remove();
 }
@@ -1134,7 +1134,7 @@ ellipses.prototype.deleteEllipse = function(ellipseID)
 	{
 		if (this.ellipseList[i].id == ellipseID)
 		{
-			this.ellipseList[i].delete();
+			this.ellipseList[i].remove();
 			this.ellipseList.splice(i,1);
 
 			break;
