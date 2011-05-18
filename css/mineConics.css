@@ -193,3 +193,8 @@ input.fieldValue
 	float: left;
 	margin: 1em;
 }
+
+#zoomHelp
+{
+	text-align: right;
+}

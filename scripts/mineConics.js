@@ -30,12 +30,12 @@ canvasHandler.prototype.cursorDefault = function()
 
 canvasHandler.prototype.cursorOpenHand = function()
 {
-	this.$canvas.css('cursor','url(../images/openhand.cur),move');
+	this.$canvas.css('cursor','url(images/openhand.cur),move');
 }
 
 canvasHandler.prototype.cursorClosedHand = function()
 {
-	this.$canvas.css('cursor','url(../images/closedhand.cur),move');
+	this.$canvas.css('cursor','url(images/closedhand.cur),move');
 }
 
 canvasHandler.prototype.cursorCrosshair = function()
