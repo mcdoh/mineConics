@@ -34,6 +34,24 @@ ul
 	text-align: center;
 }
 
+#menuBar
+{
+	float: right;
+	margin-right: 5em;
+}
+
+#blogLink
+{
+	color: #999;
+	text-decoration: none;
+}
+
+#blogLink:hover
+{
+	text-decoration: underline;
+	color: #333;
+}
+
 #content
 {
 	overflow: hidden;
