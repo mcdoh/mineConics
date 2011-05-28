@@ -218,8 +218,8 @@ input.fieldValue
 
 #graphPane
 {
-	width: auto;
-	height: 100%;
+	width: 500px;
+	height: 500px;
 	float: left;
 }
 
@@ -231,5 +231,16 @@ input.fieldValue
 
 #zoomHelp
 {
-	text-align: right;
+	height: 3em;
+	float: right;
 }
+
+#adPane
+{
+	max-width: 160px;
+	min-width: 1em;
+	height: 600px;
+	float: right;
+	margin-left: 2px;
+}
+

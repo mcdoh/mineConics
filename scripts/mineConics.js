@@ -14,11 +14,14 @@ function canvasHandler()
 	this.context = $('canvas')[0].getContext('2d');
 
 	// resize the canvas to take advantage of extra viewport space
-	this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#heading').height()));
-	this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#heading').height()));
+	this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true)));
+	this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
 
 	this.height = this.$canvas.height();
 	this.width = this.$canvas.width();
+
+	$('#graphPane').height(this.height);
+	$('#graphPane').width(this.width);
 
 	this.cursorOpenHand();
 }
