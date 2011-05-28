@@ -34,6 +34,18 @@ ul
 	text-align: center;
 }
 
+#homeLink
+{
+	color: #999;
+	text-decoration: none;
+}
+
+#homeLink:hover
+{
+	color: #333;
+	text-decoration: underline;
+}
+
 #menuBar
 {
 	float: right;
@@ -48,8 +60,8 @@ ul
 
 #blogLink:hover
 {
-	text-decoration: underline;
 	color: #333;
+	text-decoration: underline;
 }
 
 #content
