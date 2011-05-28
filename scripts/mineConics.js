@@ -1197,7 +1197,10 @@ $(document).ready(function()
 		lines.addLine($shapeControls);
 
 		lines.curLine.$lineControl.addClass('selected');
+		lines.curLine.$lineControl.find('input').addClass('selected');
+
 		lines.curLine.$lineControl.siblings().removeClass('selected');
+		lines.curLine.$lineControl.siblings().find('input').removeClass('selected');
 
 		canvas.cursorCrosshair();
 	});
@@ -1211,7 +1214,10 @@ $(document).ready(function()
 		circles.addCircle($shapeControls);
 
 		circles.curCircle.$circleControl.addClass('selected');
+		circles.curCircle.$circleControl.find('input').addClass('selected');
+
 		circles.curCircle.$circleControl.siblings().removeClass('selected');
+		circles.curCircle.$circleControl.siblings().find('input').removeClass('selected');
 
 		canvas.cursorCrosshair();
 	});
@@ -1225,7 +1231,10 @@ $(document).ready(function()
 		ellipses.addEllipse($shapeControls);
 
 		ellipses.curEllipse.$ellipseControl.addClass('selected');
+		ellipses.curEllipse.$ellipseControl.find('input').addClass('selected');
+
 		ellipses.curEllipse.$ellipseControl.siblings().removeClass('selected');
+		ellipses.curEllipse.$ellipseControl.siblings().find('input').removeClass('selected');
 
 		canvas.cursorCrosshair();
 	});
@@ -1445,6 +1454,7 @@ $(document).ready(function()
 		if ($($conic).is('.selected'))
 		{
 			$conic.removeClass('selected');
+			$conic.find('input').removeClass('selected');
 
 			lines.stopEditing();
 			circles.stopEditing();
@@ -1460,7 +1470,10 @@ $(document).ready(function()
 		else
 		{
 			$conic.addClass('selected');
+			$conic.find('input').addClass('selected');
+
 			$conic.siblings().removeClass('selected');
+			$conic.siblings().find('input').removeClass('selected');
 
 			lines.stopEditing();
 			circles.stopEditing();
@@ -1555,6 +1568,8 @@ $(document).ready(function()
 			if ($($conic).is('.selected'))
 			{
 				$conic.removeClass('selected');
+				$conic.find('input').removeClass('selected');
+
 				$hideIcon.text('[+]');
 
 				lines.stopEditing();
@@ -1840,6 +1855,8 @@ $(document).ready(function()
 				lines.curLine.updateEndY(curY);
 
 				lines.curLine.$lineControl.removeClass('selected');
+				lines.curLine.$lineControl.find('input').removeClass('selected');
+
 				lines.stopEditing();
 				canvas.cursorOpenHand();
 			}
@@ -1876,6 +1893,8 @@ $(document).ready(function()
 				circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
 
 				circles.curCircle.$circleControl.removeClass('selected');
+				circles.curCircle.$circleControl.find('input').removeClass('selected');
+
 				circles.stopEditing();
 				canvas.cursorOpenHand();
 			}
@@ -1914,6 +1933,8 @@ $(document).ready(function()
 				ellipses.curEllipse.updateRadiusY(deltaY);
 
 				ellipses.curEllipse.$ellipseControl.removeClass('selected');
+				ellipses.curEllipse.$ellipseControl.find('input').removeClass('selected');
+
 				ellipses.stopEditing();
 				canvas.cursorOpenHand();
 			}

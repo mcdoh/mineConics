@@ -17,6 +17,16 @@ ul
 	padding-left: .5em;
 }
 
+input
+{
+	color: #999;
+}
+
+input.selected
+{
+	color: #333;
+}
+
 #container
 {
 	overflow: hidden;
