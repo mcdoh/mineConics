@@ -22,11 +22,6 @@ input
 	color: #999;
 }
 
-input.selected
-{
-	color: #333;
-}
-
 #container
 {
 	overflow: hidden;
