@@ -29,7 +29,7 @@ input
 
 #header
 {
-	width: 100%;
+	width: auto;
 	height: 50px;
 	padding: 1em;
 }
@@ -54,7 +54,6 @@ input
 #menuBar
 {
 	float: right;
-	margin-right: 5em;
 }
 
 #blogLink

@@ -1178,6 +1178,9 @@ $(document).ready(function()
 	var $controlPane = $('#controlPane');
 	$controlPane.height(canvas.height);
 	
+	// move menuBar to aligng with edge of adPane
+	$('#menuBar').css('margin-right',$('#adPane').outerWidth(true));
+	
 	// add conic form to config div
 	var $pageControls = $('<div/>');
 	$pageControls.addClass('controls');
