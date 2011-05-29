@@ -185,27 +185,30 @@ function graphControl()
 function newConicControl()
 {
 	var $newConicDiv = $('<div/>');
+	var $newConicUL = $('<ul/>');
 	$newConicDiv.addClass('control');
 	$newConicDiv.addClass('newConics');
+	$newConicUL.addClass('newConics');
 
-	var $newLineButton = $('<div/>');
+	var $newLineButton = $('<li/>');
 	$newLineButton.addClass('newConic');
 	$newLineButton.addClass('newLine');
 	$newLineButton.text('[add line]');
 
-	var $newCircleButton = $('<div/>');
+	var $newCircleButton = $('<li/>');
 	$newCircleButton.addClass('newConic');
 	$newCircleButton.addClass('newCircle');
 	$newCircleButton.text('[add cirlce]');
 
-	var $newEllipseButton = $('<div/>');
+	var $newEllipseButton = $('<li/>');
 	$newEllipseButton.addClass('newConic');
 	$newEllipseButton.addClass('newEllipse');
 	$newEllipseButton.text('[add ellipse]');
 
-	$newConicDiv.append($newLineButton);
-	$newConicDiv.append($newCircleButton);
-	$newConicDiv.append($newEllipseButton);
+	$newConicUL.append($newLineButton);
+	$newConicUL.append($newCircleButton);
+	$newConicUL.append($newEllipseButton);
+	$newConicDiv.append($newConicUL);
 
 	return $newConicDiv;
 }

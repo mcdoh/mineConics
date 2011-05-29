@@ -82,15 +82,22 @@ input
 
 div.newConics
 {
-	width: 18em;
-	margin-left: auto;
-	margin-right: auto;
+	width: 100%;
 	overflow: hidden;
 }
 
-div.newConic
+ul.newConics
+{
+	float: right;
+	right: 50%;
+	position: relative;
+}
+
+li.newConic
 {
 	float: left;
+	left: 50%;
+	position: relative;
 	cursor: pointer;
 }
 
