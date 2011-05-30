@@ -1197,7 +1197,7 @@ $(document).ready(function()
 	// display the initial graph
 	setInterval(draw,100);
 
-	$('div.newLine').click(function(event)
+	$('li.newLine').click(function(event)
 	{
 		lines.stopEditing();
 		circles.stopEditing();
@@ -1214,7 +1214,7 @@ $(document).ready(function()
 		canvas.cursorCrosshair();
 	});
 
-	$('div.newCircle').click(function(event)
+	$('li.newCircle').click(function(event)
 	{
 		lines.stopEditing();
 		circles.stopEditing();
@@ -1231,7 +1231,7 @@ $(document).ready(function()
 		canvas.cursorCrosshair();
 	});
 
-	$('div.newEllipse').click(function(event)
+	$('li.newEllipse').click(function(event)
 	{
 		lines.stopEditing();
 		circles.stopEditing();
