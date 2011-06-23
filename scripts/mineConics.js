@@ -1,6 +1,7 @@
 var canvas;
 var graph;
 var lines;
+var rectangles;
 var circles;
 var ellipses;
 
@@ -195,6 +196,11 @@ function newConicControl()
 	$newLineButton.addClass('newLine');
 	$newLineButton.text('[add line]');
 
+	var $newRectangleButton = $('<li/>');
+	$newRectangleButton.addClass('newConic');
+	$newRectangleButton.addClass('newRectangle');
+	$newRectangleButton.text('[add rectangle]');
+
 	var $newCircleButton = $('<li/>');
 	$newCircleButton.addClass('newConic');
 	$newCircleButton.addClass('newCircle');
@@ -206,6 +212,7 @@ function newConicControl()
 	$newEllipseButton.text('[add ellipse]');
 
 	$newConicUL.append($newLineButton);
+	$newConicUL.append($newRectangleButton);
 	$newConicUL.append($newCircleButton);
 	$newConicUL.append($newEllipseButton);
 	$newConicDiv.append($newConicUL);
@@ -265,6 +272,67 @@ function addLineControl($shapeControls,lineID)
 	$controlDiv.append($endDiv);
 	$controlDiv.append(colorControl());
 	$conicDiv.append(titleBar('line'));
+	$conicDiv.append($controlDiv);
+	$conicDiv.hide();
+
+	$shapeControls.prepend($conicDiv);
+	$conicDiv.slideDown();
+
+	return $conicDiv;
+}
+
+function addRectangleControl($shapeControls,rectangleID)
+{
+	var $conicDiv = $('<div/>');
+	$conicDiv.addClass('conic'); // ok, so maybe a rectangle isn't a conic section either
+	$conicDiv.addClass('rectangle');
+	$conicDiv.attr('id','rectangle'+rectangleID);
+
+	var $controlDiv = $('<div/>');
+	$controlDiv.addClass('conicControl');
+
+	var $startDiv = $('<div/>');
+	var $startTitle = $('<div/>');
+	var $startXInput = $('<input/>');
+	var $startYInput = $('<input/>');
+	$startDiv.addClass('field');
+	$startTitle.addClass('fieldTitle');
+	$startTitle.text('start');
+	$startXInput.addClass('fieldValue');
+	$startXInput.addClass('startX');
+	$startYInput.addClass('fieldValue');
+	$startYInput.addClass('startY');
+	$startXInput.attr('type','text');
+	$startYInput.attr('type','text');
+	$startXInput.attr('name','startX');
+	$startYInput.attr('name','startY');
+	$startDiv.append($startTitle);
+	$startDiv.append($startXInput);
+	$startDiv.append($startYInput);
+
+	var $endDiv = $('<div/>');
+	var $endTitle = $('<div/>');
+	var $endXInput = $('<input/>');
+	var $endYInput = $('<input/>');
+	$endDiv.addClass('field');
+	$endTitle.addClass('fieldTitle');
+	$endTitle.text('end');
+	$endXInput.addClass('fieldValue');
+	$endXInput.addClass('endX');
+	$endYInput.addClass('fieldValue');
+	$endYInput.addClass('endY');
+	$endXInput.attr('type','text');
+	$endYInput.attr('type','text');
+	$endXInput.attr('name','endX');
+	$endYInput.attr('name','endY');
+	$endDiv.append($endTitle);
+	$endDiv.append($endXInput);
+	$endDiv.append($endYInput);
+
+	$controlDiv.append($startDiv);
+	$controlDiv.append($endDiv);
+	$controlDiv.append(colorControl());
+	$conicDiv.append(titleBar('rectangle'));
 	$conicDiv.append($controlDiv);
 	$conicDiv.hide();
 
@@ -455,6 +523,65 @@ cartesianPlane.prototype.plot = function(x,y,color)
 	var upperLeftY = parseInt((this.getOriginY() - (this.scale/2)) / this.scale);
 
 	this.fill(upperLeftY-y,x-upperLeftX,color);
+}
+
+// Bresenham's line algorithm
+cartesianPlane.prototype.line = function(startX,startY,endX,endY,color)
+{
+	if ((startX != null) && (startY != null) && (endX != null) && (endY != null))
+	{
+		var steep = false;
+		if (Math.abs(endY-startY) > Math.abs(endX-startX))
+			steep = true;
+
+		if (steep)
+		{
+			var temp = startX;
+			startX = startY;
+			startY = temp;
+
+			temp = endX;
+			endX = endY;
+			endY = temp;
+		}
+
+		if (startX > endX)
+		{
+			var temp = startX;
+			startX = endX;
+			endX = temp;
+
+			temp = startY;
+			startY = endY;
+			endY = temp;
+		}
+
+		var deltaX = endX - startX;
+		var deltaY = Math.abs(endY - startY);
+		var error = deltaX / 2;
+		var y = startY;
+
+		var yStep;
+		if (startY < endY)
+			yStep = 1;
+		else
+			yStep = -1;
+
+		for (var x=startX; x<=endX; x++)
+		{
+			if (steep)
+				this.plot(y,x,color);
+			else
+				this.plot(x,y,color);
+
+			error -= deltaY;
+			if (error < 0)
+			{
+				y += yStep;
+				error += deltaX;
+			}
+		}
+	}
 }
 
 cartesianPlane.prototype.draw = function()
@@ -707,8 +834,8 @@ lines.prototype.stopEditing = function()
 		this.curLine.virgin = false;
 
 	this.curLine = null;
-	this.editingLineCenter = false;
-	this.editingLineRadius = false;
+	this.editingLineStart = false;
+	this.editingLineEnd = false;
 }
 
 lines.prototype.deleteLine = function(lineID)
@@ -730,6 +857,226 @@ lines.prototype.draw = function()
 	$.each(this.lineList,function(index,line)
 	{
 		line.draw();
+	});
+}
+
+function rectangle(id,$rectangleControl)
+{
+	this.id = id;
+	this.$rectangleControl = $rectangleControl;
+	this.virgin = true;
+
+	this.startX;
+	this.startY;
+	this.endX;
+	this.endY;
+	this.color = "rgba(0,0,0,0.75)";
+}
+
+rectangle.prototype.remove = function()
+{
+	this.$rectangleControl.slideUp().remove();
+}
+
+rectangle.prototype.allSet = function()
+{
+	if (!isNaN(this.startX) && !isNaN(this.startY) && !isNaN(this.endX) && !isNaN(this.endY))
+		return true;
+	else
+		return false;
+}
+
+rectangle.prototype.editing = function()
+{
+	if (!this.virgin && this.allSet())
+		return true;
+	else
+		return false;
+}
+
+rectangle.prototype.updateStartX = function(newX)
+{
+	var testNum = parseInt(newX);
+
+	if (!isNaN(testNum))
+		this.startX = testNum;
+
+	this.$rectangleControl.find('input.startX').val(this.startX);
+}
+
+rectangle.prototype.updateStartY = function(newY)
+{
+	var testNum = parseInt(newY);
+
+	if (!isNaN(testNum))
+		this.startY = testNum;
+
+	this.$rectangleControl.find('input.startY').val(this.startY);
+}
+
+rectangle.prototype.updateEndX = function(newX)
+{
+	var testNum = parseInt(newX);
+
+	if (!isNaN(testNum))
+		this.endX = testNum;
+
+	this.$rectangleControl.find('input.endX').val(this.endX);
+}
+
+rectangle.prototype.updateEndY = function(newY)
+{
+	var testNum = parseInt(newY);
+
+	if (!isNaN(testNum))
+		this.endY = testNum;
+
+	this.$rectangleControl.find('input.endY').val(this.endY);
+}
+
+rectangle.prototype.updateColor = function(newColor)
+{
+	this.color = newColor;
+}
+
+rectangle.prototype.draw = function()
+{
+	if ((this.startX != null) && (this.startY != null) && (this.endX != null) && (this.endY != null))
+	{
+		var startX = this.startX;
+		var startY = this.startY;
+		var endX = this.endX;
+		var endY = this.endY;
+
+		// keep 'start' corner on the left
+		if (startX > endX)
+		{
+			var temp = startX;
+			startX = endX;
+			endX = temp;
+
+			temp = startY;
+			startY = endY;
+			endY = temp;
+		}
+
+		// draw left side
+		graph.line(startX,startY, startX,endY, this.color);
+
+		// if rectangle has "width"
+		if (endX != startX)
+			graph.line(endX,startY, endX,endY, this.color);
+
+		// draw horizontal lines to connect corners, but don't draw corner cells twice
+		if ((endX - startX) > 1)
+		{
+			graph.line(startX+1,startY, endX-1,startY, this.color);
+
+			// if rectangle has "height"
+			if (endY != startY)
+				graph.line(startX+1,endY, endX-1,endY, this.color);
+		}
+	}
+}
+
+function rectangles()
+{
+	this.idPool = 0;
+	this.rectangleList = [];
+
+	this.curRectangle;
+	this.editingRectangleStart = false;
+	this.editingRectangleEnd = false;
+	this.editingRectangleStartEnd = false;	// (startX,endY)
+	this.editingRectangleEndStart = false;	// (endX,startY)
+}
+
+rectangles.prototype.addRectangle = function($shapeControls)
+{
+	var newRectangleID = this.idPool++;
+
+	var $newRectangleControl = addRectangleControl($shapeControls,newRectangleID);
+	this.curRectangle = new rectangle(newRectangleID,$newRectangleControl);
+	this.rectangleList = this.rectangleList.concat(this.curRectangle);
+}
+
+rectangles.prototype.getRectangle = function(rectangleID)
+{
+	for (var i = 0; i<this.rectangleList.length; i++)
+	{
+		if (this.rectangleList[i].id == rectangleID)
+			return this.rectangleList[i];
+	}
+}
+
+rectangles.prototype.setCurRectangle = function(rectangleID)
+{
+	this.curRectangle = this.getRectangle(rectangleID);
+}
+
+rectangles.prototype.isCurRectangleStart = function(x,y)
+{
+	if ((x == this.curRectangle.startX) && (y == this.curRectangle.startY))
+		return true;
+	else
+		return false;
+}
+
+rectangles.prototype.isCurRectangleEnd = function(x,y)
+{
+	if ((x == this.curRectangle.endX) && (y == this.curRectangle.endY))
+		return true;
+	else
+		return false;
+}
+
+rectangles.prototype.isCurRectangleStartEnd = function(x,y)
+{
+	if ((x == this.curRectangle.startX) && (y == this.curRectangle.endY))
+		return true;
+	else
+		return false;
+}
+
+rectangles.prototype.isCurRectangleEndStart = function(x,y)
+{
+	if ((x == this.curRectangle.endX) && (y == this.curRectangle.startY))
+		return true;
+	else
+		return false;
+}
+
+rectangles.prototype.stopEditing = function()
+{
+	if (this.curRectangle && this.curRectangle.allSet())
+		this.curRectangle.virgin = false;
+
+	this.curRectangle = null;
+	this.editingRectangleStart = false;
+	this.editingRectangleEnd = false;
+	this.editingRectangleStartEnd = false;
+	this.editingRectangleEndStart = false;
+}
+
+rectangles.prototype.deleteRectangle = function(rectangleID)
+{
+	for (var i = 0; i<this.rectangleList.length; i++)
+	{
+		if (this.rectangleList[i].id == rectangleID)
+		{
+			this.rectangleList[i].remove();
+			this.rectangleList.splice(i,1);
+
+			break;
+		}
+	}
+}
+
+rectangles.prototype.draw = function()
+{
+	$.each(this.rectangleList,function(index,rectangle)
+	{
+		rectangle.draw();
 	});
 }
 
@@ -1162,6 +1509,7 @@ function draw()
 
 	graph.draw();
 	lines.draw();
+	rectangles.draw();
 	circles.draw();
 	ellipses.draw();
 }
@@ -1171,6 +1519,7 @@ $(document).ready(function()
 	canvas = new canvasHandler();
 	graph = new cartesianPlane();
 	lines = new lines();
+	rectangles = new rectangles();
 	circles = new circles();
 	ellipses = new ellipses();
 	
@@ -1200,6 +1549,7 @@ $(document).ready(function()
 	$('li.newLine').click(function(event)
 	{
 		lines.stopEditing();
+		rectangles.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
 
@@ -1214,9 +1564,28 @@ $(document).ready(function()
 		canvas.cursorCrosshair();
 	});
 
+	$('li.newRectangle').click(function(event)
+	{
+		lines.stopEditing();
+		rectangles.stopEditing();
+		circles.stopEditing();
+		ellipses.stopEditing();
+
+		rectangles.addRectangle($shapeControls);
+
+		rectangles.curRectangle.$rectangleControl.addClass('selected');
+		rectangles.curRectangle.$rectangleControl.find('input').addClass('selected');
+
+		rectangles.curRectangle.$rectangleControl.siblings().removeClass('selected');
+		rectangles.curRectangle.$rectangleControl.siblings().find('input').removeClass('selected');
+
+		canvas.cursorCrosshair();
+	});
+
 	$('li.newCircle').click(function(event)
 	{
 		lines.stopEditing();
+		rectangles.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
 
@@ -1234,6 +1603,7 @@ $(document).ready(function()
 	$('li.newEllipse').click(function(event)
 	{
 		lines.stopEditing();
+		rectangles.stopEditing();
 		circles.stopEditing();
 		ellipses.stopEditing();
 
@@ -1282,6 +1652,42 @@ $(document).ready(function()
 		var lineID = $endY.closest('div.line').attr('id').replace('line','');
 
 		lines.getLine(lineID).updateEndY($endY.val());
+	});
+
+	// handle updates to rectangle start X values
+	$('input.startX').live('change',function()
+	{
+		var $startX = $(this);
+		var rectangleID = $startX.closest('div.rectangle').attr('id').replace('rectangle','');
+
+		rectangles.getRectangle(rectangleID).updateStartX($startX.val());
+	});
+
+	// handle updates to rectangle start Y values
+	$('input.startY').live('change',function()
+	{
+		var $startY = $(this);
+		var rectangleID = $startY.closest('div.rectangle').attr('id').replace('rectangle','');
+
+		rectangles.getRectangle(rectangleID).updateStartY($startY.val());
+	});
+
+	// handle updates to rectangle end X values
+	$('input.endX').live('change',function()
+	{
+		var $endX = $(this);
+		var rectangleID = $endX.closest('div.rectangle').attr('id').replace('rectangle','');
+
+		rectangles.getRectangle(rectangleID).updateEndX($endX.val());
+	});
+
+	// handle updates to rectangle end Y values
+	$('input.endY').live('change',function()
+	{
+		var $endY = $(this);
+		var rectangleID = $endY.closest('div.rectangle').attr('id').replace('rectangle','');
+
+		rectangles.getRectangle(rectangleID).updateEndY($endY.val());
 	});
 
 	// handle updates to circle center X values
@@ -1397,6 +1803,12 @@ $(document).ready(function()
 
 			lines.getLine(lineID).updateColor(color);
 		}
+		else if ($($conic).is('.rectangle'))
+		{
+			var rectangleID = $conic.attr('id').replace('rectangle','');
+
+			rectangles.getRectangle(rectangleID).updateColor(color);
+		}
 		else if ($($conic).is('.circle'))
 		{
 			var circleID = $conic.attr('id').replace('circle','');
@@ -1436,6 +1848,12 @@ $(document).ready(function()
 
 				lines.getLine(lineID).updateColor(color);
 			}
+			else if ($($conic).is('.rectangle'))
+			{
+				var rectangleID = $conic.attr('id').replace('rectangle','');
+
+				rectangles.getRectangle(rectangleID).updateColor(color);
+			}
 			else if ($($conic).is('.circle'))
 			{
 				var circleID = $conic.attr('id').replace('circle','');
@@ -1466,6 +1884,7 @@ $(document).ready(function()
 			$conic.find('input').removeClass('selected');
 
 			lines.stopEditing();
+			rectangles.stopEditing();
 			circles.stopEditing();
 			ellipses.stopEditing();
 
@@ -1485,6 +1904,7 @@ $(document).ready(function()
 			$conic.siblings().find('input').removeClass('selected');
 
 			lines.stopEditing();
+			rectangles.stopEditing();
 			circles.stopEditing();
 			ellipses.stopEditing();
 
@@ -1496,6 +1916,16 @@ $(document).ready(function()
 
 				// if this line was never drawn in the first place
 				if (!lines.curLine.editing())
+					canvas.cursorCrosshair();
+			}
+			else if ($($conic).is('.rectangle'))
+			{
+				var rectangleID = $conic.attr('id').replace('rectangle','');
+
+				rectangles.setCurRectangle(rectangleID);
+
+				// if this rectangle was never drawn in the first place
+				if (!rectangles.curRectangle.editing())
 					canvas.cursorCrosshair();
 			}
 			else if ($($conic).is('.circle'))
@@ -1536,6 +1966,18 @@ $(document).ready(function()
 			}
 
 			lines.deleteLine(lineID);
+		}
+		else if ($($conic).is('.rectangle'))
+		{
+			var rectangleID = $conic.attr('id').replace('rectangle','');
+
+			if (rectangles.curRectangle && (rectangles.curRectangle.id == rectangleID))
+			{
+				rectangles.stopEditing();
+				canvas.cursorOpenHand();
+			}
+
+			rectangles.deleteRectangle(rectangleID);
 		}
 		else if ($($conic).is('.circle'))
 		{
@@ -1582,6 +2024,7 @@ $(document).ready(function()
 				$hideIcon.text('[+]');
 
 				lines.stopEditing();
+				rectangles.stopEditing();
 				circles.stopEditing();
 				ellipses.stopEditing();
 
@@ -1626,6 +2069,42 @@ $(document).ready(function()
 				lines.curLine.updateStartY(curY);
 				lines.curLine.updateEndX(curX);
 				lines.curLine.updateEndY(curY);
+			}
+		}
+		else if (rectangles.curRectangle)
+		{
+			if (rectangles.curRectangle.editing())
+			{
+				if (rectangles.isCurRectangleStart(curX,curY))
+				{
+					canvas.cursorClosedHand();
+					rectangles.editingRectangleStart = true;
+				}
+				else if (rectangles.isCurRectangleEnd(curX,curY))
+				{
+					canvas.cursorClosedHand();
+					rectangles.editingRectangleEnd = true;
+				}
+				else if (rectangles.isCurRectangleStartEnd(curX,curY))
+				{
+					canvas.cursorClosedHand();
+					rectangles.editingRectangleStartEnd = true;
+				}
+				else if (rectangles.isCurRectangleEndStart(curX,curY))
+				{
+					canvas.cursorClosedHand();
+					rectangles.editingRectangleEndStart = true;
+				}
+			}
+			else
+			{
+				startX = curX;
+				startY = curY;
+
+				rectangles.curRectangle.updateStartX(curX);
+				rectangles.curRectangle.updateStartY(curY);
+				rectangles.curRectangle.updateEndX(curX);
+				rectangles.curRectangle.updateEndY(curY);
 			}
 		}
 		else if (circles.curCircle)
@@ -1699,7 +2178,7 @@ $(document).ready(function()
 
 	$('#canvas').mousemove(function(event)
 	{
-		if ((lines.curLine && lines.curLine.editing()) || (circles.curCircle && circles.curCircle.editing()) || (ellipses.curEllipse && ellipses.curEllipse.editing()))
+		if ((lines.curLine && lines.curLine.editing()) || (rectangles.curRectangle && rectangles.curRectangle.editing()) || (circles.curCircle && circles.curCircle.editing()) || (ellipses.curEllipse && ellipses.curEllipse.editing()))
 		{
 			var curX = graph.getX(canvas.getX(event.pageX));
 			var curY = graph.getY(canvas.getY(event.pageY));
@@ -1709,6 +2188,15 @@ $(document).ready(function()
 				if (lines.editingLineStart || lines.editingLineEnd)
 					canvas.cursorClosedHand();
 				else if (lines.isCurLineStart(curX,curY) || lines.isCurLineEnd(curX,curY))
+					canvas.cursorOpenHand();
+				else
+					canvas.cursorDefault();
+			}
+			else if (rectangles.curRectangle)
+			{
+				if (rectangles.editingRectangleStart || rectangles.editingRectangleEnd || rectangles.editingRectangleStartEnd || rectangles.editingRectangleEndStart)
+					canvas.cursorClosedHand();
+				else if (rectangles.isCurRectangleStart(curX,curY) || rectangles.isCurRectangleEnd(curX,curY) || rectangles.isCurRectangleStartEnd(curX,curY) || rectangles.isCurRectangleEndStart(curX,curY))
 					canvas.cursorOpenHand();
 				else
 					canvas.cursorDefault();
@@ -1758,6 +2246,40 @@ $(document).ready(function()
 			{
 				lines.curLine.updateEndX(curX);
 				lines.curLine.updateEndY(curY);
+			}
+		}
+		else if (rectangles.curRectangle)
+		{
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
+
+			if (rectangles.curRectangle.editing())
+			{
+				if (rectangles.editingRectangleStart)
+				{
+					rectangles.curRectangle.updateStartX(curX);
+					rectangles.curRectangle.updateStartY(curY);
+				}
+				else if (rectangles.editingRectangleEnd)
+				{
+					rectangles.curRectangle.updateEndX(curX);
+					rectangles.curRectangle.updateEndY(curY);
+				}
+				else if (rectangles.editingRectangleStartEnd)
+				{
+					rectangles.curRectangle.updateStartX(curX);
+					rectangles.curRectangle.updateEndY(curY);
+				}
+				else if (rectangles.editingRectangleEndStart)
+				{
+					rectangles.curRectangle.updateEndX(curX);
+					rectangles.curRectangle.updateStartY(curY);
+				}
+			}
+			else
+			{
+				rectangles.curRectangle.updateEndX(curX);
+				rectangles.curRectangle.updateEndY(curY);
 			}
 		}
 		else if (circles.curCircle)
@@ -1867,6 +2389,54 @@ $(document).ready(function()
 				lines.curLine.$lineControl.find('input').removeClass('selected');
 
 				lines.stopEditing();
+				canvas.cursorOpenHand();
+			}
+		}
+		else if (rectangles.curRectangle)
+		{
+			var curX = graph.getX(canvas.getX(event.pageX));
+			var curY = graph.getY(canvas.getY(event.pageY));
+
+			if (rectangles.curRectangle.editing())
+			{
+				if (rectangles.editingRectangleStart)
+				{
+					rectangles.curRectangle.updateStartX(curX);
+					rectangles.curRectangle.updateStartY(curY);
+
+					rectangles.editingRectangleStart = false;
+				}
+				else if (rectangles.editingRectangleEnd)
+				{
+					rectangles.curRectangle.updateEndX(curX);
+					rectangles.curRectangle.updateEndY(curY);
+
+					rectangles.editingRectangleEnd = false;
+				}
+				else if (rectangles.editingRectangleStartEnd)
+				{
+					rectangles.curRectangle.updateStartX(curX);
+					rectangles.curRectangle.updateEndY(curY);
+
+					rectangles.editingRectangleStartEnd = false;
+				}
+				else if (rectangles.editingRectangleEndStart)
+				{
+					rectangles.curRectangle.updateEndX(curX);
+					rectangles.curRectangle.updateStartY(curY);
+
+					rectangles.editingRectangleEndStart = false;
+				}
+			}
+			else
+			{
+				rectangles.curRectangle.updateEndX(curX);
+				rectangles.curRectangle.updateEndY(curY);
+
+				rectangles.curRectangle.$rectangleControl.removeClass('selected');
+				rectangles.curRectangle.$rectangleControl.find('input').removeClass('selected');
+
+				rectangles.stopEditing();
 				canvas.cursorOpenHand();
 			}
 		}
