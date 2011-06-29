@@ -13,8 +13,8 @@ body
 ul
 {
 	list-style-type: none;
-	margin-left: .5em;
-	padding-left: .5em;
+	margin-left: 0px;
+	padding-left: 0px;
 }
 
 input
@@ -78,6 +78,98 @@ input
 	width: 20%;
 	float: left;
 }
+
+/* start backboneConics */
+
+.control
+{
+	border: 2px solid;
+	margin: 2px;
+	padding: 2px;
+
+	width: 90%;
+	overflow: hidden;
+
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+}
+
+div#addShapes
+{
+}
+
+ul#addShapeList
+{
+	float: right;
+	right: 50%;
+	position: relative;
+}
+
+li.addShape
+{
+	float: left;
+	left: 50%;
+	position: relative;
+	cursor: pointer;
+}
+
+div#shapes
+{
+	overflow: auto;
+}
+
+ul#shapeList
+{
+}
+
+li.shape
+{
+}
+
+div.titleBar
+{
+	width: 100%;
+	float: left;
+	margin-bottom: 3px;
+	font-weight: bold;
+	overflow: hidden;
+}
+
+span.close
+{
+	float: left;
+	cursor: pointer;
+}
+
+span.titleWrapper
+{
+	float: left;
+	position: relative;
+	left: 40%;
+	text-align: center;
+}
+
+span.title
+{
+	float: left;
+	position: relative;
+	right: 50%;
+	cursor: pointer;
+}
+
+span.hide
+{
+	float: right;
+	cursor: pointer;
+}
+
+.selected
+{
+	color: #333;
+}
+
+/* end backboneConics */
 
 div.newConics
 {
