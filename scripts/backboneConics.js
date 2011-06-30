@@ -71,6 +71,12 @@ $(function()
 			{
 				$this.addClass('selected');
 				$this.siblings().removeClass('selected');
+
+				if ($this.hasClass('hidden'))
+				{
+					$this.removeClass('hidden');
+					$(this.el).find('.hide').html('[-]');
+				}
 			}
 		},
 
@@ -85,6 +91,11 @@ $(function()
 			}
 			else
 			{
+				if ($this.hasClass('selected'))
+				{
+					$this.removeClass('selected');
+				}
+
 				$this.addClass('hidden');
 				$(this.el).find('.hide').html('[+]');
 			}
