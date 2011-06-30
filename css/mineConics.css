@@ -34,8 +34,29 @@ input
 	padding: 1em;
 }
 
+#headingWrapper
+{
+	width: 100%;
+	float: right;
+	right: 50%;
+	position: relative;
+}
+
 #heading
 {
+	width: 100%;
+	float: left;
+	left: 50%;
+	position: relative;
+	text-align: center;
+}
+
+#subheading
+{
+	width: 100%;
+	float: left;
+	left: 50%;
+	position: relative;
 	text-align: center;
 }
 
