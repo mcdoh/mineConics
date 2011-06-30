@@ -127,7 +127,11 @@ $(function()
 		addShape: function(shape)
 		{
 			var view = new ShapeView({model: shape});
-			this.$('#shapeList').append(view.render().el);
+			var $newShapeView = $(view.render().el);
+
+			$newShapeView.hide();
+			this.$('#shapeList').prepend($newShapeView);
+			$newShapeView.slideDown();
 		},
 	});
 
