@@ -51,29 +51,38 @@
 		<!-- Templates --> 
 
 		<script type="text/template" id="controlPaneTemplate"> 
-			<div id="canvasControl">
-			</div>
+			<div id="canvasControl"></div>
 			<div id="addShapes" class="control">
 				<ul id="addShapeList">
 					<li id="addShape" class="addShape">[add shape]</li>
+					<li id="addCircle" class="addShape">[add circle]</li>
 				</ul>
 			</div>
-			<div id="shapes">
-				<ul id="shapeList"></ul>
-			</div>
+			<ul id="shapes"></ul>
 		</script> 
 
 		<script type="text/template" id="shapeTemplate"> 
-			<li class="shape control">
-				<div class="titleBar">
-					<span class="close">[X]</span>
-					<span class="titleWrapper">
-						<span class="title">shape</span>
-					</span>
-					<span class="hide">[-]</span>
-				</div>
-			</li>
+			<div class="titleBar">
+				<span class="close">[X]</span>
+				<span class="titleWrapper">
+					<span class="title">shape</span>
+				</span>
+				<span class="hide">[-]</span>
+			</div>
 		</script> 
 
+		<script type="text/template" id="circleTemplate">
+			<div class="shapeControl circle">
+				<div class="field">
+					<span class="field">center</span>
+					<input type="text" class="field locationX"></input>
+					<input type="text" class="field locationY"></input>
+				</div>
+				<div class="field">
+					<span class="field">radius</span>
+					<input type="text" class="field radius"></input>
+				</div>
+			</div>
+		</script>
 	</body>
 </html>

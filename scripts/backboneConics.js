@@ -14,6 +14,16 @@ $(function()
 		},
 	});
 
+	var Circle = Shape.extend(
+	{
+		defaults:
+		{
+			centerX: '',
+			centerY: '',
+			radius:  '',
+		},
+	});
+
 	var Shapes = Backbone.Collection.extend(
 	{
 		model: Shape,
@@ -22,8 +32,9 @@ $(function()
 	var ShapeView = Backbone.View.extend(
 	{
 		tagName: 'li',
+		className: 'shape control',
 
-		template: _.template($('#shapeTemplate').html()),
+		shapeTemplate: _.template($('#shapeTemplate').html()),
 
 		events:
 		{
@@ -40,7 +51,7 @@ $(function()
 
 		render: function()
 		{
-			$(this.el).html(this.template(this.model.toJSON()));
+			$(this.el).html(this.shapeTemplate(this.model.toJSON()));
 			return this;
 		},
 
@@ -102,6 +113,39 @@ $(function()
 		},
 	});
 
+	var CircleView = ShapeView.extend(
+	{
+		circleTemplate: _.template($('#circleTemplate').html()),
+
+		initialize: function()
+		{
+			_.bindAll(this, 'render', 'remove');
+			this.model.bind('remove', this.remove);
+		},
+
+		render: function()
+		{
+			var $shapeRender = $(ShapeView.prototype.render.call(this).el);
+			var circleTemplate = this.circleTemplate(this.model.toJSON());
+
+			$shapeRender.append(circleTemplate);
+			$(this.el).html($shapeRender.html());
+
+			return this;
+		},
+
+		remove: function()
+		{
+			$this = $(this.el);
+
+			$this.slideUp(function()
+			{
+				$this.remove();
+			});
+		},
+
+	});
+
 	var ControlPane = Backbone.View.extend(
 	{
 		el: $('#controlPane'),
@@ -111,6 +155,7 @@ $(function()
 		events:
 		{
 			'click #addShape': 'createShape',
+			'click #addCircle': 'createCircle',
 		},
 
 		initialize: function()
@@ -135,13 +180,25 @@ $(function()
  			this.shapes.add(shape);
 		},
 
+		createCircle: function()
+		{
+ 			var circle = new Circle;
+ 			this.shapes.add(circle);
+		},
+
 		addShape: function(shape)
 		{
-			var view = new ShapeView({model: shape});
+			var view;
+
+			if (shape instanceof Circle)
+				view = new CircleView({model: shape});
+			else
+				view = new ShapeView({model: shape});
+
 			var $newShapeView = $(view.render().el);
 
 			$newShapeView.hide();
-			this.$('#shapeList').prepend($newShapeView);
+			this.$('#shapes').prepend($newShapeView);
 			$newShapeView.slideDown();
 		},
 	});
