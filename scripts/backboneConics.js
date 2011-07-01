@@ -9,19 +9,21 @@ $(function()
 	{
 		defaults:
 		{
+			title:  'shape',
 			virgin: true,
-			color: "color(0,0,0,0.75)",
+			color:	'color(0,0,0,0.75)',
 		},
 	});
 
 	var Circle = Shape.extend(
 	{
-		defaults:
+		defaults: _.extend({}, Shape.prototype.defaults,
 		{
+			title:   'circle',
 			centerX: '',
 			centerY: '',
 			radius:  '',
-		},
+		}),
 	});
 
 	var Shapes = Backbone.Collection.extend(
@@ -57,7 +59,7 @@ $(function()
 
 		remove: function()
 		{
-			$this = $(this.el);
+			var $this = $(this.el);
 
 			$this.slideUp(function()
 			{
@@ -72,7 +74,7 @@ $(function()
 
 		toggleSelected: function()
 		{
-			$this = $(this.el);
+			var $this = $(this.el);
 
 			if ($this.hasClass('selected'))
 			{
@@ -93,7 +95,7 @@ $(function()
 
 		toggleHide: function()
 		{
-			$this = $(this.el);
+			var $this = $(this.el);
 
 			if ($this.hasClass('hidden'))
 			{
@@ -117,6 +119,13 @@ $(function()
 	{
 		circleTemplate: _.template($('#circleTemplate').html()),
 
+		events: _.extend({}, ShapeView.prototype.events,
+		{
+			'change .centerX': 'updateCenterX',
+			'change .centerY': 'updateCenterY',
+			'change .radius':  'updateRadius',
+		}),
+
 		initialize: function()
 		{
 			_.bindAll(this, 'render', 'remove');
@@ -136,7 +145,7 @@ $(function()
 
 		remove: function()
 		{
-			$this = $(this.el);
+			var $this = $(this.el);
 
 			$this.slideUp(function()
 			{
@@ -144,6 +153,32 @@ $(function()
 			});
 		},
 
+		updateCenterX: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.centerX').val());
+
+			if (!isNaN(testNum))
+				this.model.set({centerX: testNum});
+		},
+
+		updateCenterY: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.centerY').val());
+
+			if (!isNaN(testNum))
+				this.model.set({centerY: testNum});
+		},
+
+		updateRadius: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.radius').val());
+
+			if (!isNaN(testNum))
+				this.model.set({radius: testNum});
+		},
 	});
 
 	var ControlPane = Backbone.View.extend(

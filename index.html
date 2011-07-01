@@ -65,7 +65,7 @@
 			<div class="titleBar">
 				<span class="close">[X]</span>
 				<span class="titleWrapper">
-					<span class="title">shape</span>
+					<span class="title"><%= title %></span>
 				</span>
 				<span class="hide">[-]</span>
 			</div>
@@ -75,12 +75,12 @@
 			<div class="shapeControl circle">
 				<div class="field">
 					<span class="field">center</span>
-					<input type="text" class="field locationX"></input>
-					<input type="text" class="field locationY"></input>
+					<input type="text" class="field centerX" value="<%= centerX %>"></input>
+					<input type="text" class="field centerY" value="<%= centerY %>"></input>
 				</div>
 				<div class="field">
 					<span class="field">radius</span>
-					<input type="text" class="field radius"></input>
+					<input type="text" class="field radius" value="<%= radius %>"></input>
 				</div>
 			</div>
 		</script>
