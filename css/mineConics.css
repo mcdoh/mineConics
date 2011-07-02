@@ -165,11 +165,42 @@ div.shapeControl
 	float: left;
 }
 
+div.colorSelector
+{
+	width: 100%;
+	float: left;
+	overflow: hidden;
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+
+input.color
+{
+	margin-top: 4px;
+}
+
+input.hexColor
+{
+	width: 5em;
+	height: 1em;
+	margin-top: 4px;
+}
+
+.field
+{
+	vertical-align: baseline;
+}
+
 div.field
 {
 	float: left;
 	width: 50%;
-	text-align: bottom;
+}
+
+form.field
+{
+	float: left;
+	width: 50%;
 }
 
 span.field
@@ -319,7 +350,7 @@ input.hexColor
 {
 	float: left;
 	width: 50%;
-	text-align: bottom;
+	vertical-align: bottom;
 }
 
 div.fieldTitle

@@ -12,6 +12,7 @@ $(function()
 			title:  'shape',
 			virgin: true,
 			color:	'color(0,0,0,0.75)',
+			hexColor: '#000000',
 		},
 	});
 
@@ -118,6 +119,7 @@ $(function()
 	var CircleView = ShapeView.extend(
 	{
 		circleTemplate: _.template($('#circleTemplate').html()),
+		colorSelectorTemplate: _.template($('#colorSelectorTemplate').html()),
 
 		events: _.extend({}, ShapeView.prototype.events,
 		{
@@ -134,11 +136,13 @@ $(function()
 
 		render: function()
 		{
-			var $shapeRender = $(ShapeView.prototype.render.call(this).el);
-			var circleTemplate = this.circleTemplate(this.model.toJSON());
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var $circle = $(this.circleTemplate(this.model.toJSON()));
+			var colorSelector = this.colorSelectorTemplate(this.model.toJSON());
 
-			$shapeRender.append(circleTemplate);
-			$(this.el).html($shapeRender.html());
+			$circle.append(colorSelector);
+			$shape.append($circle);
+			$(this.el).html($shape.html());
 
 			return this;
 		},
