@@ -55,6 +55,7 @@ $(function()
 		render: function()
 		{
 			$(this.el).html(this.shapeTemplate(this.model.toJSON()));
+
 			return this;
 		},
 
@@ -119,7 +120,6 @@ $(function()
 	var CircleView = ShapeView.extend(
 	{
 		circleTemplate: _.template($('#circleTemplate').html()),
-		colorSelectorTemplate: _.template($('#colorSelectorTemplate').html()),
 
 		events: _.extend({}, ShapeView.prototype.events,
 		{
@@ -137,11 +137,9 @@ $(function()
 		render: function()
 		{
 			var $shape = $(ShapeView.prototype.render.call(this).el);
-			var $circle = $(this.circleTemplate(this.model.toJSON()));
-			var colorSelector = this.colorSelectorTemplate(this.model.toJSON());
+			var circle = this.circleTemplate(this.model.toJSON());
 
-			$circle.append(colorSelector);
-			$shape.append($circle);
+			$shape.find('.shapeControls').prepend(circle);
 			$(this.el).html($shape.html());
 
 			return this;

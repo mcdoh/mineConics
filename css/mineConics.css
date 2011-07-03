@@ -159,13 +159,19 @@ span.hide
 	cursor: pointer;
 }
 
+div.shapeControls
+{
+	width: 100%;
+	float: left;
+}
+
 div.shapeControl
 {
 	width: 100%;
 	float: left;
 }
 
-div.colorSelector
+div.colorControl
 {
 	width: 100%;
 	float: left;
@@ -184,11 +190,6 @@ input.hexColor
 	width: 5em;
 	height: 1em;
 	margin-top: 4px;
-}
-
-.field
-{
-	vertical-align: baseline;
 }
 
 div.field
@@ -326,7 +327,7 @@ div.conicControl
 	float: left;
 }
 
-div.colorSelector
+div.colorControl
 {
 	width: 100%;
 	float: left;

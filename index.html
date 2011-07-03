@@ -69,6 +69,20 @@
 				</span>
 				<span class="hide">[-]</span>
 			</div>
+			<div class="shapeControls">
+				<div class="colorControl">
+					<form class="field">
+						<span class="field">rgb</span>
+						<input type="checkbox" name="color" class="color red">
+						<input type="checkbox" name="color" class="color green">
+						<input type="checkbox" name="color" class="color blue">
+					</form>
+					<div class="field">
+						<span class="field">hex</span>
+						<input type="text" class="hexColor" value="<%= hexColor %>">
+					</div>
+				</div>
+			</div>
 		</script> 
 
 		<script type="text/template" id="circleTemplate">
@@ -81,21 +95,6 @@
 				<div class="field">
 					<span class="field">radius</span>
 					<input type="text" class="field radius" value="<%= radius %>"></input>
-				</div>
-			</div>
-		</script>
-
-		<script type="text/template" id="colorSelectorTemplate">
-			<div class="colorSelector">
-				<form class="field">
-					<span class="field">rgb</span>
-					<input type="checkbox" name="color" class="color red">
-					<input type="checkbox" name="color" class="color green">
-					<input type="checkbox" name="color" class="color blue">
-				</form>
-				<div class="field">
-					<span class="field">hex</span>
-					<input type="text" class="hexColor" value="<%= hexColor %>">
 				</div>
 			</div>
 		</script>
