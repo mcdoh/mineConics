@@ -140,7 +140,8 @@ $(function()
 				if ($this.hasClass('hidden'))
 				{
 					$this.removeClass('hidden');
-					$(this.el).find('.hide').html('[-]');
+					$this.find('.hide').html('[-]');
+					$this.find('.shapeControls').slideDown();
 				}
 			}
 		},
@@ -152,7 +153,8 @@ $(function()
 			if ($this.hasClass('hidden'))
 			{
 				$this.removeClass('hidden');
-				$(this.el).find('.hide').html('[-]');
+				$this.find('.hide').html('[-]');
+				$this.find('.shapeControls').slideDown();
 			}
 			else
 			{
@@ -163,7 +165,8 @@ $(function()
 				}
 
 				$this.addClass('hidden');
-				$(this.el).find('.hide').html('[+]');
+				$this.find('.hide').html('[+]');
+				$this.find('.shapeControls').slideUp();
 			}
 		},
 
