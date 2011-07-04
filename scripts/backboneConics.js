@@ -5,14 +5,55 @@ $(function()
 		success();
 	}
 
+	var intToHex = function(integer)
+	{
+		var hex = integer.toString(16).toUpperCase();
+
+		if (hex.length === 1)
+			hex = '0' + hex;
+
+		return hex;
+	}
+
 	var Shape = Backbone.Model.extend(
 	{
 		defaults:
 		{
-			title:  'shape',
-			virgin: true,
-			color:	'color(0,0,0,0.75)',
+			title:    'shape',
+			virgin:    true,
+			red:       0,
+			green:     0,
+			blue:      0,
+			alpha:     0.75,
+			rgba:     'rgba(0,0,0,0.75)',
 			hexColor: '#000000',
+		},
+
+		initialize: function()
+		{
+			_.bindAll(this, 'colorChanged');
+
+			this.bind('change:red', this.colorChanged);
+			this.bind('change:green', this.colorChanged);
+			this.bind('change:blue', this.colorChanged);
+		},
+
+		colorChanged: function()
+		{
+			var rgba = 'rgba(';
+			var hexColor = '#';
+
+			rgba += this.get('red')   + ',';
+			rgba += this.get('green') + ',';
+			rgba += this.get('blue')  + ',';
+			rgba += '0.75)';
+
+			hexColor += intToHex(this.get('red'));
+			hexColor += intToHex(this.get('green'));
+			hexColor += intToHex(this.get('blue'));
+
+			this.set({rgba: rgba});
+			this.set({hexColor: hexColor});
 		},
 	});
 
@@ -41,15 +82,20 @@ $(function()
 
 		events:
 		{
-			'click .close' : 'close',
-			'click .title' : 'toggleSelected',
-			'click .hide'  : 'toggleHide',
+			'click .close': 'close',
+			'click .title': 'toggleSelected',
+			'click .hide':  'toggleHide',
+
+			'change .color':    'setColor',
+			'change .hexColor': 'setHexColor',
 		},
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'remove');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput');
+
 			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
 		},
 
 		render: function()
@@ -115,6 +161,52 @@ $(function()
 				$(this.el).find('.hide').html('[+]');
 			}
 		},
+
+		setColor: function()
+		{
+			var $this = $(this.el);
+			var red   = 0;
+			var green = 0;
+			var blue  = 0;
+
+
+			if ($this.find('input.red').is(':checked'))
+				red = 255;
+
+			if ($this.find('input.green').is(':checked'))
+				green = 255;
+
+			if ($this.find('input.blue').is(':checked'))
+				blue = 255;
+
+			this.model.set({red: red, green: green, blue: blue});
+		},
+
+		setHexColor: function()
+		{
+			var $this = $(this.el);
+			var hexString = $this.find('.hexColor').val();
+
+			if (hexString.charAt(0) == '#')
+				hexString = hexString.substring(1,7);
+
+			var red = parseInt(hexString.substring(0,2), 16);
+			var green = parseInt(hexString.substring(2,4), 16);
+			var blue = parseInt(hexString.substring(4,6), 16);
+
+			// ensure all of the rgb checkboxes are unset
+			$this.find('input.color').attr('checked',false);
+
+			if (!isNaN(red) && !isNaN(green) && !isNaN(blue))
+				this.model.set({red: red, green: green, blue: blue});
+			else
+				$this.find('.hexColor').val(this.model.get('hexColor'));
+		},
+
+		changeHexInput: function()
+		{
+			$(this.el).find('.hexColor').val(this.model.get('hexColor'));
+		},
 	});
 
 	var CircleView = ShapeView.extend(
@@ -130,8 +222,10 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'remove');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput');
+
 			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
 		},
 
 		render: function()
@@ -143,16 +237,6 @@ $(function()
 			$(this.el).html($shape.html());
 
 			return this;
-		},
-
-		remove: function()
-		{
-			var $this = $(this.el);
-
-			$this.slideUp(function()
-			{
-				$this.remove();
-			});
 		},
 
 		updateCenterX: function()
@@ -191,7 +275,7 @@ $(function()
 
 		events:
 		{
-			'click #addShape': 'createShape',
+			'click #addShape':  'createShape',
 			'click #addCircle': 'createCircle',
 		},
 
