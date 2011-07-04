@@ -127,11 +127,15 @@ $(function()
 			if ($this.hasClass('selected'))
 			{
 				$this.removeClass('selected');
+				$this.find('input').removeClass('selected');
 			}
 			else
 			{
 				$this.addClass('selected');
+				$this.find('input').addClass('selected');
+
 				$this.siblings().removeClass('selected');
+				$this.siblings().find('input').removeClass('selected');
 
 				if ($this.hasClass('hidden'))
 				{
@@ -155,6 +159,7 @@ $(function()
 				if ($this.hasClass('selected'))
 				{
 					$this.removeClass('selected');
+					$this.find('input').removeClass('selected');
 				}
 
 				$this.addClass('hidden');
