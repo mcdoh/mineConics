@@ -254,6 +254,8 @@ $(function()
 
 			if (!isNaN(testNum))
 				this.model.set({centerX: testNum});
+			else
+				$this.find('.centerX').val(this.model.get('centerX'));
 		},
 
 		updateCenterY: function()
@@ -263,6 +265,8 @@ $(function()
 
 			if (!isNaN(testNum))
 				this.model.set({centerY: testNum});
+			else
+				$this.find('.centerY').val(this.model.get('centerY'));
 		},
 
 		updateRadius: function()
@@ -272,6 +276,8 @@ $(function()
 
 			if (!isNaN(testNum))
 				this.model.set({radius: testNum});
+			else
+				$this.find('.radius').val(this.model.get('radius'));
 		},
 	});
 
