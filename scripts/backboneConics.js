@@ -20,11 +20,11 @@ $(function()
 		defaults:
 		{
 			title:    'shape',
-			virgin:    true,
-			red:       0,
-			green:     0,
-			blue:      0,
-			alpha:     0.75,
+			virgin:   true,
+			red:      0,
+			green:    0,
+			blue:     0,
+			alpha:    0.75,
 			rgba:     'rgba(0,0,0,0.75)',
 			hexColor: '#000000',
 		},
@@ -281,6 +281,318 @@ $(function()
 		},
 	});
 
+	var Graph = Backbone.Model.extend(
+	{
+		defaults:
+		{
+			color:      'rgba(1,1,1,0.1)',
+			highlight:  'rgba(1,1,1,0.2)',
+			scale:      10,
+			originX:    0,
+			originY:    0,
+			interval:   2,                        // how often a marker is drawn along the axes
+		},
+
+		// essentially +=, but then corrected for floating point errors
+		augment: function(delta)
+		{
+			if (delta.scale)
+			{
+				var scaleOrig = this.get('scale');
+				var scaleTemp = scaleOrig;
+
+				scaleTemp = parseInt((scaleTemp*1000) + (delta.scale*1000)) / 1000;
+
+				// make sure 'scale' doesn't get too small nor too big
+				if (scaleTemp < 3)
+					this.set({scale: 3});
+				else if (scaleTemp > 50)
+					this.set({scale: 50});
+				else
+					this.set({scale: scaleTemp});
+			}
+
+			if (delta.originX)
+			{
+				this.set({originX: Math.floor((this.get('originX')*1000) + (delta.originX*1000)) / 1000});
+			}
+
+			if (delta.originY)
+			{
+				this.set({originY: Math.floor((this.get('originY')*1000) + (delta.originY*1000)) / 1000});
+			}
+		},
+
+		// return x relative to the graph
+		getX: function(x)
+		{
+			return Math.round((x - this.get('originX')) / this.get('scale'));
+		},
+
+		// return y relative to the graph
+		getY: function(y)
+		{
+			return Math.round((this.get('originY') - y) / this.get('scale'));
+		},
+
+		// draw a square on the canvas relative to 'scale'
+		fill: function(row,col,color)
+		{
+			var width = this.view.width;
+			var height = this.view.height;
+			var scale = this.get('scale');
+
+			var cols = Math.floor(width / scale);
+			var rows = Math.floor(height / scale);
+
+			var xOffset = ((this.get('originX') - (scale/2)) % scale);
+			var yOffset = ((this.get('originY') - (scale/2)) % scale);
+
+			this.view.context.beginPath();
+			this.view.context.fillStyle = color;
+			this.view.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
+			this.view.context.closePath();
+			this.view.context.fill();
+		},
+
+		// 'fill' a point on the cartesian plane
+		plot: function(x,y,color)
+		{
+			var upperLeftX = -parseInt((this.get('originX') - (this.get('scale')/2)) / this.get('scale'));
+			var upperLeftY = parseInt((this.get('originY') - (this.get('scale')/2)) / this.get('scale'));
+
+			this.fill(upperLeftY-y,x-upperLeftX,color);
+		},
+
+		drawGraph: function()
+		{
+			var width = this.view.width;
+			var height = this.view.height;
+			var scale = this.get('scale');
+
+			// fill with background color
+			this.view.context.beginPath();
+			this.view.context.fillStyle = this.get('color');
+			this.view.context.rect(0,0,width,height);
+			this.view.context.closePath();
+			this.view.context.fill();
+
+			var cols = Math.floor(width / scale);
+			var xOffset = ((this.get('originX') - (scale/2)) % scale);
+
+			for (var col=0; col<=cols; col++)
+			{
+				this.view.context.beginPath();
+				this.view.context.fillStyle = "rgba(255,255,255,1)";
+				this.view.context.rect((col * scale) + xOffset, 0, 1, height);
+				this.view.context.closePath();
+				this.view.context.fill();
+
+				// draw marks along the X axis
+				var x = col - parseInt((this.get('originX') + (scale/2)) / scale);
+				if ((x % this.get('interval')) == 0)
+					this.plot(x,0,this.get('highlight'));
+				else if ((col == cols) && (((x+1) % this.get('interval')) == 0))
+					this.plot(x+1,0,this.get('highlight')); // slight hack for small slivers at the edge
+			}
+
+			var rows = Math.floor(height / scale);
+			var yOffset = ((this.get('originY') - (scale/2)) % scale);
+
+			for (var row=0; row<=rows; row++)
+			{
+				this.view.context.beginPath();
+				this.view.context.fillStyle = "rgba(255,255,255,1)";
+				this.view.context.rect(0, (row * scale) + yOffset, width, 1);
+				this.view.context.closePath();
+				this.view.context.fill();
+
+				// draw marks along the Y axis
+				var y = parseInt((this.get('originY') - (scale/2)) / scale) - row;
+				if ((y % this.get('interval')) == 0)
+					this.plot(0,y,this.get('highlight'));
+				else if ((row == 0) && (((y+1) % this.get('interval')) == 0))
+					this.plot(0,y+1,this.get('highlight')); // slight hack for small slivers at the edge
+			}
+		},
+	});
+
+	var CanvasView = Backbone.View.extend(
+	{
+		el: $('#canvas'),
+
+		events:
+		{
+			'mousedown':  'mousedown',
+			'mousemove':  'mousemove',
+//			'mousewheel': 'mousemove',
+			'mouseup':    'mouseup',
+			'mouseout':   'mouseout',
+		},
+
+		initialize: function()
+		{
+			_.bindAll(this, 'drawScene');
+
+			this.$canvas = $(this.el);
+			this.context = this.$canvas[0].getContext('2d');
+
+			this.startX;           // the last X location processed while 'clicking'
+			this.startY;           // the last Y location processed while 'clicking'
+			this.clicking = false; // whether or not the user is currently clicking
+
+			// resize the canvas to take advantage of extra viewport space
+			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true)));
+			this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
+
+			this.height = this.$canvas.height();
+			this.width = this.$canvas.width();
+
+			$('#graphPane').height(this.height);
+			$('#graphPane').width(this.width);
+
+			this.model = new Graph();
+			this.model.view = this;
+
+			this.model.bind('change', this.drawScene);
+			this.model.set({originX: Math.floor(this.width / 2)});
+			this.model.set({originY: Math.floor(this.height / 2)});
+
+			this.cursorOpenHand();
+		},
+
+		clear: function()
+		{
+			this.context.clearRect(0,0,this.width,this.height);
+		},
+
+		drawScene: function()
+		{
+			this.clear();
+			this.model.drawGraph();
+		},
+
+		mousedown: function(event)
+		{
+			var curX = this.getX(event.pageX);
+			var curY = this.getY(event.pageY);
+			$('#canvasTest').text('mousemove: '+curX+','+curY);
+
+			this.startX = curX;
+			this.startY = curY;
+
+			this.clicking = true;
+			this.cursorClosedHand();
+		},
+
+		mousemove: function(event)
+		{
+			var curX = this.getX(event.pageX);
+			var curY = this.getY(event.pageY);
+			$('#canvasTest').text('mousemove: '+curX+','+curY);
+
+			if (!this.clicking)
+				return;
+
+			this.model.augment({originX: curX - this.startX});
+			this.model.augment({originY: curY - this.startY});
+
+			this.startX = curX;
+			this.startY = curY;
+		},
+
+// 		mousewheel: function(event,delta)
+// 		{
+// 			var curX = this.getX(event.pageX);
+// 			var curY = this.getY(event.pageY);
+// 			$('#canvasTest').text('mousewheel: '+curX+','+curY);
+// 
+// 			var mouseX = curX - this.model.get('originX');
+// 			var mouseY = curY - this.model.get('originY');
+// 
+// 			this.model.originX(-(mouseX / this.model.get('scale')) * delta);
+// 			this.model.originY(-(mouseY / this.model.get('scale')) * delta);
+// 		},
+
+		mouseup: function(event)
+		{
+			var curX = this.getX(event.pageX);
+			var curY = this.getY(event.pageY);
+			$('#canvasTest').text('mouseup: '+curX+','+curY);
+
+			if (!this.clicking)
+				return;
+
+			this.model.augment({originX: curX - this.startX});
+			this.model.augment({originY: curY - this.startY});
+
+			this.startX = curX;
+			this.startY = curY;
+
+			this.clicking = false;
+			this.cursorOpenHand();
+		},
+
+		mouseout: function(event)
+		{
+			var curX = this.getX(event.pageX);
+			var curY = this.getY(event.pageY);
+			$('#canvasTest').text('mouseup: '+curX+','+curY);
+
+			if (!this.clicking)
+				return;
+
+			this.model.augment({originX: curX - this.startX});
+			this.model.augment({originY: curY - this.startY});
+
+			this.startX = curX;
+			this.startY = curY;
+
+			this.clicking = false;
+			this.cursorOpenHand();
+		},
+
+		cursorDefault: function()
+		{
+			this.$canvas.css('cursor','default');
+		},
+
+		cursorOpenHand: function()
+		{
+			this.$canvas.css('cursor','url(images/openhand.cur),move');
+		},
+
+		cursorClosedHand: function()
+		{
+			this.$canvas.css('cursor','url(images/closedhand.cur),move');
+		},
+
+		cursorCrosshair: function()
+		{
+			this.$canvas.css('cursor','crosshair');
+		},
+
+		offsetLeft: function()
+		{
+			return this.$canvas.offset().left;
+		},
+
+		offsetTop: function()
+		{
+			return this.$canvas.offset().top;
+		},
+
+		getX: function(x)
+		{
+			return x - this.offsetLeft();
+		},
+
+		getY: function(y)
+		{
+			return y - this.offsetTop();
+		},
+	});
+
 	var ControlPane = Backbone.View.extend(
 	{
 		el: $('#controlPane'),
@@ -297,8 +609,7 @@ $(function()
 		{
 			_.bindAll(this, 'render','addShape');
 
-			this.shapes = new Shapes;
-			this.shapes.bind('add', this.addShape);
+			this.collection.bind('add', this.addShape);
 
 			this.render();
 		},
@@ -312,13 +623,13 @@ $(function()
 		createShape: function()
 		{
  			var shape = new Shape;
- 			this.shapes.add(shape);
+ 			this.collection.add(shape);
 		},
 
 		createCircle: function()
 		{
  			var circle = new Circle;
- 			this.shapes.add(circle);
+ 			this.collection.add(circle);
 		},
 
 		addShape: function(shape)
@@ -338,6 +649,8 @@ $(function()
 		},
 	});
 
-	var controlPane = new ControlPane;
+	var shapes =      new Shapes();
+	var controlPane = new ControlPane({collection: shapes});
+	var canvas =      new CanvasView();
 });
 
