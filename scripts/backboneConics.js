@@ -61,11 +61,64 @@ $(function()
 	{
 		defaults: _.extend({}, Shape.prototype.defaults,
 		{
-			title:   'circle',
-			centerX: '',
-			centerY: '',
-			radius:  '',
+			title:      'circle',
+			centerX:    '',
+			centerY:    '',
+			radius:     '',
+			showCenter: false,
 		}),
+
+		// helper for midpoint circle algorithm
+		plotFourPoints: function(plot,x,y)
+		{
+			plot(this.get('centerX')+x,this.get('centerY')+y,this.get('rgba'));
+
+			if (x != 0)
+				plot(this.get('centerX')-x,this.get('centerY')+y,this.get('rgba'));
+
+			if (y != 0)
+				plot(this.get('centerX')+x,this.get('centerY')-y,this.get('rgba'));
+
+			if ((x != 0) && (y != 0))
+				plot(this.get('centerX')-x,this.get('centerY')-y,this.get('rgba'));
+		},
+
+		// helper for midpoint circle algorithm
+		plotEightPoints: function(plot,x,y)
+		{
+			this.plotFourPoints(plot,x,y);
+
+			if (x != y)
+				this.plotFourPoints(plot,y,x);
+		},
+
+		// midpoint circle algorithm
+		draw: function(plot)
+		{
+			if (!isNaN(this.get('centerX')) && !isNaN(this.get('centerY')) && !isNaN(this.get('radius')))
+			{
+				var x = this.get('radius');
+				var y = 0;
+				var error = -x;
+
+				while (x >= y)
+				{
+					this.plotEightPoints(plot,x,y);
+
+					error += (2 * y) + 1;
+					y++;
+
+					if (error >= 0)
+					{
+						x--;
+						error -= 2 * x;
+					}
+				}
+
+				if (this.get('showCenter'))
+					plot(this.get('centerX'),this.get('centerY'));
+			}
+		},
 	});
 
 	var Shapes = Backbone.Collection.extend(
@@ -281,6 +334,62 @@ $(function()
 		},
 	});
 
+	var ControlPane = Backbone.View.extend(
+	{
+		el: $('#controlPane'),
+
+		template: _.template($('#controlPaneTemplate').html()),
+
+		events:
+		{
+			'click #addShape':  'createShape',
+			'click #addCircle': 'createCircle',
+		},
+
+		initialize: function()
+		{
+			_.bindAll(this, 'render','addShape');
+
+			this.collection.bind('add', this.addShape);
+
+			this.render();
+		},
+
+		render: function()
+		{
+			$(this.el).html(this.template({}));
+			return this;
+		},
+
+		createShape: function()
+		{
+			var shape = new Shape;
+			this.collection.add(shape);
+		},
+
+		createCircle: function()
+		{
+			var circle = new Circle;
+			this.collection.add(circle);
+		},
+
+		addShape: function(shape)
+		{
+			var view;
+
+			if (shape instanceof Circle)
+				view = new CircleView({model: shape});
+			else
+				view = new ShapeView({model: shape});
+
+			var $newShapeView = $(view.render().el);
+
+			$newShapeView.hide();
+			this.$('#shapes').prepend($newShapeView);
+			$newShapeView.slideDown();
+		},
+	});
+
 	var Graph = Backbone.Model.extend(
 	{
 		defaults:
@@ -290,14 +399,16 @@ $(function()
 			scale:      10,
 			originX:    0,
 			originY:    0,
-			interval:   2,                        // how often a marker is drawn along the axes
-			mouseX:     0,                        // mouse location
-			mouseY:     0,                        // mouse location
-			clicking:   false,                    // if the user is clicking the mouse button
+			interval:   2,                  // how often a marker is drawn along the axes
+			mouseX:     0,                  // mouse location
+			mouseY:     0,                  // mouse location
+			lastX:      0,                  // last mouse location
+			lastY:      0,                  // last mouse location
+			clicking:   false,              // if the user is clicking the mouse button
 		},
 
 		// essentially +=, but then corrected for floating point errors
-		augment: function(delta)
+		augment: function(delta,options)
 		{
 			if (delta.scale)
 			{
@@ -308,27 +419,27 @@ $(function()
 
 				// make sure 'scale' doesn't get too small nor too big
 				if (scaleTemp < 3)
-					this.set({scale: 3});
+					this.set({scale: 3}, options);
 				else if (scaleTemp > 50)
-					this.set({scale: 50});
+					this.set({scale: 50}, options);
 				else
 				{
-					this.set({scale: scaleTemp});
+					this.set({scale: scaleTemp}, options);
 
 					// zoom to the current mouse location
-					this.augment({originX: (((this.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)});
-					this.augment({originY: (((this.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)});
+					this.augment({originX: (((this.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)}, {silent: true});
+					this.augment({originY: (((this.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)}, {silent: true});
 				}
 			}
 
 			if (delta.originX)
 			{
-				this.set({originX: Math.floor((this.get('originX')*1000) + (delta.originX*1000)) / 1000});
+				this.set({originX: Math.floor((this.get('originX')*1000) + (delta.originX*1000)) / 1000}, options);
 			}
 
 			if (delta.originY)
 			{
-				this.set({originY: Math.floor((this.get('originY')*1000) + (delta.originY*1000)) / 1000});
+				this.set({originY: Math.floor((this.get('originY')*1000) + (delta.originY*1000)) / 1000}, options);
 			}
 		},
 
@@ -343,90 +454,9 @@ $(function()
 		{
 			return Math.round((this.get('originY') - y) / this.get('scale'));
 		},
-
-		// draw a square on the canvas relative to 'scale'
-		fill: function(row,col,color)
-		{
-			var width = this.view.width;
-			var height = this.view.height;
-			var scale = this.get('scale');
-
-			var cols = Math.floor(width / scale);
-			var rows = Math.floor(height / scale);
-
-			var xOffset = ((this.get('originX') - (scale/2)) % scale);
-			var yOffset = ((this.get('originY') - (scale/2)) % scale);
-
-			this.view.context.beginPath();
-			this.view.context.fillStyle = color;
-			this.view.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
-			this.view.context.closePath();
-			this.view.context.fill();
-		},
-
-		// 'fill' a point on the cartesian plane
-		plot: function(x,y,color)
-		{
-			var upperLeftX = -parseInt((this.get('originX') - (this.get('scale')/2)) / this.get('scale'));
-			var upperLeftY = parseInt((this.get('originY') - (this.get('scale')/2)) / this.get('scale'));
-
-			this.fill(upperLeftY-y,x-upperLeftX,color);
-		},
-
-		drawGraph: function()
-		{
-			var width = this.view.width;
-			var height = this.view.height;
-			var scale = this.get('scale');
-
-			// fill with background color
-			this.view.context.beginPath();
-			this.view.context.fillStyle = this.get('color');
-			this.view.context.rect(0,0,width,height);
-			this.view.context.closePath();
-			this.view.context.fill();
-
-			var cols = Math.floor(width / scale);
-			var xOffset = ((this.get('originX') - (scale/2)) % scale);
-
-			for (var col=0; col<=cols; col++)
-			{
-				this.view.context.beginPath();
-				this.view.context.fillStyle = "rgba(255,255,255,1)";
-				this.view.context.rect((col * scale) + xOffset, 0, 1, height);
-				this.view.context.closePath();
-				this.view.context.fill();
-
-				// draw marks along the X axis
-				var x = col - parseInt((this.get('originX') + (scale/2)) / scale);
-				if ((x % this.get('interval')) == 0)
-					this.plot(x,0,this.get('highlight'));
-				else if ((col == cols) && (((x+1) % this.get('interval')) == 0))
-					this.plot(x+1,0,this.get('highlight')); // slight hack for small slivers at the edge
-			}
-
-			var rows = Math.floor(height / scale);
-			var yOffset = ((this.get('originY') - (scale/2)) % scale);
-
-			for (var row=0; row<=rows; row++)
-			{
-				this.view.context.beginPath();
-				this.view.context.fillStyle = "rgba(255,255,255,1)";
-				this.view.context.rect(0, (row * scale) + yOffset, width, 1);
-				this.view.context.closePath();
-				this.view.context.fill();
-
-				// draw marks along the Y axis
-				var y = parseInt((this.get('originY') - (scale/2)) / scale) - row;
-				if ((y % this.get('interval')) == 0)
-					this.plot(0,y,this.get('highlight'));
-				else if ((row == 0) && (((y+1) % this.get('interval')) == 0))
-					this.plot(0,y+1,this.get('highlight')); // slight hack for small slivers at the edge
-			}
-		},
 	});
 
-	var CanvasView = Backbone.View.extend(
+	var GraphView = Backbone.View.extend(
 	{
 		el: $('#canvas'),
 
@@ -449,7 +479,8 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'drawScene', 'reportLocation', 'storeMouseX', 'storeMouseY');
+			_.bindAll(this, 'drawScene', 'plot', 'reportLocation', 'storeMouseX', 'storeMouseY');
+			this.collection.bind('change', this.drawScene);
 
 			this.$canvas = $(this.el);
 			this.context = this.$canvas[0].getContext('2d');
@@ -480,17 +511,6 @@ $(function()
 
 			this.model.set({originX: Math.floor(this.width / 2)});
 			this.model.set({originY: Math.floor(this.height / 2)});
-		},
-
-		clear: function()
-		{
-			this.context.clearRect(0,0,this.width,this.height);
-		},
-
-		drawScene: function()
-		{
-			this.clear();
-			this.model.drawGraph();
 		},
 
 		// keep track of last mouse X position
@@ -592,66 +612,107 @@ $(function()
 		{
 			return y - this.offsetTop();
 		},
-	});
 
-	var ControlPane = Backbone.View.extend(
-	{
-		el: $('#controlPane'),
-
-		template: _.template($('#controlPaneTemplate').html()),
-
-		events:
+		// draw a square on the canvas relative to 'scale'
+		fill: function(row,col,color)
 		{
-			'click #addShape':  'createShape',
-			'click #addCircle': 'createCircle',
+			var width = this.width;
+			var height = this.height;
+			var scale = this.model.get('scale');
+
+			var cols = Math.floor(width / scale);
+			var rows = Math.floor(height / scale);
+
+			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
+			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			this.context.beginPath();
+			this.context.fillStyle = color;
+			this.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
+			this.context.closePath();
+			this.context.fill();
 		},
 
-		initialize: function()
+		// 'fill' a point on the cartesian plane
+		plot: function(x,y,color)
 		{
-			_.bindAll(this, 'render','addShape');
+			var upperLeftX = -parseInt((this.model.get('originX') - (this.model.get('scale')/2)) / this.model.get('scale'));
+			var upperLeftY = parseInt((this.model.get('originY') - (this.model.get('scale')/2)) / this.model.get('scale'));
 
-			this.collection.bind('add', this.addShape);
-
-			this.render();
+			this.fill(upperLeftY-y,x-upperLeftX,color);
 		},
 
-		render: function()
+		drawGraph: function()
 		{
-			$(this.el).html(this.template({}));
-			return this;
+			var width = this.width;
+			var height = this.height;
+			var scale = this.model.get('scale');
+
+			// fill with background color
+			this.context.beginPath();
+			this.context.fillStyle = this.model.get('color');
+			this.context.rect(0,0,width,height);
+			this.context.closePath();
+			this.context.fill();
+
+			var cols = Math.floor(width / scale);
+			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
+
+			for (var col=0; col<=cols; col++)
+			{
+				this.context.beginPath();
+				this.context.fillStyle = "rgba(255,255,255,1)";
+				this.context.rect((col * scale) + xOffset, 0, 1, height);
+				this.context.closePath();
+				this.context.fill();
+
+				// draw marks along the X axis
+				var x = col - parseInt((this.model.get('originX') + (scale/2)) / scale);
+				if ((x % this.model.get('interval')) == 0)
+					this.plot(x,0,this.model.get('highlight'));
+				else if ((col == cols) && (((x+1) % this.model.get('interval')) == 0))
+					this.plot(x+1,0,this.model.get('highlight')); // slight hack for small slivers at the edge
+			}
+
+			var rows = Math.floor(height / scale);
+			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			for (var row=0; row<=rows; row++)
+			{
+				this.context.beginPath();
+				this.context.fillStyle = "rgba(255,255,255,1)";
+				this.context.rect(0, (row * scale) + yOffset, width, 1);
+				this.context.closePath();
+				this.context.fill();
+
+				// draw marks along the Y axis
+				var y = parseInt((this.model.get('originY') - (scale/2)) / scale) - row;
+				if ((y % this.model.get('interval')) == 0)
+					this.plot(0,y,this.model.get('highlight'));
+				else if ((row == 0) && (((y+1) % this.model.get('interval')) == 0))
+					this.plot(0,y+1,this.model.get('highlight')); // slight hack for small slivers at the edge
+			}
 		},
 
-		createShape: function()
+		clear: function()
 		{
- 			var shape = new Shape;
- 			this.collection.add(shape);
+			this.context.clearRect(0,0,this.width,this.height);
 		},
 
-		createCircle: function()
+		drawScene: function()
 		{
- 			var circle = new Circle;
- 			this.collection.add(circle);
-		},
+			this.clear();
+			this.drawGraph();
 
-		addShape: function(shape)
-		{
-			var view;
-
-			if (shape instanceof Circle)
-				view = new CircleView({model: shape});
-			else
-				view = new ShapeView({model: shape});
-
-			var $newShapeView = $(view.render().el);
-
-			$newShapeView.hide();
-			this.$('#shapes').prepend($newShapeView);
-			$newShapeView.slideDown();
+			this.collection.each(function(shape)
+			{
+				shape.draw(this.plot);
+			},this);
 		},
 	});
 
 	var shapes =      new Shapes();
 	var controlPane = new ControlPane({collection: shapes});
-	var canvas =      new CanvasView();
+	var graph =       new GraphView({collection: shapes});
 });
 
