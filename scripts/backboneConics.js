@@ -421,13 +421,21 @@ $(function()
 	{
 		el: $('#canvas'),
 
+		cursors:
+		{
+			default:    'default',
+			openHand:   'url(images/openhand.cur),move',
+			closedHand: 'url(images/closedhand.cur),move',
+			crosshair:  'crosshair',
+		},
+
 		events:
 		{
-			'mousedown':  'mousedown',
-			'mousemove':  'mousemove',
-//			'mousewheel': 'mousemove',
-			'mouseup':    'mouseup',
-			'mouseout':   'mouseout',
+			'mousedown':  'mouseDown',
+			'mousemove':  'mouseMove',
+//			'mousewheel': 'mouseMove',
+			'mouseup':    'mouseUp',
+			'mouseout':   'mouseOut',
 		},
 
 		initialize: function()
@@ -458,7 +466,7 @@ $(function()
 			this.model.set({originX: Math.floor(this.width / 2)});
 			this.model.set({originY: Math.floor(this.height / 2)});
 
-			this.cursorOpenHand();
+			this.setCursor('openHand');
 		},
 
 		clear: function()
@@ -472,7 +480,7 @@ $(function()
 			this.model.drawGraph();
 		},
 
-		mousedown: function(event)
+		mouseDown: function(event)
 		{
 			var curX = this.getX(event.pageX);
 			var curY = this.getY(event.pageY);
@@ -482,10 +490,10 @@ $(function()
 			this.startY = curY;
 
 			this.clicking = true;
-			this.cursorClosedHand();
+			this.setCursor('closedHand');
 		},
 
-		mousemove: function(event)
+		mouseMove: function(event)
 		{
 			var curX = this.getX(event.pageX);
 			var curY = this.getY(event.pageY);
@@ -501,7 +509,7 @@ $(function()
 			this.startY = curY;
 		},
 
-// 		mousewheel: function(event,delta)
+// 		mouseWheel: function(event,delta)
 // 		{
 // 			var curX = this.getX(event.pageX);
 // 			var curY = this.getY(event.pageY);
@@ -514,7 +522,7 @@ $(function()
 // 			this.model.originY(-(mouseY / this.model.get('scale')) * delta);
 // 		},
 
-		mouseup: function(event)
+		mouseUp: function(event)
 		{
 			var curX = this.getX(event.pageX);
 			var curY = this.getY(event.pageY);
@@ -530,10 +538,10 @@ $(function()
 			this.startY = curY;
 
 			this.clicking = false;
-			this.cursorOpenHand();
+			this.setCursor('openHand');
 		},
 
-		mouseout: function(event)
+		mouseOut: function(event)
 		{
 			var curX = this.getX(event.pageX);
 			var curY = this.getY(event.pageY);
@@ -549,27 +557,12 @@ $(function()
 			this.startY = curY;
 
 			this.clicking = false;
-			this.cursorOpenHand();
+			this.setCursor('openHand');
 		},
 
-		cursorDefault: function()
+		setCursor: function(cursor)
 		{
-			this.$canvas.css('cursor','default');
-		},
-
-		cursorOpenHand: function()
-		{
-			this.$canvas.css('cursor','url(images/openhand.cur),move');
-		},
-
-		cursorClosedHand: function()
-		{
-			this.$canvas.css('cursor','url(images/closedhand.cur),move');
-		},
-
-		cursorCrosshair: function()
-		{
-			this.$canvas.css('cursor','crosshair');
+			this.$canvas.css('cursor', this.cursors[cursor]);
 		},
 
 		offsetLeft: function()
