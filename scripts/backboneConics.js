@@ -293,8 +293,6 @@ $(function()
 			interval:   2,                        // how often a marker is drawn along the axes
 			mouseX:     0,                        // mouse location
 			mouseY:     0,                        // mouse location
-			lastX:      0,                        // last mouse location
-			lastY:      0,                        // last mouse location
 			clicking:   false,                    // if the user is clicking the mouse button
 		},
 
@@ -451,7 +449,7 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'drawScene', 'reportLocation');
+			_.bindAll(this, 'drawScene', 'reportLocation', 'storeMouseX', 'storeMouseY');
 
 			this.$canvas = $(this.el);
 			this.context = this.$canvas[0].getContext('2d');
@@ -475,6 +473,8 @@ $(function()
 			this.model.bind('change:originY', this.drawScene);
 
 			this.$location = $('#canvasTest');
+			this.model.bind('change:mouseX', this.storeMouseX);
+			this.model.bind('change:mouseY', this.storeMouseY);
 			this.model.bind('change:mouseX', this.reportLocation);
 			this.model.bind('change:mouseY', this.reportLocation);
 
@@ -493,6 +493,17 @@ $(function()
 			this.model.drawGraph();
 		},
 
+		// keep track of last mouse X position
+		storeMouseX: function()
+		{
+			this.model.set({lastX: this.model.previous('mouseX')});
+		},
+
+		storeMouseY: function()
+		{
+			this.model.set({lastY: this.model.previous('mouseY')});
+		},
+
 		reportLocation: function()
 		{
 			this.$location.text('(' + this.model.getX(this.model.get('mouseX')) + ',' + this.model.getY(this.model.get('mouseY')) + ')');
@@ -500,8 +511,6 @@ $(function()
 
 		mouseDown: function(event)
 		{
-			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
-			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
 			this.model.set({mouseX: this.getX(event.pageX)});
 			this.model.set({mouseY: this.getY(event.pageY)});
 
@@ -511,8 +520,6 @@ $(function()
 
 		mouseMove: function(event)
 		{
-			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
-			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
 			this.model.set({mouseX: this.getX(event.pageX)});
 			this.model.set({mouseY: this.getY(event.pageY)});
 
@@ -521,15 +528,10 @@ $(function()
 
 			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
-
-// 			this.model.augment({originX: this.model.get('mouseX') - this.model.previous('mouseX')});
-// 			this.model.augment({originY: this.model.get('mouseY') - this.model.previous('mouseY')});
 		},
 
 		mouseWheel: function(event,delta)
 		{
-			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
-			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
 			this.model.set({mouseX: this.getX(event.pageX)});
 			this.model.set({mouseY: this.getY(event.pageY)});
 
@@ -538,8 +540,6 @@ $(function()
 
 		mouseUp: function(event)
 		{
-			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
-			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
 			this.model.set({mouseX: this.getX(event.pageX)});
 			this.model.set({mouseY: this.getY(event.pageY)});
 
@@ -548,9 +548,6 @@ $(function()
 
 			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
-
-// 			this.model.augment({originX: this.model.get('mouseX') - this.model.previous('mouseX')});
-// 			this.model.augment({originY: this.model.get('mouseY') - this.model.previous('mouseY')});
 
 			this.model.set({clicking: false});
 			this.setCursor('openHand');
@@ -558,8 +555,6 @@ $(function()
 
 		mouseOut: function(event)
 		{
-			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
-			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
 			this.model.set({mouseX: this.getX(event.pageX)});
 			this.model.set({mouseY: this.getY(event.pageY)});
 
@@ -568,9 +563,6 @@ $(function()
 
 			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
-
-// 			this.model.augment({originX: this.model.get('mouseX') - this.model.previous('mouseX')});
-// 			this.model.augment({originY: this.model.get('mouseY') - this.model.previous('mouseY')});
 
 			this.model.set({clicking: false});
 			this.setCursor('openHand');
