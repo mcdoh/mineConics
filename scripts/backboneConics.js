@@ -291,6 +291,11 @@ $(function()
 			originX:    0,
 			originY:    0,
 			interval:   2,                        // how often a marker is drawn along the axes
+			mouseX:     0,                        // mouse location
+			mouseY:     0,                        // mouse location
+			lastX:      0,                        // last mouse location
+			lastY:      0,                        // last mouse location
+			clicking:   false,                    // if the user is clicking the mouse button
 		},
 
 		// essentially +=, but then corrected for floating point errors
@@ -309,7 +314,13 @@ $(function()
 				else if (scaleTemp > 50)
 					this.set({scale: 50});
 				else
+				{
 					this.set({scale: scaleTemp});
+
+					// zoom to the current mouse location
+					this.augment({originX: (((this.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)});
+					this.augment({originY: (((this.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)});
+				}
 			}
 
 			if (delta.originX)
@@ -433,21 +444,18 @@ $(function()
 		{
 			'mousedown':  'mouseDown',
 			'mousemove':  'mouseMove',
-//			'mousewheel': 'mouseMove',
+			'mousewheel': 'mouseWheel',
 			'mouseup':    'mouseUp',
 			'mouseout':   'mouseOut',
 		},
 
 		initialize: function()
 		{
-			_.bindAll(this, 'drawScene');
+			_.bindAll(this, 'drawScene', 'reportLocation');
 
 			this.$canvas = $(this.el);
 			this.context = this.$canvas[0].getContext('2d');
-
-			this.startX;           // the last X location processed while 'clicking'
-			this.startY;           // the last Y location processed while 'clicking'
-			this.clicking = false; // whether or not the user is currently clicking
+			this.setCursor('openHand');
 
 			// resize the canvas to take advantage of extra viewport space
 			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true)));
@@ -462,11 +470,16 @@ $(function()
 			this.model = new Graph();
 			this.model.view = this;
 
-			this.model.bind('change', this.drawScene);
+			this.model.bind('change:scale', this.drawScene);
+			this.model.bind('change:originX', this.drawScene);
+			this.model.bind('change:originY', this.drawScene);
+
+			this.$location = $('#canvasTest');
+			this.model.bind('change:mouseX', this.reportLocation);
+			this.model.bind('change:mouseY', this.reportLocation);
+
 			this.model.set({originX: Math.floor(this.width / 2)});
 			this.model.set({originY: Math.floor(this.height / 2)});
-
-			this.setCursor('openHand');
 		},
 
 		clear: function()
@@ -480,83 +493,86 @@ $(function()
 			this.model.drawGraph();
 		},
 
+		reportLocation: function()
+		{
+			this.$location.text('(' + this.model.getX(this.model.get('mouseX')) + ',' + this.model.getY(this.model.get('mouseY')) + ')');
+		},
+
 		mouseDown: function(event)
 		{
-			var curX = this.getX(event.pageX);
-			var curY = this.getY(event.pageY);
-			$('#canvasTest').text('mousemove: '+curX+','+curY);
+			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
+			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
+			this.model.set({mouseX: this.getX(event.pageX)});
+			this.model.set({mouseY: this.getY(event.pageY)});
 
-			this.startX = curX;
-			this.startY = curY;
-
-			this.clicking = true;
+			this.model.set({clicking: true});
 			this.setCursor('closedHand');
 		},
 
 		mouseMove: function(event)
 		{
-			var curX = this.getX(event.pageX);
-			var curY = this.getY(event.pageY);
-			$('#canvasTest').text('mousemove: '+curX+','+curY);
+			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
+			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
+			this.model.set({mouseX: this.getX(event.pageX)});
+			this.model.set({mouseY: this.getY(event.pageY)});
 
-			if (!this.clicking)
+			if (!this.model.get('clicking'))
 				return;
 
-			this.model.augment({originX: curX - this.startX});
-			this.model.augment({originY: curY - this.startY});
+			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 
-			this.startX = curX;
-			this.startY = curY;
+// 			this.model.augment({originX: this.model.get('mouseX') - this.model.previous('mouseX')});
+// 			this.model.augment({originY: this.model.get('mouseY') - this.model.previous('mouseY')});
 		},
 
-// 		mouseWheel: function(event,delta)
-// 		{
-// 			var curX = this.getX(event.pageX);
-// 			var curY = this.getY(event.pageY);
-// 			$('#canvasTest').text('mousewheel: '+curX+','+curY);
-// 
-// 			var mouseX = curX - this.model.get('originX');
-// 			var mouseY = curY - this.model.get('originY');
-// 
-// 			this.model.originX(-(mouseX / this.model.get('scale')) * delta);
-// 			this.model.originY(-(mouseY / this.model.get('scale')) * delta);
-// 		},
+		mouseWheel: function(event,delta)
+		{
+			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
+			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
+			this.model.set({mouseX: this.getX(event.pageX)});
+			this.model.set({mouseY: this.getY(event.pageY)});
+
+			this.model.augment({scale: delta});
+		},
 
 		mouseUp: function(event)
 		{
-			var curX = this.getX(event.pageX);
-			var curY = this.getY(event.pageY);
-			$('#canvasTest').text('mouseup: '+curX+','+curY);
+			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
+			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
+			this.model.set({mouseX: this.getX(event.pageX)});
+			this.model.set({mouseY: this.getY(event.pageY)});
 
-			if (!this.clicking)
+			if (!this.model.get('clicking'))
 				return;
 
-			this.model.augment({originX: curX - this.startX});
-			this.model.augment({originY: curY - this.startY});
+			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 
-			this.startX = curX;
-			this.startY = curY;
+// 			this.model.augment({originX: this.model.get('mouseX') - this.model.previous('mouseX')});
+// 			this.model.augment({originY: this.model.get('mouseY') - this.model.previous('mouseY')});
 
-			this.clicking = false;
+			this.model.set({clicking: false});
 			this.setCursor('openHand');
 		},
 
 		mouseOut: function(event)
 		{
-			var curX = this.getX(event.pageX);
-			var curY = this.getY(event.pageY);
-			$('#canvasTest').text('mouseup: '+curX+','+curY);
+			this.model.set({lastX: this.model.get('mouseX')}); // hack until 'previous' works
+			this.model.set({lastY: this.model.get('mouseY')}); // hack until 'previous' works
+			this.model.set({mouseX: this.getX(event.pageX)});
+			this.model.set({mouseY: this.getY(event.pageY)});
 
-			if (!this.clicking)
+			if (!this.model.get('clicking'))
 				return;
 
-			this.model.augment({originX: curX - this.startX});
-			this.model.augment({originY: curY - this.startY});
+			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 
-			this.startX = curX;
-			this.startY = curY;
+// 			this.model.augment({originX: this.model.get('mouseX') - this.model.previous('mouseX')});
+// 			this.model.augment({originY: this.model.get('mouseY') - this.model.previous('mouseY')});
 
-			this.clicking = false;
+			this.model.set({clicking: false});
 			this.setCursor('openHand');
 		},
 

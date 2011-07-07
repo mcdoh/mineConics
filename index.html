@@ -17,7 +17,7 @@
 <!-- 		<script src="scripts/todos.js"></script>  -->
 		<script src="scripts/backboneConics.js"></script> 
 
-<!-- 		<script type="text/javascript" src="scripts/jquery.mousewheel.js"></script> -->
+		<script type="text/javascript" src="scripts/jquery.mousewheel.js"></script>
 <!-- 		<script type="text/javascript" src="scripts/mineConics.js"></script> -->
 
 	</head>
@@ -39,7 +39,6 @@
 				<div id="graphPane">
 					<canvas id="canvas" width="500" height="500"></canvas>
 					<div id="zoomHelp">scroll to zoom</div>
-					<div id="canvasTest"></div>
 				</div>
 
 				<div id="adPane">
@@ -52,7 +51,9 @@
 		<!-- Templates --> 
 
 		<script type="text/template" id="controlPaneTemplate"> 
-			<div id="canvasControl"></div>
+			<div id="canvasControl">
+				<div id="canvasTest"></div>
+			</div>
 			<div id="addShapes" class="control">
 				<ul id="addShapeList">
 					<li id="addShape" class="addShape">[add shape]</li>
