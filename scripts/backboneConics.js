@@ -451,13 +451,13 @@ $(function()
 		},
 
 		// return x relative to the graph
-		getX: function(x)
+		graphX: function(x)
 		{
 			return Math.round((x - this.get('originX')) / this.get('scale'));
 		},
 
 		// return y relative to the graph
-		getY: function(y)
+		graphY: function(y)
 		{
 			return Math.round((this.get('originY') - y) / this.get('scale'));
 		},
@@ -547,13 +547,13 @@ $(function()
 
 		reportLocation: function()
 		{
-			this.$location.text('(' + this.model.getX(this.model.get('mouseX')) + ',' + this.model.getY(this.model.get('mouseY')) + ')');
+			this.$location.text('(' + this.model.graphX(this.model.get('mouseX')) + ',' + this.model.graphY(this.model.get('mouseY')) + ')');
 		},
 
 		mouseDown: function(event)
 		{
-			this.model.set({mouseX: this.getX(event.pageX)});
-			this.model.set({mouseY: this.getY(event.pageY)});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			this.model.set({clicking: true});
 			this.setCursor('closedHand');
@@ -561,8 +561,8 @@ $(function()
 
 		mouseMove: function(event)
 		{
-			this.model.set({mouseX: this.getX(event.pageX)});
-			this.model.set({mouseY: this.getY(event.pageY)});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			if (!this.model.get('clicking'))
 				return;
@@ -573,16 +573,16 @@ $(function()
 
 		mouseWheel: function(event,delta)
 		{
-			this.model.set({mouseX: this.getX(event.pageX)});
-			this.model.set({mouseY: this.getY(event.pageY)});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			this.model.augment({scale: delta});
 		},
 
 		mouseUp: function(event)
 		{
-			this.model.set({mouseX: this.getX(event.pageX)});
-			this.model.set({mouseY: this.getY(event.pageY)});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			if (!this.model.get('clicking'))
 				return;
@@ -596,8 +596,8 @@ $(function()
 
 		mouseOut: function(event)
 		{
-			this.model.set({mouseX: this.getX(event.pageX)});
-			this.model.set({mouseY: this.getY(event.pageY)});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			if (!this.model.get('clicking'))
 				return;
@@ -624,12 +624,12 @@ $(function()
 			return this.$canvas.offset().top;
 		},
 
-		getX: function(x)
+		canvasX: function(x)
 		{
 			return x - this.offsetLeft();
 		},
 
-		getY: function(y)
+		canvasY: function(y)
 		{
 			return y - this.offsetTop();
 		},
