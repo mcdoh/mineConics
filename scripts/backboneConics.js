@@ -21,6 +21,7 @@ $(function()
 		{
 			title:    'shape',
 			virgin:   true,
+			selected: false,
 			red:      0,
 			green:    0,
 			blue:     0,
@@ -95,7 +96,7 @@ $(function()
 		// midpoint circle algorithm
 		draw: function(plot)
 		{
-			if (!isNaN(this.get('centerX')) && !isNaN(this.get('centerY')) && !isNaN(this.get('radius')))
+			if (!isNaN(parseInt(this.get('centerX'))) && !isNaN(parseInt(this.get('centerY'))) && !isNaN(parseInt(this.get('radius'))))
 			{
 				var x = this.get('radius');
 				var y = 0;
@@ -179,11 +180,15 @@ $(function()
 
 			if ($this.hasClass('selected'))
 			{
+				this.model.set({selected: false});
+
 				$this.removeClass('selected');
 				$this.find('input').removeClass('selected');
 			}
 			else
 			{
+				this.model.set({selected: true});
+
 				$this.addClass('selected');
 				$this.find('input').addClass('selected');
 
@@ -213,6 +218,8 @@ $(function()
 			{
 				if ($this.hasClass('selected'))
 				{
+					this.model.set({selected: false});
+
 					$this.removeClass('selected');
 					$this.find('input').removeClass('selected');
 				}
@@ -479,7 +486,8 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'drawScene', 'plot', 'reportLocation', 'storeMouseX', 'storeMouseY');
+			_.bindAll(this, 'drawScene', 'plot', 'shapeSelected', 'reportLocation', 'storeMouseX', 'storeMouseY');
+			this.collection.bind('change:selected', this.shapeSelected);
 			this.collection.bind('change', this.drawScene);
 
 			this.$canvas = $(this.el);
@@ -511,6 +519,19 @@ $(function()
 
 			this.model.set({originX: Math.floor(this.width / 2)});
 			this.model.set({originY: Math.floor(this.height / 2)});
+		},
+
+		shapeSelected: function(justSelected)
+		{
+			if (justSelected === this.selected)
+				this.selected = null;
+			else
+			{
+				if (this.selected)
+					this.selected.set({selected: false}, {silent: true});
+
+				this.selected = justSelected;
+			}
 		},
 
 		// keep track of last mouse X position
