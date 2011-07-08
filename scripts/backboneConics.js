@@ -407,11 +407,6 @@ $(function()
 			originX:    0,
 			originY:    0,
 			interval:   2,                  // how often a marker is drawn along the axes
-			mouseX:     0,                  // mouse location
-			mouseY:     0,                  // mouse location
-			lastX:      0,                  // last mouse location
-			lastY:      0,                  // last mouse location
-			clicking:   false,              // if the user is clicking the mouse button
 		},
 
 		// essentially +=, but then corrected for floating point errors
@@ -433,9 +428,10 @@ $(function()
 				{
 					this.set({scale: scaleTemp}, options);
 
+					var quijibo = parseInt(delta.scale*1000)/1000;
 					// zoom to the current mouse location
-					this.augment({originX: (((this.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)}, {silent: true});
-					this.augment({originY: (((this.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)}, {silent: true});
+					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * -quijibo)}, {silent: true});
+					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * -quijibo)}, {silent: true});
 				}
 			}
 
@@ -465,6 +461,111 @@ $(function()
 
 	var GraphView = Backbone.View.extend(
 	{
+		initialize: function()
+		{
+			_.bindAll(this, 'render', 'plot', 'fill');
+		},
+
+		// draw a square on the canvas relative to 'scale'
+		fill: function(row,col,color)
+		{
+			var width = this.canvas.model.get('width');
+			var height = this.canvas.model.get('height');
+			var scale = this.model.get('scale');
+
+			var cols = Math.floor(width / scale);
+			var rows = Math.floor(height / scale);
+
+			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
+			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			this.canvas.context.beginPath();
+			this.canvas.context.fillStyle = color;
+			this.canvas.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
+			this.canvas.context.closePath();
+			this.canvas.context.fill();
+		},
+
+		// 'fill' a point on the cartesian plane
+		plot: function(x,y,color)
+		{
+			var upperLeftX = -parseInt((this.model.get('originX') - (this.model.get('scale')/2)) / this.model.get('scale'));
+			var upperLeftY = parseInt((this.model.get('originY') - (this.model.get('scale')/2)) / this.model.get('scale'));
+
+			this.fill(upperLeftY-y,x-upperLeftX,color);
+		},
+
+		render: function()
+		{
+			var width = this.canvas.model.get('width');
+			var height = this.canvas.model.get('height');
+			var scale = this.model.get('scale');
+
+			// fill with background color
+			this.canvas.context.beginPath();
+			this.canvas.context.fillStyle = this.model.get('color');
+			this.canvas.context.rect(0,0,width,height);
+			this.canvas.context.closePath();
+			this.canvas.context.fill();
+
+			var cols = Math.floor(width / scale);
+			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
+
+			for (var col=0; col<=cols; col++)
+			{
+				this.canvas.context.beginPath();
+				this.canvas.context.fillStyle = "rgba(255,255,255,1)";
+				this.canvas.context.rect((col * scale) + xOffset, 0, 1, height);
+				this.canvas.context.closePath();
+				this.canvas.context.fill();
+
+				// draw marks along the X axis
+				var x = col - parseInt((this.model.get('originX') + (scale/2)) / scale);
+				if ((x % this.model.get('interval')) == 0)
+					this.plot(x,0,this.model.get('highlight'));
+				else if ((col == cols) && (((x+1) % this.model.get('interval')) == 0))
+					this.plot(x+1,0,this.model.get('highlight')); // slight hack for small slivers at the edge
+			}
+
+			var rows = Math.floor(height / scale);
+			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			for (var row=0; row<=rows; row++)
+			{
+				this.canvas.context.beginPath();
+				this.canvas.context.fillStyle = "rgba(255,255,255,1)";
+				this.canvas.context.rect(0, (row * scale) + yOffset, width, 1);
+				this.canvas.context.closePath();
+				this.canvas.context.fill();
+
+				// draw marks along the Y axis
+				var y = parseInt((this.model.get('originY') - (scale/2)) / scale) - row;
+				if ((y % this.model.get('interval')) == 0)
+					this.plot(0,y,this.model.get('highlight'));
+				else if ((row == 0) && (((y+1) % this.model.get('interval')) == 0))
+					this.plot(0,y+1,this.model.get('highlight')); // slight hack for small slivers at the edge
+			}
+		},
+	});
+
+	var Canvas = Backbone.Model.extend(
+	{
+		defaults:
+		{
+			height:     500,                // size of canvas
+			width:      500,                // size of canvas
+			offsetLeft: 0,                  // location of canvas
+			offsetTop:  0,                  // location of canvas
+			mouseX:     0,                  // mouse location
+			mouseY:     0,                  // mouse location
+			lastX:      0,                  // last mouse location
+			lastY:      0,                  // last mouse location
+			clicking:   false,              // if the user is clicking the mouse button
+		},
+	});
+
+	var CanvasView = Backbone.View.extend(
+	{
 		el: $('#canvas'),
 
 		cursors:
@@ -486,39 +587,59 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'drawScene', 'plot', 'shapeSelected', 'reportLocation', 'storeMouseX', 'storeMouseY');
-			this.collection.bind('change:selected', this.shapeSelected);
-			this.collection.bind('change', this.drawScene);
+			_.bindAll(this, 'render', 'shapeSelected', 'reportLocation');//, 'storeMouseX', 'storeMouseY');
+
+			this.model = new Canvas();
+			this.model.bind('change:mouseX', this.reportLocation);
+			this.model.bind('change:mouseY', this.reportLocation);
 
 			this.$canvas = $(this.el);
 			this.context = this.$canvas[0].getContext('2d');
-			this.setCursor('openHand');
 
 			// resize the canvas to take advantage of extra viewport space
 			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true)));
 			this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
 
-			this.height = this.$canvas.height();
-			this.width = this.$canvas.width();
+			// stash canvas details
+			this.model.set({height: this.$canvas.height()});
+			this.model.set({width: this.$canvas.width()});
+			this.model.set({offsetLeft: this.$canvas.offset().left});
+			this.model.set({offsetTop: this.$canvas.offset().top});
 
-			$('#graphPane').height(this.height);
-			$('#graphPane').width(this.width);
+			// adjust size of #graphPane
+			$('#graphPane').height(this.model.get('height'));
+			$('#graphPane').width(this.model.get('width'));
 
-			this.model = new Graph();
-			this.model.view = this;
+			// set bindings with shapes
+			this.collection.bind('change:selected', this.shapeSelected);
+			this.collection.bind('change', this.render);
 
-			this.model.bind('change:scale', this.drawScene);
-			this.model.bind('change:originX', this.drawScene);
-			this.model.bind('change:originY', this.drawScene);
+			// set up graph
+			this.graph = new Graph();
+			this.graph.view = new GraphView({model: this.graph});
+			this.graph.canvas = this;
+			this.graph.view.canvas = this;
+
+			this.graph.bind('change:scale', this.render);
+			this.graph.bind('change:originX', this.render);
+			this.graph.bind('change:originY', this.render);
+
+			this.graph.set({originX: Math.floor(this.model.get('width') / 2)});
+			this.graph.set({originY: Math.floor(this.model.get('height') / 2)});
 
 			this.$location = $('#canvasTest');
-			this.model.bind('change:mouseX', this.storeMouseX);
-			this.model.bind('change:mouseY', this.storeMouseY);
-			this.model.bind('change:mouseX', this.reportLocation);
-			this.model.bind('change:mouseY', this.reportLocation);
+			this.setCursor('openHand');
+		},
 
-			this.model.set({originX: Math.floor(this.width / 2)});
-			this.model.set({originY: Math.floor(this.height / 2)});
+		render: function()
+		{
+			this.clear();
+			this.graph.view.render();
+
+			this.collection.each(function(shape)
+			{
+				shape.draw(this.graph.view.plot);
+			},this);
 		},
 
 		shapeSelected: function(justSelected)
@@ -534,20 +655,9 @@ $(function()
 			}
 		},
 
-		// keep track of last mouse X position
-		storeMouseX: function()
-		{
-			this.model.set({lastX: this.model.previous('mouseX')});
-		},
-
-		storeMouseY: function()
-		{
-			this.model.set({lastY: this.model.previous('mouseY')});
-		},
-
 		reportLocation: function()
 		{
-			this.$location.text('(' + this.model.graphX(this.model.get('mouseX')) + ',' + this.model.graphY(this.model.get('mouseY')) + ')');
+			this.$location.text('(' + this.graph.graphX(this.model.get('mouseX')) + ',' + this.graph.graphY(this.model.get('mouseY')) + ')');
 		},
 
 		mouseDown: function(event)
@@ -557,38 +667,80 @@ $(function()
 
 			this.model.set({clicking: true});
 			this.setCursor('closedHand');
+// 			var curX = this.canvasX(event.pageX);
+// 			var curY = this.canvasY(event.pageY);
+// 
+// 			this.model.set({mouseX: curX});
+// 			this.model.set({mouseY: curY});
+// 			this.model.set({clicking: true});
+// 
+// 			if (!this.selected)
+// 				this.setCursor('closedHand');
+// 			else if (this.selected instanceof Circle)
+// 			{
+// 				if (this.selected.get('virgin'))
+// 				{
+// 					this.selected.set({centerX: this.model.graphX(curX)});
+// 					this.selected.set({centerY: this.model.graphY(curY)});
+// 					this.selected.set({radius: 0});
+// 					this.selected.set({virgin: false});
+// 				}
+// 				else
+// 				{
+// 					if (this.model.graphX(curX) === this.selected.get('centerX') && this.model.graphY(curY) === this.selected.get('centerY'))
+// 					{
+// 						this.setCursor('closedHand');
+// 						this.selected.set({editingCenter: true});
+// 					}
+// 					else
+// 					{
+// 						this.selected.set({editingRadius: true});
+// 
+// 						var deltaX = circles.curCircle.centerX - curX;
+// 						var deltaY = circles.curCircle.centerY - curY;
+// 
+// 						circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+// 					}
+// 				}
+// 			}
 		},
 
 		mouseMove: function(event)
 		{
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
 			this.model.set({mouseX: this.canvasX(event.pageX)});
 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			if (!this.model.get('clicking'))
 				return;
 
-			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
-			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+			this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 		},
 
 		mouseWheel: function(event,delta)
 		{
-			this.model.set({mouseX: this.canvasX(event.pageX)});
-			this.model.set({mouseY: this.canvasY(event.pageY)});
+// 			this.model.set({lastX: this.model.get('mouseX')});
+// 			this.model.set({lastY: this.model.get('mouseY')});
+// 			this.model.set({mouseX: this.canvasX(event.pageX)});
+// 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
-			this.model.augment({scale: delta});
+			this.graph.augment({scale: delta});
 		},
 
 		mouseUp: function(event)
 		{
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
 			this.model.set({mouseX: this.canvasX(event.pageX)});
 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			if (!this.model.get('clicking'))
 				return;
 
-			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
-			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+			this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 
 			this.model.set({clicking: false});
 			this.setCursor('openHand');
@@ -596,14 +748,16 @@ $(function()
 
 		mouseOut: function(event)
 		{
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
 			this.model.set({mouseX: this.canvasX(event.pageX)});
 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			if (!this.model.get('clicking'))
 				return;
 
-			this.model.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
-			this.model.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+			this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 
 			this.model.set({clicking: false});
 			this.setCursor('openHand');
@@ -614,126 +768,24 @@ $(function()
 			this.$canvas.css('cursor', this.cursors[cursor]);
 		},
 
-		offsetLeft: function()
-		{
-			return this.$canvas.offset().left;
-		},
-
-		offsetTop: function()
-		{
-			return this.$canvas.offset().top;
-		},
-
 		canvasX: function(x)
 		{
-			return x - this.offsetLeft();
+			return x - this.model.get('offsetLeft');
 		},
 
 		canvasY: function(y)
 		{
-			return y - this.offsetTop();
-		},
-
-		// draw a square on the canvas relative to 'scale'
-		fill: function(row,col,color)
-		{
-			var width = this.width;
-			var height = this.height;
-			var scale = this.model.get('scale');
-
-			var cols = Math.floor(width / scale);
-			var rows = Math.floor(height / scale);
-
-			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
-			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
-
-			this.context.beginPath();
-			this.context.fillStyle = color;
-			this.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
-			this.context.closePath();
-			this.context.fill();
-		},
-
-		// 'fill' a point on the cartesian plane
-		plot: function(x,y,color)
-		{
-			var upperLeftX = -parseInt((this.model.get('originX') - (this.model.get('scale')/2)) / this.model.get('scale'));
-			var upperLeftY = parseInt((this.model.get('originY') - (this.model.get('scale')/2)) / this.model.get('scale'));
-
-			this.fill(upperLeftY-y,x-upperLeftX,color);
-		},
-
-		drawGraph: function()
-		{
-			var width = this.width;
-			var height = this.height;
-			var scale = this.model.get('scale');
-
-			// fill with background color
-			this.context.beginPath();
-			this.context.fillStyle = this.model.get('color');
-			this.context.rect(0,0,width,height);
-			this.context.closePath();
-			this.context.fill();
-
-			var cols = Math.floor(width / scale);
-			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
-
-			for (var col=0; col<=cols; col++)
-			{
-				this.context.beginPath();
-				this.context.fillStyle = "rgba(255,255,255,1)";
-				this.context.rect((col * scale) + xOffset, 0, 1, height);
-				this.context.closePath();
-				this.context.fill();
-
-				// draw marks along the X axis
-				var x = col - parseInt((this.model.get('originX') + (scale/2)) / scale);
-				if ((x % this.model.get('interval')) == 0)
-					this.plot(x,0,this.model.get('highlight'));
-				else if ((col == cols) && (((x+1) % this.model.get('interval')) == 0))
-					this.plot(x+1,0,this.model.get('highlight')); // slight hack for small slivers at the edge
-			}
-
-			var rows = Math.floor(height / scale);
-			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
-
-			for (var row=0; row<=rows; row++)
-			{
-				this.context.beginPath();
-				this.context.fillStyle = "rgba(255,255,255,1)";
-				this.context.rect(0, (row * scale) + yOffset, width, 1);
-				this.context.closePath();
-				this.context.fill();
-
-				// draw marks along the Y axis
-				var y = parseInt((this.model.get('originY') - (scale/2)) / scale) - row;
-				if ((y % this.model.get('interval')) == 0)
-					this.plot(0,y,this.model.get('highlight'));
-				else if ((row == 0) && (((y+1) % this.model.get('interval')) == 0))
-					this.plot(0,y+1,this.model.get('highlight')); // slight hack for small slivers at the edge
-			}
+			return y - this.model.get('offsetTop');
 		},
 
 		clear: function()
 		{
-			this.context.clearRect(0,0,this.width,this.height);
-		},
-
-		drawScene: function()
-		{
-			this.clear();
-			this.drawGraph();
-
-			this.collection.each(function(shape)
-			{
-				shape.draw(this.plot);
-			},this);
+			this.context.clearRect(0,0,this.model.get('width'),this.model.get('height'));
 		},
 	});
 
 	var shapes =      new Shapes();
 	var controlPane = new ControlPane({collection: shapes});
-	var graph =       new GraphView({collection: shapes});
+	var scene =       new CanvasView({collection: shapes});
 });
 
