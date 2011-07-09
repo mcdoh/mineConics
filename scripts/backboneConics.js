@@ -69,6 +69,14 @@ $(function()
 			showCenter: false,
 		}),
 
+		isCenter: function(x,y)
+		{
+			if ((x === this.get('centerX')) && (y === this.get('centerY')))
+				return true;
+			else
+				return false;
+		},
+
 		// helper for midpoint circle algorithm
 		plotFourPoints: function(plot,x,y)
 		{
@@ -417,7 +425,8 @@ $(function()
 				var scaleOrig = this.get('scale');
 				var scaleTemp = scaleOrig;
 
-				scaleTemp = parseInt((scaleTemp*1000) + (delta.scale*1000)) / 1000;
+				delta.scale = parseInt(delta.scale*1000) / 1000;
+				scaleTemp = parseInt((scaleTemp*1000) + delta.scale*1000) / 1000;
 
 				// make sure 'scale' doesn't get too small nor too big
 				if (scaleTemp < 3)
@@ -428,10 +437,9 @@ $(function()
 				{
 					this.set({scale: scaleTemp}, options);
 
-					var quijibo = parseInt(delta.scale*1000)/1000;
 					// zoom to the current mouse location
-					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * -quijibo)}, {silent: true});
-					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * -quijibo)}, {silent: true});
+					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)}, {silent: true});
+					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)}, {silent: true});
 				}
 			}
 
@@ -666,43 +674,41 @@ $(function()
 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			this.model.set({clicking: true});
-			this.setCursor('closedHand');
-// 			var curX = this.canvasX(event.pageX);
-// 			var curY = this.canvasY(event.pageY);
-// 
-// 			this.model.set({mouseX: curX});
-// 			this.model.set({mouseY: curY});
-// 			this.model.set({clicking: true});
-// 
-// 			if (!this.selected)
-// 				this.setCursor('closedHand');
-// 			else if (this.selected instanceof Circle)
-// 			{
-// 				if (this.selected.get('virgin'))
-// 				{
-// 					this.selected.set({centerX: this.model.graphX(curX)});
-// 					this.selected.set({centerY: this.model.graphY(curY)});
-// 					this.selected.set({radius: 0});
-// 					this.selected.set({virgin: false});
-// 				}
-// 				else
-// 				{
-// 					if (this.model.graphX(curX) === this.selected.get('centerX') && this.model.graphY(curY) === this.selected.get('centerY'))
-// 					{
-// 						this.setCursor('closedHand');
-// 						this.selected.set({editingCenter: true});
-// 					}
-// 					else
-// 					{
-// 						this.selected.set({editingRadius: true});
-// 
-// 						var deltaX = circles.curCircle.centerX - curX;
-// 						var deltaY = circles.curCircle.centerY - curY;
-// 
-// 						circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
-// 					}
-// 				}
-// 			}
+
+			if (!this.selected)
+				this.setCursor('closedHand');
+			else if (this.selected instanceof Circle)
+			{
+				var locX = this.graph.graphX(this.model.get('mouseX'));
+				var locY = this.graph.graphY(this.model.get('mouseY'));
+
+				if (this.selected.get('virgin'))
+				{
+					this.selected.set({centerX: locX});
+					this.selected.set({centerY: locY});
+					this.selected.set({radius: 0});
+
+					this.selected.set({editingRadius: true});
+					this.selected.set({virgin: false});
+				}
+				else
+				{
+					if (this.selected.isCenter(locX,locY))
+					{
+						this.setCursor('closedHand');
+						this.selected.set({editingCenter: true});
+					}
+					else
+					{
+						this.selected.set({editingRadius: true});
+
+						var deltaX = this.selected.get('centerX') - locX;
+						var deltaY = this.selected.get('centerY') - locY;
+
+						this.selected.set({radius: (Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)))});
+					}
+				}
+			}
 		},
 
 		mouseMove: function(event)
@@ -712,19 +718,53 @@ $(function()
 			this.model.set({mouseX: this.canvasX(event.pageX)});
 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
+			var locX = this.graph.graphX(this.model.get('mouseX'));
+			var locY = this.graph.graphY(this.model.get('mouseY'));
+
+			if (this.selected)
+			{
+				if (this.selected instanceof Circle)
+				{
+					if (this.selected.get('editingCenter'))
+						this.setCursor('closedHand');
+					else if (this.selected.isCenter(locX,locY))
+						this.setCursor('openHand');
+					else
+						this.setCursor('crosshair');
+				}
+			}
+
 			if (!this.model.get('clicking'))
 				return;
 
-			this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
-			this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			if (!this.selected)
+			{
+				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			}
+			else if (this.selected instanceof Circle)
+			{
+				if (this.selected.get('editingCenter'))
+				{
+					this.selected.set({centerX: locX});
+					this.selected.set({centerY: locY});
+				}
+				else // editing radius
+				{
+					var deltaX = this.selected.get('centerX') - locX;
+					var deltaY = this.selected.get('centerY') - locY;
+
+					this.selected.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
+				}
+			}
 		},
 
 		mouseWheel: function(event,delta)
 		{
-// 			this.model.set({lastX: this.model.get('mouseX')});
-// 			this.model.set({lastY: this.model.get('mouseY')});
-// 			this.model.set({mouseX: this.canvasX(event.pageX)});
-// 			this.model.set({mouseY: this.canvasY(event.pageY)});
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
 
 			this.graph.augment({scale: delta});
 		},
@@ -739,8 +779,31 @@ $(function()
 			if (!this.model.get('clicking'))
 				return;
 
-			this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
-			this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			if (!this.selected)
+			{
+				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			}
+			else if (this.selected instanceof Circle)
+			{
+				var locX = this.graph.graphX(this.model.get('mouseX'));
+				var locY = this.graph.graphY(this.model.get('mouseY'));
+
+				if (this.selected.get('editingCenter'))
+				{
+					this.selected.set({centerX: locX});
+					this.selected.set({centerY: locY});
+					this.selected.set({editingCenter: false});
+				}
+				else // editing radius
+				{
+					var deltaX = this.selected.get('centerX') - locX;
+					var deltaY = this.selected.get('centerY') - locY;
+
+					this.selected.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
+					this.selected.set({editingRadius: false});
+				}
+			}
 
 			this.model.set({clicking: false});
 			this.setCursor('openHand');
