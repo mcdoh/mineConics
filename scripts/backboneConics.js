@@ -75,58 +75,6 @@ $(function()
 			else
 				return false;
 		},
-
-		// helper for midpoint circle algorithm
-		plotFourPoints: function(plot,x,y)
-		{
-			plot(this.get('centerX')+x,this.get('centerY')+y,this.get('rgba'));
-
-			if (x != 0)
-				plot(this.get('centerX')-x,this.get('centerY')+y,this.get('rgba'));
-
-			if (y != 0)
-				plot(this.get('centerX')+x,this.get('centerY')-y,this.get('rgba'));
-
-			if ((x != 0) && (y != 0))
-				plot(this.get('centerX')-x,this.get('centerY')-y,this.get('rgba'));
-		},
-
-		// helper for midpoint circle algorithm
-		plotEightPoints: function(plot,x,y)
-		{
-			this.plotFourPoints(plot,x,y);
-
-			if (x != y)
-				this.plotFourPoints(plot,y,x);
-		},
-
-		// midpoint circle algorithm
-		draw: function(plot)
-		{
-			if (!isNaN(parseInt(this.get('centerX'))) && !isNaN(parseInt(this.get('centerY'))) && !isNaN(parseInt(this.get('radius'))))
-			{
-				var x = this.get('radius');
-				var y = 0;
-				var error = -x;
-
-				while (x >= y)
-				{
-					this.plotEightPoints(plot,x,y);
-
-					error += (2 * y) + 1;
-					y++;
-
-					if (error >= 0)
-					{
-						x--;
-						error -= 2 * x;
-					}
-				}
-
-				if (this.get('selected'))
-					plot(this.get('centerX'),this.get('centerY'));
-			}
-		},
 	});
 
 	var Shapes = Backbone.Collection.extend(
@@ -379,6 +327,149 @@ $(function()
 		},
 	});
 
+	// repurposing the View object for managing shapes on the canvas
+	var ShapeDraw = Backbone.View.extend(
+	{
+	});
+
+	var CircleDraw = ShapeDraw.extend(
+	{
+		initialize: function()
+		{
+		},
+
+		// helper for midpoint circle algorithm
+		plotFourPoints: function(plot,x,y)
+		{
+			plot(this.model.get('centerX')+x,this.model.get('centerY')+y,this.model.get('rgba'));
+
+			if (x != 0)
+				plot(this.model.get('centerX')-x,this.model.get('centerY')+y,this.model.get('rgba'));
+
+			if (y != 0)
+				plot(this.model.get('centerX')+x,this.model.get('centerY')-y,this.model.get('rgba'));
+
+			if ((x != 0) && (y != 0))
+				plot(this.model.get('centerX')-x,this.model.get('centerY')-y,this.model.get('rgba'));
+		},
+
+		// helper for midpoint circle algorithm
+		plotEightPoints: function(plot,x,y)
+		{
+			this.plotFourPoints(plot,x,y);
+
+			if (x != y)
+				this.plotFourPoints(plot,y,x);
+		},
+
+		// midpoint circle algorithm
+		render: function(plot)
+		{
+			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radius'))))
+			{
+				var x = this.model.get('radius');
+				var y = 0;
+				var error = -x;
+
+				while (x >= y)
+				{
+					this.plotEightPoints(plot,x,y);
+
+					error += (2 * y) + 1;
+					y++;
+
+					if (error >= 0)
+					{
+						x--;
+						error -= 2 * x;
+					}
+				}
+
+				if (this.model.get('selected'))
+					plot(this.model.get('centerX'),this.model.get('centerY'));
+			}
+		},
+
+		setCursor: function(locX,locY)
+		{
+			if (this.model.get('editingCenter'))
+				this.canvas.setCursor('closedHand');
+			else if (this.model.isCenter(locX,locY))
+				this.canvas.setCursor('openHand');
+			else
+				this.canvas.setCursor('crosshair');
+		},
+
+		mouseDown: function(locX, locY)
+		{
+			if (this.model.get('virgin'))
+			{
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({radius: 0});
+
+				this.model.set({editingRadius: true});
+			}
+			else
+			{
+				if (this.model.isCenter(locX,locY))
+				{
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingCenter: true});
+				}
+				else
+				{
+					this.model.set({editingRadius: true});
+
+					var deltaX = this.model.get('centerX') - locX;
+					var deltaY = this.model.get('centerY') - locY;
+
+					this.model.set({radius: (Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)))});
+				}
+			}
+		},
+
+		mouseMove: function(locX,locY)
+		{
+			if (this.model.get('editingCenter'))
+			{
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+			}
+			else // editing radius
+			{
+				var deltaX = this.model.get('centerX') - locX;
+				var deltaY = this.model.get('centerY') - locY;
+
+				this.model.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
+			}
+		},
+
+		mouseUp: function(locX,locY)
+		{
+			if (this.model.get('editingCenter'))
+			{
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({editingCenter: false});
+			}
+			else // editing radius
+			{
+				var deltaX = this.model.get('centerX') - locX;
+				var deltaY = this.model.get('centerY') - locY;
+
+				this.model.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
+				this.model.set({editingRadius: false});
+			}
+
+			if (this.model.get('virgin'))
+			{
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+		},
+	});
+
 	var ControlPane = Backbone.View.extend(
 	{
 		el: $('#controlPane'),
@@ -621,12 +712,12 @@ $(function()
 			'mousemove':  'mouseMove',
 			'mousewheel': 'mouseWheel',
 			'mouseup':    'mouseUp',
-			'mouseout':   'mouseOut',
+			'mouseout':   'mouseUp',
 		},
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'shapeSelected', 'reportLocation');//, 'storeMouseX', 'storeMouseY');
+			_.bindAll(this, 'render', 'addShape', 'shapeSelected', 'reportLocation');//, 'storeMouseX', 'storeMouseY');
 
 			this.model = new Canvas();
 			this.model.bind('change:mouseX', this.reportLocation);
@@ -650,6 +741,7 @@ $(function()
 			$('#graphPane').width(this.model.get('width'));
 
 			// set bindings with shapes
+			this.collection.bind('add', this.addShape);
 			this.collection.bind('change:selected', this.shapeSelected);
 			this.collection.bind('change', this.render);
 
@@ -677,8 +769,22 @@ $(function()
 
 			this.collection.each(function(shape)
 			{
-				shape.draw(this.graph.view.plot);
+				shape.draw.render(this.graph.view.plot);
 			},this);
+		},
+
+
+		addShape: function(shape)
+		{
+			var draw;
+
+			if (shape instanceof Circle)
+				draw = new CircleDraw({model: shape});
+			else
+				draw = new ShapeDraw({model: shape});
+
+			draw.canvas = this;
+			shape.draw = draw;
 		},
 
 		shapeSelected: function(justSelected)
@@ -711,36 +817,12 @@ $(function()
 
 			if (!this.selected)
 				this.setCursor('closedHand');
-			else if (this.selected instanceof Circle)
+			else
 			{
 				var locX = this.graph.graphX(this.model.get('mouseX'));
 				var locY = this.graph.graphY(this.model.get('mouseY'));
 
-				if (this.selected.get('virgin'))
-				{
-					this.selected.set({centerX: locX});
-					this.selected.set({centerY: locY});
-					this.selected.set({radius: 0});
-
-					this.selected.set({editingRadius: true});
-				}
-				else
-				{
-					if (this.selected.isCenter(locX,locY))
-					{
-						this.setCursor('closedHand');
-						this.selected.set({editingCenter: true});
-					}
-					else
-					{
-						this.selected.set({editingRadius: true});
-
-						var deltaX = this.selected.get('centerX') - locX;
-						var deltaY = this.selected.get('centerY') - locY;
-
-						this.selected.set({radius: (Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)))});
-					}
-				}
+				this.selected.draw.mouseDown(locX,locY);
 			}
 		},
 
@@ -755,17 +837,7 @@ $(function()
 			var locY = this.graph.graphY(this.model.get('mouseY'));
 
 			if (this.selected)
-			{
-				if (this.selected instanceof Circle)
-				{
-					if (this.selected.get('editingCenter'))
-						this.setCursor('closedHand');
-					else if (this.selected.isCenter(locX,locY))
-						this.setCursor('openHand');
-					else
-						this.setCursor('crosshair');
-				}
-			}
+				this.selected.draw.setCursor(locX,locY);
 
 			if (!this.model.get('clicking'))
 				return;
@@ -775,21 +847,8 @@ $(function()
 				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 			}
-			else if (this.selected instanceof Circle)
-			{
-				if (this.selected.get('editingCenter'))
-				{
-					this.selected.set({centerX: locX});
-					this.selected.set({centerY: locY});
-				}
-				else // editing radius
-				{
-					var deltaX = this.selected.get('centerX') - locX;
-					var deltaY = this.selected.get('centerY') - locY;
-
-					this.selected.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
-				}
-			}
+			else
+				this.selected.draw.mouseMove(locX,locY);
 		},
 
 		mouseWheel: function(event,delta)
@@ -817,49 +876,13 @@ $(function()
 				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 			}
-			else if (this.selected instanceof Circle)
+			else
 			{
 				var locX = this.graph.graphX(this.model.get('mouseX'));
 				var locY = this.graph.graphY(this.model.get('mouseY'));
 
-				if (this.selected.get('editingCenter'))
-				{
-					this.selected.set({centerX: locX});
-					this.selected.set({centerY: locY});
-					this.selected.set({editingCenter: false});
-				}
-				else // editing radius
-				{
-					var deltaX = this.selected.get('centerX') - locX;
-					var deltaY = this.selected.get('centerY') - locY;
-
-					this.selected.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
-					this.selected.set({editingRadius: false});
-				}
-
-				if (this.selected.get('virgin'))
-				{
-					this.selected.set({virgin: false});
-					this.selected.set({selected: false});
-				}
+				this.selected.draw.mouseUp(locX,locY);
 			}
-
-			this.model.set({clicking: false});
-			this.setCursor('openHand');
-		},
-
-		mouseOut: function(event)
-		{
-			this.model.set({lastX: this.model.get('mouseX')});
-			this.model.set({lastY: this.model.get('mouseY')});
-			this.model.set({mouseX: this.canvasX(event.pageX)});
-			this.model.set({mouseY: this.canvasY(event.pageY)});
-
-			if (!this.model.get('clicking'))
-				return;
-
-			this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
-			this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 
 			this.model.set({clicking: false});
 			this.setCursor('openHand');
