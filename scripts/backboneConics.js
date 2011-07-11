@@ -153,11 +153,11 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'monitorSelected');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected');
 
 			this.model.bind('remove', this.remove);
 			this.model.bind('change:hexColor', this.changeHexInput);
-			this.model.bind('change:selected', this.monitorSelected);
+			this.model.bind('change:selected', this.changeSelected);
 		},
 
 		render: function()
@@ -210,7 +210,7 @@ $(function()
 		},
 
 		// set/unset 'selected' based on model state
-		monitorSelected: function()
+		changeSelected: function()
 		{
 			if (this.model.get('selected'))
 				this.setSelected();
@@ -308,11 +308,15 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'monitorSelected');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY', 'changeRadius');
 
 			this.model.bind('remove', this.remove);
 			this.model.bind('change:hexColor', this.changeHexInput);
-			this.model.bind('change:selected', this.monitorSelected);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:centerX', this.changeCenterX);
+			this.model.bind('change:centerY', this.changeCenterY);
+			this.model.bind('change:radius', this.changeRadius);
 		},
 
 		render: function()
@@ -357,6 +361,21 @@ $(function()
 				this.model.set({radius: testNum});
 			else
 				$this.find('.radius').val(this.model.get('radius'));
+		},
+
+		changeCenterX: function()
+		{
+			$(this.el).find('.centerX').val(this.model.get('centerX'));
+		},
+
+		changeCenterY: function()
+		{
+			$(this.el).find('.centerY').val(this.model.get('centerY'));
+		},
+
+		changeRadius: function()
+		{
+			$(this.el).find('.radius').val(this.model.get('radius'));
 		},
 	});
 
