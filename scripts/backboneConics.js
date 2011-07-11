@@ -66,7 +66,6 @@ $(function()
 			centerX:    '',
 			centerY:    '',
 			radius:     '',
-			showCenter: false,
 		}),
 
 		isCenter: function(x,y)
@@ -124,7 +123,7 @@ $(function()
 					}
 				}
 
-				if (this.get('showCenter'))
+				if (this.get('selected'))
 					plot(this.get('centerX'),this.get('centerY'));
 			}
 		},
@@ -146,7 +145,7 @@ $(function()
 		{
 			'click .close': 'close',
 			'click .title': 'toggleSelected',
-			'click .hide':  'toggleHide',
+			'click .hide':  'toggleHidden',
 
 			'change .color':    'setColor',
 			'change .hexColor': 'setHexColor',
@@ -154,10 +153,11 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'remove', 'changeHexInput');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'monitorSelected');
 
 			this.model.bind('remove', this.remove);
 			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.monitorSelected);
 		},
 
 		render: function()
@@ -182,60 +182,70 @@ $(function()
 			this.model.destroy();
 		},
 
-		toggleSelected: function()
+		setSelected: function()
 		{
 			var $this = $(this.el);
 
-			if ($this.hasClass('selected'))
-			{
-				this.model.set({selected: false});
+			$this.addClass('selected');
+			$this.find('input').addClass('selected');
 
-				$this.removeClass('selected');
-				$this.find('input').removeClass('selected');
-			}
-			else
-			{
-				this.model.set({selected: true});
+			$this.siblings().removeClass('selected');
+			$this.siblings().find('input').removeClass('selected');
 
-				$this.addClass('selected');
-				$this.find('input').addClass('selected');
-
-				$this.siblings().removeClass('selected');
-				$this.siblings().find('input').removeClass('selected');
-
-				if ($this.hasClass('hidden'))
-				{
-					$this.removeClass('hidden');
-					$this.find('.hide').html('[-]');
-					$this.find('.shapeControls').slideDown();
-				}
-			}
+			if ($this.hasClass('hidden'))
+				this.unsetHidden();
 		},
 
-		toggleHide: function()
+		unsetSelected: function()
+		{
+			var $this = $(this.el);
+
+			$this.removeClass('selected');
+			$this.find('input').removeClass('selected');
+		},
+
+		toggleSelected: function()
+		{
+			this.model.set({selected: !this.model.get('selected')});
+		},
+
+		// set/unset 'selected' based on model state
+		monitorSelected: function()
+		{
+			if (this.model.get('selected'))
+				this.setSelected();
+			else
+				this.unsetSelected();
+		},
+
+		setHidden: function()
+		{
+			var $this = $(this.el);
+
+			if (this.model.get('selected'))
+				this.model.set({selected: false});
+
+			$this.addClass('hidden');
+			$this.find('.hide').html('[+]');
+			$this.find('.shapeControls').slideUp();
+		},
+
+		unsetHidden: function()
+		{
+			var $this = $(this.el);
+			$this.removeClass('hidden');
+			$this.find('.hide').html('[-]');
+			$this.find('.shapeControls').slideDown();
+		},
+
+		toggleHidden: function()
 		{
 			var $this = $(this.el);
 
 			if ($this.hasClass('hidden'))
-			{
-				$this.removeClass('hidden');
-				$this.find('.hide').html('[-]');
-				$this.find('.shapeControls').slideDown();
-			}
+				this.unsetHidden();
 			else
-			{
-				if ($this.hasClass('selected'))
-				{
-					this.model.set({selected: false});
-
-					$this.removeClass('selected');
-					$this.find('input').removeClass('selected');
-				}
-
-				$this.addClass('hidden');
-				$this.find('.hide').html('[+]');
-				$this.find('.shapeControls').slideUp();
-			}
+				this.setHidden();
 		},
 
 		setColor: function()
@@ -298,10 +308,11 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'remove', 'changeHexInput');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'monitorSelected');
 
 			this.model.bind('remove', this.remove);
 			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.monitorSelected);
 		},
 
 		render: function()
@@ -386,6 +397,7 @@ $(function()
 		{
 			var circle = new Circle;
 			this.collection.add(circle);
+			circle.set({selected: true});
 		},
 
 		addShape: function(shape)
@@ -653,7 +665,10 @@ $(function()
 		shapeSelected: function(justSelected)
 		{
 			if (justSelected === this.selected)
+			{
 				this.selected = null;
+				this.setCursor('openHand');
+			}
 			else
 			{
 				if (this.selected)
@@ -689,7 +704,6 @@ $(function()
 					this.selected.set({radius: 0});
 
 					this.selected.set({editingRadius: true});
-					this.selected.set({virgin: false});
 				}
 				else
 				{
@@ -802,6 +816,12 @@ $(function()
 
 					this.selected.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
 					this.selected.set({editingRadius: false});
+				}
+
+				if (this.selected.get('virgin'))
+				{
+					this.selected.set({virgin: false});
+					this.selected.set({selected: false});
 				}
 			}
 
