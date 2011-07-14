@@ -550,16 +550,17 @@ $(function()
 
 				// make sure 'scale' doesn't get too small nor too big
 				if (scaleTemp < 3)
-					this.set({scale: 3}, options);
+					scaleTemp = 3;
 				else if (scaleTemp > 50)
-					this.set({scale: 50}, options);
-				else
+					scaleTemp = 50;
+
+				if (scaleOrig != scaleTemp)
 				{
 					this.set({scale: scaleTemp}, options);
 
 					// zoom to the current mouse location
-					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)});
-					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)});
+					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * (scaleOrig - scaleTemp))});
+					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * (scaleOrig - scaleTemp))});
 				}
 			}
 
