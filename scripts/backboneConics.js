@@ -545,10 +545,8 @@ $(function()
 			if (delta.scale)
 			{
 				var scaleOrig = this.get('scale');
-				var scaleTemp = scaleOrig;
 
-				delta.scale = parseInt(delta.scale*1000) / 1000;
-				scaleTemp = parseInt((scaleTemp*1000) + delta.scale*1000) / 1000;
+				var scaleTemp = parseInt((scaleOrig+delta.scale) * 1000) / 1000;
 
 				// make sure 'scale' doesn't get too small nor too big
 				if (scaleTemp < 3)
@@ -560,8 +558,8 @@ $(function()
 					this.set({scale: scaleTemp}, options);
 
 					// zoom to the current mouse location
-					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)}, {silent: true});
-					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)}, {silent: true});
+					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * -delta.scale)});
+					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * -delta.scale)});
 				}
 			}
 
@@ -641,6 +639,9 @@ $(function()
 			var cols = Math.floor(width / scale);
 			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
 
+			if (xOffset < 0)
+				xOffset += scale;
+
 			for (var col=0; col<=cols; col++)
 			{
 				this.canvas.context.beginPath();
@@ -650,15 +651,20 @@ $(function()
 				this.canvas.context.fill();
 
 				// draw marks along the X axis
-				var x = col - parseInt((this.model.get('originX') + (scale/2)) / scale);
+				var x = col - parseInt((this.model.get('originX') - (scale/2)) / scale);
 				if ((x % this.model.get('interval')) == 0)
 					this.plot(x,0,this.model.get('highlight'));
+				else if ((col == 0) && (((x-1) % this.model.get('interval')) == 0))
+					this.plot(x-1,0,this.model.get('highlight'));
 				else if ((col == cols) && (((x+1) % this.model.get('interval')) == 0))
-					this.plot(x+1,0,this.model.get('highlight')); // slight hack for small slivers at the edge
+					this.plot(x+1,0,this.model.get('highlight'));
 			}
 
 			var rows = Math.floor(height / scale);
 			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			if (yOffset < 0)
+				yOffset += scale;
 
 			for (var row=0; row<=rows; row++)
 			{
@@ -673,7 +679,9 @@ $(function()
 				if ((y % this.model.get('interval')) == 0)
 					this.plot(0,y,this.model.get('highlight'));
 				else if ((row == 0) && (((y+1) % this.model.get('interval')) == 0))
-					this.plot(0,y+1,this.model.get('highlight')); // slight hack for small slivers at the edge
+					this.plot(0,y+1,this.model.get('highlight'));
+				else if ((row == rows) && (((y-1) % this.model.get('interval')) == 0))
+					this.plot(0,y-1,this.model.get('highlight'));
 			}
 		},
 	});
