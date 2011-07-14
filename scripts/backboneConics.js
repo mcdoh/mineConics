@@ -558,9 +558,21 @@ $(function()
 				{
 					this.set({scale: scaleTemp}, options);
 
-					// zoom to the current mouse location
-					this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * (scaleOrig - scaleTemp))});
-					this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * (scaleOrig - scaleTemp))});
+					if (delta.focusCenter)
+					{
+						var canvasCenterX = this.canvas.model.get('width') / 2;
+						var canvasCenterY = this.canvas.model.get('height') / 2;
+
+						// zoom to center of canvas
+						this.augment({originX: (((canvasCenterX-this.get('originX'))/scaleTemp) * (scaleOrig - scaleTemp))}, options);
+						this.augment({originY: (((canvasCenterY-this.get('originY'))/scaleTemp) * (scaleOrig - scaleTemp))}, options);
+					}
+					else
+					{
+						// zoom to the current mouse location
+						this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
+						this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
+					}
 				}
 			}
 
@@ -857,7 +869,18 @@ $(function()
 				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 			}
 			else
+			{
+				if (this.model.get('mouseX') < this.graph.get('scale'))
+					this.graph.augment({scale: -0.1, focusCenter: true});
+				else if (this.model.get('mouseX') > (this.model.get('width') - this.graph.get('scale')))
+					this.graph.augment({scale: -0.1, focusCenter: true});
+				else if (this.model.get('mouseY') < this.graph.get('scale'))
+					this.graph.augment({scale: -0.1, focusCenter: true});
+				else if (this.model.get('mouseY') > (this.model.get('height') - this.graph.get('scale')))
+					this.graph.augment({scale: -0.1, focusCenter: true});
+
 				this.selected.draw.mouseMove(locX,locY);
+			}
 		},
 
 		mouseWheel: function(event,delta)
