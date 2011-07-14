@@ -730,19 +730,19 @@ $(function()
 		events:
 		{
 			'mousedown':  'mouseDown',
-			'mousemove':  'mouseMove',
+			'mousemove':  'reportLocation',
 			'mousewheel': 'mouseWheel',
-			'mouseup':    'mouseUp',
-			'mouseout':   'mouseUp',
 		},
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'addShape', 'shapeSelected', 'reportLocation');//, 'storeMouseX', 'storeMouseY');
+			_.bindAll(this, 'render', 'addShape', 'shapeSelected', 'reportLocation', 'mouseUp', 'mouseMove');
+
+			// in case the user's mouse is not on the canvas
+			$(document).bind('mousemove', this.mouseMove);
+			$(document).bind('mouseup', this.mouseUp);
 
 			this.model = new Canvas();
-			this.model.bind('change:mouseX', this.reportLocation);
-			this.model.bind('change:mouseY', this.reportLocation);
 
 			this.$canvas = $(this.el);
 			this.context = this.$canvas[0].getContext('2d');
@@ -824,9 +824,9 @@ $(function()
 			}
 		},
 
-		reportLocation: function()
+		reportLocation: function(event)
 		{
-			this.$location.text('(' + this.graph.graphX(this.model.get('mouseX')) + ',' + this.graph.graphY(this.model.get('mouseY')) + ')');
+			this.$location.text('(' + this.graph.graphX(this.canvasX(event.pageX)) + ',' + this.graph.graphY(this.canvasY(event.pageY)) + ')');
 		},
 
 		mouseDown: function(event)
@@ -870,13 +870,13 @@ $(function()
 			}
 			else
 			{
-				if (this.model.get('mouseX') < this.graph.get('scale'))
+				if (this.model.get('mouseX') < 10)
 					this.graph.augment({scale: -0.1, focusCenter: true});
-				else if (this.model.get('mouseX') > (this.model.get('width') - this.graph.get('scale')))
+				else if (this.model.get('mouseX') > (this.model.get('width') - 10))
 					this.graph.augment({scale: -0.1, focusCenter: true});
-				else if (this.model.get('mouseY') < this.graph.get('scale'))
+				else if (this.model.get('mouseY') < 10)
 					this.graph.augment({scale: -0.1, focusCenter: true});
-				else if (this.model.get('mouseY') > (this.model.get('height') - this.graph.get('scale')))
+				else if (this.model.get('mouseY') > (this.model.get('height') - 10))
 					this.graph.augment({scale: -0.1, focusCenter: true});
 
 				this.selected.draw.mouseMove(locX,locY);
