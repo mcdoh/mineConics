@@ -1,6 +1,9 @@
 *
 {
 	margin:0;
+
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 body
@@ -20,6 +23,9 @@ ul
 input
 {
 	color: #999;
+
+	-webkit-user-select: text;
+	user-select: text;
 }
 
 #container
