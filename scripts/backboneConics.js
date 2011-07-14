@@ -109,6 +109,28 @@ $(function()
 		},
 	});
 
+	var Ellipse = Shape.extend(
+	{
+		defaults: _.extend({}, Shape.prototype.defaults,
+		{
+			title:         'ellipse',
+			centerX:       '',
+			centerY:       '',
+			radiusX:       '',
+			radiusY:       '',
+			editingCenter: false,
+			editingRadius: false,
+		}),
+
+		isCenter: function(x,y)
+		{
+			if ((x === this.get('centerX')) && (y === this.get('centerY')))
+				return true;
+			else
+				return false;
+		},
+	});
+
 	var Shapes = Backbone.Collection.extend(
 	{
 		model: Shape,
@@ -461,6 +483,108 @@ $(function()
 		},
 	});
 
+	var EllipseView = ShapeView.extend(
+	{
+		ellipseTemplate: _.template($('#ellipseTemplate').html()),
+
+		events: _.extend({}, ShapeView.prototype.events,
+		{
+			'change .centerX': 'updateCenterX',
+			'change .centerY': 'updateCenterY',
+			'change .radiusX': 'updateRadiusX',
+			'change .radiusY': 'updateRadiusY',
+		}),
+
+		initialize: function()
+		{
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY', 'changeRadiusX', 'changeRadiusY');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:centerX', this.changeCenterX);
+			this.model.bind('change:centerY', this.changeCenterY);
+			this.model.bind('change:radiusX', this.changeRadiusX);
+			this.model.bind('change:radiusY', this.changeRadiusY);
+		},
+
+		render: function()
+		{
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var ellipse = this.ellipseTemplate(this.model.toJSON());
+
+			$shape.find('.shapeControls').prepend(ellipse);
+			$(this.el).html($shape.html());
+
+			return this;
+		},
+
+		updateCenterX: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.centerX').val());
+
+			if (!isNaN(testNum))
+				this.model.set({centerX: testNum});
+			else
+				$this.find('.centerX').val(this.model.get('centerX'));
+		},
+
+		updateCenterY: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.centerY').val());
+
+			if (!isNaN(testNum))
+				this.model.set({centerY: testNum});
+			else
+				$this.find('.centerY').val(this.model.get('centerY'));
+		},
+
+		updateRadiusX: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.radiusX').val());
+
+			if (!isNaN(testNum))
+				this.model.set({radiusX: testNum});
+			else
+				$this.find('.radiusX').val(this.model.get('radiusX'));
+		},
+
+		updateRadiusY: function()
+		{
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.radiusY').val());
+
+			if (!isNaN(testNum))
+				this.model.set({radiusY: testNum});
+			else
+				$this.find('.radiusY').val(this.model.get('radiusY'));
+		},
+
+		changeCenterX: function()
+		{
+			$(this.el).find('.centerX').val(this.model.get('centerX'));
+		},
+
+		changeCenterY: function()
+		{
+			$(this.el).find('.centerY').val(this.model.get('centerY'));
+		},
+
+		changeRadiusX: function()
+		{
+			$(this.el).find('.radiusX').val(this.model.get('radiusX'));
+		},
+
+		changeRadiusY: function()
+		{
+			$(this.el).find('.radiusY').val(this.model.get('radiusY'));
+		},
+	});
+
 	// repurposing the View object for managing shapes on the canvas
 	var ShapeDraw = Backbone.View.extend(
 	{
@@ -468,7 +592,7 @@ $(function()
 
 	var LineDraw = ShapeDraw.extend(
 	{
-		// midpoint circle algorithm
+		// Bresenham's line algorithm
 		render: function(plot)
 		{
 			if (!isNaN(parseInt(this.model.get('startX'))) && !isNaN(parseInt(this.model.get('startY'))) && !isNaN(parseInt(this.model.get('endX'))) && !isNaN(parseInt(this.model.get('endY'))))
@@ -741,6 +865,154 @@ $(function()
 		},
 	});
 
+	var EllipseDraw = ShapeDraw.extend(
+	{
+		// helper for midpoint ellipse algorithm
+		plotFourPoints: function(plot,x,y)
+		{
+			plot(this.model.get('centerX')+x,this.model.get('centerY')+y,this.model.get('rgba'));
+
+			if (x != 0)
+				plot(this.model.get('centerX')-x,this.model.get('centerY')+y,this.model.get('rgba'));
+
+			if (y != 0)
+				plot(this.model.get('centerX')+x,this.model.get('centerY')-y,this.model.get('rgba'));
+
+			if ((x != 0) && (y != 0))
+				plot(this.model.get('centerX')-x,this.model.get('centerY')-y,this.model.get('rgba'));
+		},
+
+		// midpoint ellipse algorithm
+		render: function(plot)
+		{
+			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radiusX'))) && !isNaN(parseInt(this.model.get('radiusY'))))
+			{
+				var x = -this.model.get('radiusX');
+				var y = 0;
+				var twoASquare = 2 * (this.model.get('radiusX') * this.model.get('radiusX'));
+				var twoBSquare = 2 * (this.model.get('radiusY') * this.model.get('radiusY'));
+				var deltaX = (1 - (2 * this.model.get('radiusX'))) * (this.model.get('radiusY') * this.model.get('radiusY'));
+				var deltaY = this.model.get('radiusX') * this.model.get('radiusX');
+				var error = deltaX + deltaY;
+				var errorDoubled;
+
+				do
+				{
+					this.plotFourPoints(plot,x,y);
+
+					errorDoubled = 2 * error;
+
+					if (errorDoubled >= deltaX)
+					{
+						x++;
+						deltaX += twoBSquare;
+						error += deltaX;
+					}
+
+					if (errorDoubled <= deltaY)
+					{
+						y++;
+						deltaY += twoASquare;
+						error += deltaY;
+					}
+				} while (x <= 0);
+
+				// for flat ellipses with radiusX = 1
+				while (y++ < this.model.get('radiusY'))
+				{
+					plot(this.model.get('centerX'), (this.model.get('centerY') + y), this.model.get('rgba')); // draw the tip of the ellipse
+					plot(this.model.get('centerX'), (this.model.get('centerY') - y), this.model.get('rgba'));
+				}
+
+				if (this.model.get('selected'))
+					plot(this.model.get('centerX'), this.model.get('centerY'), this.model.get('rgba'));
+			}
+		},
+
+		setCursor: function(locX,locY)
+		{
+			if (this.model.get('editingCenter'))
+				this.canvas.setCursor('closedHand');
+			else if (this.model.isCenter(locX,locY))
+				this.canvas.setCursor('openHand');
+			else
+				this.canvas.setCursor('crosshair');
+		},
+
+		mouseDown: function(locX, locY)
+		{
+			if (this.model.get('virgin'))
+			{
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({radiusX: 0});
+				this.model.set({radiusY: 0});
+
+				this.model.set({editingRadius: true});
+			}
+			else
+			{
+				if (this.model.isCenter(locX,locY))
+				{
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingCenter: true});
+				}
+				else
+				{
+					this.model.set({editingRadius: true});
+
+					var deltaX = Math.abs(this.model.get('centerX') - locX);
+					var deltaY = Math.abs(this.model.get('centerY') - locY);
+
+					this.model.set({radiusX: deltaX});
+					this.model.set({radiusY: deltaY});
+				}
+			}
+		},
+
+		mouseMove: function(locX,locY)
+		{
+			if (this.model.get('editingCenter'))
+			{
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+			}
+			else // editing radius
+			{
+				var deltaX = Math.abs(this.model.get('centerX') - locX);
+				var deltaY = Math.abs(this.model.get('centerY') - locY);
+
+				this.model.set({radiusX: deltaX});
+				this.model.set({radiusY: deltaY});
+			}
+		},
+
+		mouseUp: function(locX,locY)
+		{
+			if (this.model.get('editingCenter'))
+			{
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({editingCenter: false});
+			}
+			else // editing radius
+			{
+				var deltaX = Math.abs(this.model.get('centerX') - locX);
+				var deltaY = Math.abs(this.model.get('centerY') - locY);
+
+				this.model.set({radiusX: deltaX});
+				this.model.set({radiusY: deltaY});
+				this.model.set({editingRadius: false});
+			}
+
+			if (this.model.get('virgin'))
+			{
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+		},
+	});
+
 	var ControlPane = Backbone.View.extend(
 	{
 		el: $('#controlPane'),
@@ -751,6 +1023,7 @@ $(function()
 		{
 			'click #addLine':  'createLine',
 			'click #addCircle': 'createCircle',
+			'click #addEllipse': 'createEllipse',
 		},
 
 		initialize: function()
@@ -782,6 +1055,13 @@ $(function()
 			circle.set({selected: true});
 		},
 
+		createEllipse: function()
+		{
+			var ellipse = new Ellipse;
+			this.collection.add(ellipse);
+			ellipse.set({selected: true});
+		},
+
 		addShape: function(shape)
 		{
 			var view;
@@ -790,6 +1070,8 @@ $(function()
 				view = new LineView({model: shape});
 			else if (shape instanceof Circle)
 				view = new CircleView({model: shape});
+			else if (shape instanceof Ellipse)
+				view = new EllipseView({model: shape});
 
 			var $newShapeView = $(view.render().el);
 
@@ -1075,6 +1357,8 @@ $(function()
 				draw = new LineDraw({model: shape});
 			else if (shape instanceof Circle)
 				draw = new CircleDraw({model: shape});
+			else if (shape instanceof Ellipse)
+				draw = new EllipseDraw({model: shape});
 
 			draw.canvas = this;
 			shape.draw = draw;

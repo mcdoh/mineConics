@@ -59,6 +59,7 @@
 				<ul id="addShapeList">
 					<li id="addLine" class="addShape">[add line]</li>
 					<li id="addCircle" class="addShape">[add circle]</li>
+					<li id="addEllipse" class="addShape">[add ellipse]</li>
 				</ul>
 			</div>
 			<ul id="shapes"></ul>
@@ -113,6 +114,21 @@
 				<div class="field">
 					<span class="field">radius</span>
 					<input type="text" class="field radius" value="<%= radius %>"></input>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="ellipseTemplate">
+			<div class="shapeControl ellipse">
+				<div class="field">
+					<span class="field">center</span>
+					<input type="text" class="field centerX" value="<%= centerX %>"></input>
+					<input type="text" class="field centerY" value="<%= centerY %>"></input>
+				</div>
+				<div class="field">
+					<span class="field">radius</span>
+					<input type="text" class="field radiusX" value="<%= radiusX %>"></input>
+					<input type="text" class="field radiusY" value="<%= radiusY %>"></input>
 				</div>
 			</div>
 		</script>
