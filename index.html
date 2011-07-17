@@ -58,6 +58,7 @@
 			<div id="addShapes" class="control">
 				<ul id="addShapeList">
 					<li id="addLine" class="addShape">[add line]</li>
+					<li id="addRectangle" class="addShape">[add rectangle]</li>
 					<li id="addCircle" class="addShape">[add circle]</li>
 					<li id="addEllipse" class="addShape">[add ellipse]</li>
 				</ul>
@@ -91,6 +92,21 @@
 
 		<script type="text/template" id="lineTemplate">
 			<div class="shapeControl line">
+				<div class="field">
+					<span class="field">start</span>
+					<input type="text" class="field startX" value="<%= startX %>"></input>
+					<input type="text" class="field startY" value="<%= startY %>"></input>
+				</div>
+				<div class="field">
+					<span class="field">end</span>
+					<input type="text" class="field endX" value="<%= endX %>"></input>
+					<input type="text" class="field endY" value="<%= endY %>"></input>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="rectangleTemplate">
+			<div class="shapeControl rectangle">
 				<div class="field">
 					<span class="field">start</span>
 					<input type="text" class="field startX" value="<%= startX %>"></input>

@@ -88,6 +88,32 @@ $(function()
 		},
 	});
 
+	var Rectangle = Line.extend(
+	{
+		defaults: _.extend({}, Line.prototype.defaults,
+		{
+			title:           'rectangle',
+			editingStartEnd: false,
+			editingEndStart: false,
+		}),
+
+		isStartEnd: function(x,y)
+		{
+			if ((x === this.get('startX')) && (y === this.get('endY')))
+				return true;
+			else
+				return false;
+		},
+
+		isEndStart: function(x,y)
+		{
+			if ((x === this.get('endX')) && (y === this.get('startY')))
+				return true;
+			else
+				return false;
+		},
+	});
+
 	var Conic = Shape.extend(
 	{
 		defaults: _.extend({}, Shape.prototype.defaults,
@@ -396,6 +422,40 @@ $(function()
 		},
 	});
 
+	var RectangleView = LineView.extend(
+	{
+		rectangleTemplate: _.template($('#rectangleTemplate').html()),
+
+		events: _.extend({}, LineView.prototype.events,
+		{
+		}),
+
+		initialize: function()
+		{
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeStartX', 'changeStartY', 'changeEndX', 'changeEndY');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:startX', this.changeStartX);
+			this.model.bind('change:startY', this.changeStartY);
+			this.model.bind('change:endX', this.changeEndX);
+			this.model.bind('change:endY', this.changeEndY);
+		},
+
+		render: function()
+		{
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var rectangle = this.rectangleTemplate(this.model.toJSON());
+
+			$shape.find('.shapeControls').prepend(rectangle);
+			$(this.el).html($shape.html());
+
+			return this;
+		},
+	});
+
 	var ConicView = ShapeView.extend(
 	{
 		events: _.extend({}, ShapeView.prototype.events,
@@ -575,66 +635,71 @@ $(function()
 	var LineDraw = ShapeDraw.extend(
 	{
 		// Bresenham's line algorithm
+		line: function(plot,startX,startY,endX,endY)
+		{
+			var steep = false;
+			if (Math.abs(endY-startY) > Math.abs(endX-startX))
+				steep = true;
+
+			if (steep)
+			{
+				var temp = startX;
+				startX = startY;
+				startY = temp;
+
+				temp = endX;
+				endX = endY;
+				endY = temp;
+			}
+
+			if (startX > endX)
+			{
+				var temp = startX;
+				startX = endX;
+				endX = temp;
+
+				temp = startY;
+				startY = endY;
+				endY = temp;
+			}
+
+			var deltaX = endX - startX;
+			var deltaY = Math.abs(endY - startY);
+			var error = deltaX / 2;
+			var y = startY;
+
+			var yStep;
+			if (startY < endY)
+				yStep = 1;
+			else
+				yStep = -1;
+
+			for (var x=startX; x<=endX; x++)
+			{
+				if (steep)
+					plot(y,x,this.model.get('rgba'));
+				else
+					plot(x,y,this.model.get('rgba'));
+
+				error -= deltaY;
+				if (error < 0)
+				{
+					y += yStep;
+					error += deltaX;
+				}
+			}
+		},
+
 		render: function(plot)
 		{
-			if (!isNaN(parseInt(this.model.get('startX'))) && !isNaN(parseInt(this.model.get('startY'))) && !isNaN(parseInt(this.model.get('endX'))) && !isNaN(parseInt(this.model.get('endY'))))
+			var startX = this.model.get('startX');
+			var startY = this.model.get('startY');
+			var endX = this.model.get('endX');
+			var endY = this.model.get('endY');
+
+			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY)))
 			{
-				var startX = this.model.get('startX');
-				var endX = this.model.get('endX');
-				var startY = this.model.get('startY');
-				var endY = this.model.get('endY');
-
-				var steep = false;
-				if (Math.abs(endY-startY) > Math.abs(endX-startX))
-					steep = true;
-
-				if (steep)
-				{
-					var temp = startX;
-					startX = startY;
-					startY = temp;
-
-					temp = endX;
-					endX = endY;
-					endY = temp;
-				}
-
-				if (startX > endX)
-				{
-					var temp = startX;
-					startX = endX;
-					endX = temp;
-
-					temp = startY;
-					startY = endY;
-					endY = temp;
-				}
-
-				var deltaX = endX - startX;
-				var deltaY = Math.abs(endY - startY);
-				var error = deltaX / 2;
-				var y = startY;
-
-				var yStep;
-				if (startY < endY)
-					yStep = 1;
-				else
-					yStep = -1;
-
-				for (var x=startX; x<=endX; x++)
-				{
-					if (steep)
-						plot(y,x,this.model.get('rgba'));
-					else
-						plot(x,y,this.model.get('rgba'));
-
-					error -= deltaY;
-					if (error < 0)
-					{
-						y += yStep;
-						error += deltaX;
-					}
-				}
+				this.line(plot,startX,startY,endX,endY);
 			}
 		},
 
@@ -703,6 +768,146 @@ $(function()
 				this.model.set({endX: locX});
 				this.model.set({endY: locY});
 				this.model.set({editingEnd: false});
+			}
+
+			if (this.model.get('virgin'))
+			{
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+		},
+	});
+
+	var RectangleDraw = LineDraw.extend(
+	{
+		render: function(plot)
+		{
+			var startX = this.model.get('startX');
+			var startY = this.model.get('startY');
+			var endX = this.model.get('endX');
+			var endY = this.model.get('endY');
+
+			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY)))
+			{
+				if (startX > endX)
+				{
+					var temp = startX;
+					startX = endX;
+					endX = temp;
+				}
+
+				this.line(plot,startX,startY,startX,endY);
+
+				if (startX != endX)
+					this.line(plot,endX,startY,endX,endY);
+
+				if (Math.abs(endX - startX) > 1)
+				{
+					this.line(plot,startX+1,startY,endX-1,startY);
+
+					if (startY != endY)
+						this.line(plot,startX+1,endY,endX-1,endY);
+				}
+			}
+		},
+
+		setCursor: function(locX,locY)
+		{
+			if (this.model.get('virgin'))
+				this.canvas.setCursor('crosshair');
+			else if (this.model.get('editingStart') || this.model.get('editingEnd') || this.model.get('editingStartEnd') || this.model.get('editingEndStart'))
+				this.canvas.setCursor('closedHand');
+			else if (this.model.isStart(locX,locY) || this.model.isEnd(locX,locY) || this.model.isStartEnd(locX,locY) || this.model.isEndStart(locX,locY))
+				this.canvas.setCursor('openHand');
+			else
+				this.canvas.setCursor('default');
+		},
+
+		mouseDown: function(locX, locY)
+		{
+			if (this.model.get('virgin'))
+			{
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+
+				this.model.set({editingEnd: true});
+			}
+			else
+			{
+				if (this.model.isStart(locX,locY))
+				{
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingStart: true});
+				}
+				else if (this.model.isEnd(locX,locY))
+				{
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingEnd: true});
+				}
+				else if (this.model.isStartEnd(locX,locY))
+				{
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingStartEnd: true});
+				}
+				else if (this.model.isEndStart(locX,locY))
+				{
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingEndStart: true});
+				}
+			}
+		},
+
+		mouseMove: function(locX,locY)
+		{
+			if (this.model.get('editingStart'))
+			{
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+			}
+			else if (this.model.get('editingEnd'))
+			{
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+			}
+			else if (this.model.get('editingStartEnd'))
+			{
+				this.model.set({startX: locX});
+				this.model.set({endY: locY});
+			}
+			else if (this.model.get('editingEndStart'))
+			{
+				this.model.set({endX: locX});
+				this.model.set({startY: locY});
+			}
+		},
+
+		mouseUp: function(locX,locY)
+		{
+			if (this.model.get('editingStart'))
+			{
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+				this.model.set({editingStart: false});
+			}
+			else if (this.model.get('editingEnd'))
+			{
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+				this.model.set({editingEnd: false});
+			}
+			else if (this.model.get('editingStartEnd'))
+			{
+				this.model.set({startX: locX});
+				this.model.set({endY: locY});
+				this.model.set({editingStartEnd: false});
+			}
+			else if (this.model.get('editingEndStart'))
+			{
+				this.model.set({endX: locX});
+				this.model.set({startY: locY});
+				this.model.set({editingEndStart: false});
 			}
 
 			if (this.model.get('virgin'))
@@ -980,9 +1185,10 @@ $(function()
 
 		events:
 		{
-			'click #addLine':  'createLine',
-			'click #addCircle': 'createCircle',
-			'click #addEllipse': 'createEllipse',
+			'click #addLine':      'createLine',
+			'click #addRectangle': 'createRectangle',
+			'click #addCircle':    'createCircle',
+			'click #addEllipse':   'createEllipse',
 		},
 
 		initialize: function()
@@ -1007,6 +1213,13 @@ $(function()
 			line.set({selected: true});
 		},
 
+		createRectangle: function()
+		{
+			var rectangle = new Rectangle;
+			this.collection.add(rectangle);
+			rectangle.set({selected: true});
+		},
+
 		createCircle: function()
 		{
 			var circle = new Circle;
@@ -1027,6 +1240,8 @@ $(function()
 
 			if (shape instanceof Line)
 				view = new LineView({model: shape});
+			else if (shape instanceof Rectangle)
+				view = new RectangleView({model: shape});
 			else if (shape instanceof Circle)
 				view = new CircleView({model: shape});
 			else if (shape instanceof Ellipse)
@@ -1312,7 +1527,9 @@ $(function()
 		{
 			var draw;
 
-			if (shape instanceof Line)
+			if (shape instanceof Rectangle)
+				draw = new RectangleDraw({model: shape});
+			else if (shape instanceof Line)
 				draw = new LineDraw({model: shape});
 			else if (shape instanceof Circle)
 				draw = new CircleDraw({model: shape});
