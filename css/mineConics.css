@@ -85,8 +85,6 @@ input
 	float: left;
 }
 
-/* start backboneConics */
-
 .control
 {
 	border: 2px solid;
@@ -100,11 +98,42 @@ input
 	overflow: hidden;
 }
 
+div#graphPane
+{
+	width: 100%;
+	float: left;
+}
+
+ul#graphMenu
+{
+	float: right;
+	right: 50%;
+	position: relative;
+}
+
+li.graphOption
+{
+	cursor: pointer;
+	float: left;
+	left: 50%;
+	position: relative;
+}
+
+div#shapesPane
+{
+	float: left;
+	width: 100%;
+}
+
 div#addShapes
 {
 }
 
 ul#addShapeList
+{
+}
+
+span.addShapeRow
 {
 	float: right;
 	right: 50%;
@@ -113,10 +142,10 @@ ul#addShapeList
 
 li.addShape
 {
+	cursor: pointer;
 	float: left;
 	left: 50%;
 	position: relative;
-	cursor: pointer;
 }
 
 ul#shapes
@@ -233,152 +262,7 @@ input.field
 	color: #333;
 }
 
-/* end backboneConics */
-/*
-div.newConics
-{
-	width: 100%;
-	overflow: hidden;
-}
-
-ul.newConics
-{
-	float: right;
-	right: 50%;
-	position: relative;
-}
-
-li.newConic
-{
-	float: left;
-	left: 50%;
-	position: relative;
-	cursor: pointer;
-}
-
-div.shapeControls
-{
-	overflow: auto;
-}
-
-div.controls
-{
-	border: 2px solid;
-	margin: 2px;
-	padding: 2px;
-
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
-	border-radius: 10px;
-}
-
-div.conic
-{
-	border: 2px solid;
-	margin: 2px;
-	padding: 2px;
-
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
-	border-radius: 10px;
-
-	overflow: hidden;
-}
-
-.selected
-{
-	color: #333;
-}
-
-div.titleBar
-{
-	width: 100%;
-	float: left;
-	margin-bottom: 3px;
-	font-weight: bold;
-	overflow: hidden;
-}
-
-div.titleWrapper
-{
-	float: left;
-	position: relative;
-	left: 40%;
-	text-align: center;
-}
-
-div.title
-{
-	float: left;
-	position: relative;
-	right: 50%;
-	cursor: pointer;
-}
-
-div.close
-{
-	float: left;
-	cursor: pointer;
-}
-
-div.hide
-{
-	float: right;
-	cursor: pointer;
-}
-
-div.conicControl
-{
-	width: 100%;
-	float: left;
-}
-
-div.colorControl
-{
-	width: 100%;
-	float: left;
-	overflow: hidden;
-	margin-top: 3px;
-	margin-bottom: 3px;
-}
-
-input.color
-{
-	margin-top: 4px;
-}
-
-input.hexColor
-{
-	width: 5em;
-	height: 1em;
-}
-
-.field
-{
-	float: left;
-	width: 50%;
-	vertical-align: bottom;
-}
-
-div.fieldTitle
-{
-	float: left;
-	width: 3.5em;
-	padding-right: 0.5em;
-	text-align: right;
-	height: 1em;
-	padding-top: 4px;
-}
-
-input.fieldValue
-{
-	float: left;
-	width: 2em;
-	height: 1em;
-	margin-right: 0.5em;
-}
-*/
-#graphPane
+#canvasPane
 {
 	width: 500px;
 	height: 500px;
@@ -391,9 +275,29 @@ input.fieldValue
 	margin: 1em;
 }
 
+#canvasFooter
+{
+	width: 100%;
+	height: 2em;
+	float: left;
+}
+
+#mouseLocation
+{
+	float: left;
+}
+
+.mouseLocation
+{
+	min-width: 2em;
+	height: 1em;
+	margin-left: 3px;
+	float: left;
+	text-align: right;
+}
+
 #zoomHelp
 {
-	height: 3em;
 	float: right;
 }
 
@@ -401,7 +305,7 @@ input.fieldValue
 {
 	max-width: 160px;
 	min-width: 1em;
-	height: 600px;
+//	height: 600px;
 	float: right;
 	margin-left: 2px;
 }

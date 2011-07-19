@@ -1177,11 +1177,11 @@ $(function()
 		},
 	});
 
-	var ControlPane = Backbone.View.extend(
+	var ShapesPane = Backbone.View.extend(
 	{
-		el: $('#controlPane'),
+		el: $('#shapesPane'),
 
-		template: _.template($('#controlPaneTemplate').html()),
+		template: _.template($('#shapesPaneTemplate').html()),
 
 		events:
 		{
@@ -1198,6 +1198,13 @@ $(function()
 			this.collection.bind('add', this.addShape);
 
 			this.render();
+		},
+
+		resize: function()
+		{
+			$('#controlPane').height($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true));
+			$('#shapesPane').height($('#controlPane').height() - $('#graphPane').height());
+			$('#shapes').height($('#shapesPane').height() - $('#addShapes').height());
 		},
 
 		render: function()
@@ -1265,6 +1272,9 @@ $(function()
 			originX:    0,
 			originY:    0,
 			interval:   2,                  // how often a marker is drawn along the axes
+
+			mouseX:     '',                 // location of mouse when within canvas
+			mouseY:     '',                 // location of mouse when within canvas
 		},
 
 		// essentially +=, but then corrected for floating point errors
@@ -1329,6 +1339,51 @@ $(function()
 	});
 
 	var GraphView = Backbone.View.extend(
+	{
+		el: $('#graphPane'),
+
+		template: _.template($('#graphControlTemplate').html()),
+
+		events:
+		{
+			'click #clear': 'clearShapes',
+		},
+
+		initialize: function()
+		{
+			_.bindAll(this, 'render', 'clearShapes', 'changeMouseX', 'changeMouseY');
+
+			this.model.bind('change:mouseX', this.changeMouseX);
+			this.model.bind('change:mouseY', this.changeMouseY);
+
+			this.render();
+			this.$mouseX = $('#mouseX');
+			this.$mouseY = $('#mouseY');
+		},
+
+		render: function()
+		{
+			$(this.el).html(this.template(this.model.toJSON()));
+		},
+
+		clearShapes: function()
+		{
+			while(this.model.canvas.collection.size())
+				this.model.canvas.collection.last().destroy();
+		},
+
+		changeMouseX: function()
+		{
+			this.$mouseX.html(this.model.get('mouseX'));
+		},
+
+		changeMouseY: function()
+		{
+			this.$mouseY.html(this.model.get('mouseY'));
+		},
+	});
+
+	var GraphDraw = Backbone.View.extend(
 	{
 		initialize: function()
 		{
@@ -1459,6 +1514,7 @@ $(function()
 		{
 			'mousedown':  'mouseDown',
 			'mousemove':  'reportLocation',
+			'mouseout':   'clearLocation',
 			'mousewheel': 'mouseWheel',
 		},
 
@@ -1475,8 +1531,43 @@ $(function()
 			this.$canvas = $(this.el);
 			this.context = this.$canvas[0].getContext('2d');
 
-			// resize the canvas to take advantage of extra viewport space
-			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true)));
+			// set bindings with shapes
+			this.collection.bind('add', this.addShape);
+			this.collection.bind('change:selected', this.shapeSelected);
+			this.collection.bind('all', this.render);
+
+			// set up graph
+			this.graph = new Graph();
+			this.graph.view = new GraphView({model: this.graph});
+			this.graph.draw = new GraphDraw({model: this.graph});
+			this.graph.canvas = this;
+			this.graph.draw.canvas = this;
+
+			this.graph.bind('change:scale', this.render);
+			this.graph.bind('change:originX', this.render);
+			this.graph.bind('change:originY', this.render);
+
+			this.resize();
+			this.graph.set({originX: Math.floor(this.model.get('width') / 2)});
+			this.graph.set({originY: Math.floor(this.model.get('height') / 2)});
+
+			this.setCursor('openHand');
+		},
+
+		render: function()
+		{
+			this.clear();
+			this.graph.draw.render();
+
+			this.collection.each(function(shape)
+			{
+				shape.draw.render(this.graph.draw.plot);
+			},this);
+		},
+
+		resize: function()
+		{
+			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#canvasFooter').outerHeight(true)));
 			this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
 
 			// stash canvas details
@@ -1485,43 +1576,10 @@ $(function()
 			this.model.set({offsetLeft: this.$canvas.offset().left});
 			this.model.set({offsetTop: this.$canvas.offset().top});
 
-			// adjust size of #graphPane
-			$('#graphPane').height(this.model.get('height'));
-			$('#graphPane').width(this.model.get('width'));
-
-			// set bindings with shapes
-			this.collection.bind('add', this.addShape);
-			this.collection.bind('change:selected', this.shapeSelected);
-			this.collection.bind('change', this.render);
-
-			// set up graph
-			this.graph = new Graph();
-			this.graph.view = new GraphView({model: this.graph});
-			this.graph.canvas = this;
-			this.graph.view.canvas = this;
-
-			this.graph.bind('change:scale', this.render);
-			this.graph.bind('change:originX', this.render);
-			this.graph.bind('change:originY', this.render);
-
-			this.graph.set({originX: Math.floor(this.model.get('width') / 2)});
-			this.graph.set({originY: Math.floor(this.model.get('height') / 2)});
-
-			this.$location = $('#canvasTest');
-			this.setCursor('openHand');
+			// adjust size of #canvasPane
+			$('#canvasPane').height(this.model.get('height') + $('#canvasFooter').outerHeight(true));
+			$('#canvasPane').width(this.model.get('width'));
 		},
-
-		render: function()
-		{
-			this.clear();
-			this.graph.view.render();
-
-			this.collection.each(function(shape)
-			{
-				shape.draw.render(this.graph.view.plot);
-			},this);
-		},
-
 
 		addShape: function(shape)
 		{
@@ -1558,7 +1616,14 @@ $(function()
 
 		reportLocation: function(event)
 		{
-			this.$location.text('(' + this.graph.graphX(this.canvasX(event.pageX)) + ',' + this.graph.graphY(this.canvasY(event.pageY)) + ')');
+			this.graph.set({mouseX: this.graph.graphX(this.canvasX(event.pageX))});
+			this.graph.set({mouseY: this.graph.graphY(this.canvasY(event.pageY))});
+		},
+
+		clearLocation: function()
+		{
+			this.graph.set({mouseX: ''});
+			this.graph.set({mouseY: ''});
 		},
 
 		mouseDown: function(event)
@@ -1673,8 +1738,10 @@ $(function()
 		},
 	});
 
-	var shapes =      new Shapes();
-	var controlPane = new ControlPane({collection: shapes});
-	var scene =       new CanvasView({collection: shapes});
+	var shapes =     new Shapes();
+	var shapesPane = new ShapesPane({collection: shapes});
+	var scene =      new CanvasView({collection: shapes});
+
+	shapesPane.resize();
 });
 

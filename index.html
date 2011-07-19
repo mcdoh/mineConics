@@ -35,11 +35,21 @@
 			<div id="content">
 
 				<div id="controlPane">
+					<div id="graphPane">
+					</div>
+					<div id="shapesPane">
+					</div>
 				</div>
 
-				<div id="graphPane">
+				<div id="canvasPane">
 					<canvas id="canvas" width="500" height="500"></canvas>
-					<div id="zoomHelp">scroll to zoom</div>
+					<div id="canvasFooter">
+						<div id="mouseLocation">
+							<span id="mouseX" class="mouseLocation"></span>
+							<span id="mouseY" class="mouseLocation"></span>
+						</div>
+						<div id="zoomHelp">scroll to zoom</div>
+					</div>
 				</div>
 
 				<div id="adPane">
@@ -51,16 +61,26 @@
 
 		<!-- Templates --> 
 
-		<script type="text/template" id="controlPaneTemplate"> 
-			<div id="canvasControl">
-				<div id="canvasTest"></div>
+		<script type="text/template" id="graphControlTemplate"> 
+			<div id="graphControl" class="control">
+				<ul id="graphMenu">
+					<li id="save" class="graphOption">[save]</li>
+					<li id="clear" class="graphOption">[clear]</li>
+				</ul>
 			</div>
+		</script>
+
+		<script type="text/template" id="shapesPaneTemplate"> 
 			<div id="addShapes" class="control">
 				<ul id="addShapeList">
-					<li id="addLine" class="addShape">[add line]</li>
-					<li id="addRectangle" class="addShape">[add rectangle]</li>
-					<li id="addCircle" class="addShape">[add circle]</li>
-					<li id="addEllipse" class="addShape">[add ellipse]</li>
+					<span class="addShapeRow">
+						<li id="addLine" class="addShape">[add line]</li>
+						<li id="addRectangle" class="addShape">[add rectangle]</li>
+					</span>
+					<span class="addShapeRow">
+						<li id="addCircle" class="addShape">[add circle]</li>
+						<li id="addEllipse" class="addShape">[add ellipse]</li>
+					</span>
 				</ul>
 			</div>
 			<ul id="shapes"></ul>
