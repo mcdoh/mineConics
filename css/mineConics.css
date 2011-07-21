@@ -40,8 +40,29 @@ input
 	padding: 1em;
 }
 
+#headingWrapper
+{
+	width: 100%;
+	float: right;
+	right: 50%;
+	position: relative;
+}
+
 #heading
 {
+	width: 100%;
+	float: left;
+	left: 50%;
+	position: relative;
+	text-align: center;
+}
+
+#subheading
+{
+	width: 100%;
+	float: left;
+	left: 50%;
+	position: relative;
 	text-align: center;
 }
 
@@ -55,6 +76,13 @@ input
 {
 	color: #333;
 	text-decoration: underline;
+}
+
+#plusOne
+{
+	height: 15px;
+	width: 70px;
+	float: left;
 }
 
 #menuBar
@@ -305,7 +333,7 @@ input.field
 {
 	max-width: 160px;
 	min-width: 1em;
-//	height: 600px;
+	max-height: 600px;
 	float: right;
 	margin-left: 2px;
 }
