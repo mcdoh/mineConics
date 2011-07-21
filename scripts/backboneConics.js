@@ -1,10 +1,5 @@
 $(function()
 {
-	Backbone.sync = function(method, model, success, error)
-	{
-		success();
-	}
-
 	var intToHex = function(integer)
 	{
 		var hex = integer.toString(16).toUpperCase();
@@ -55,6 +50,7 @@ $(function()
 
 			this.set({rgba: rgba});
 			this.set({hexColor: hexColor});
+			this.save();
 		},
 	});
 
@@ -157,6 +153,31 @@ $(function()
 	var Shapes = Backbone.Collection.extend(
 	{
 		model: Shape,
+
+		localStorage: new Store('mineConics'),
+
+		fetch: function()
+		{
+			Backbone.Collection.prototype.fetch.call(this, {silent: true});
+
+			// convert each Shape to its respective subclass
+			this.reset(this.map(function(shape)
+			{
+				// ensure no Shapes are 'selected'
+				shape.set({selected: false}, {silent: true});
+
+				var type = shape.get('title');
+
+				if (type === 'rectangle')
+					return new Rectangle(shape.attributes);
+				else if (type === 'line')
+					return new Line(shape.attributes);
+				else if (type === 'circle')
+					return new Circle(shape.attributes);
+				else if (type === 'ellipse')
+					return new Ellipse(shape.attributes);
+			}));
+		},
 	});
 
 	var ShapeView = Backbone.View.extend(
@@ -363,7 +384,10 @@ $(function()
 			var testNum = parseInt($this.find('.startX').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({startX: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.startX').val(this.model.get('startX'));
 		},
@@ -374,7 +398,10 @@ $(function()
 			var testNum = parseInt($this.find('.startY').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({startY: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.startY').val(this.model.get('startY'));
 		},
@@ -385,7 +412,10 @@ $(function()
 			var testNum = parseInt($this.find('.endX').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({endX: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.endX').val(this.model.get('endX'));
 		},
@@ -396,7 +426,10 @@ $(function()
 			var testNum = parseInt($this.find('.endY').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({endY: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.endY').val(this.model.get('endY'));
 		},
@@ -482,7 +515,10 @@ $(function()
 			var testNum = parseInt($this.find('.centerX').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({centerX: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.centerX').val(this.model.get('centerX'));
 		},
@@ -493,7 +529,10 @@ $(function()
 			var testNum = parseInt($this.find('.centerY').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({centerY: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.centerY').val(this.model.get('centerY'));
 		},
@@ -548,7 +587,10 @@ $(function()
 			var testNum = parseInt($this.find('.radius').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({radius: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.radius').val(this.model.get('radius'));
 		},
@@ -600,7 +642,10 @@ $(function()
 			var testNum = parseInt($this.find('.radiusX').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({radiusX: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.radiusX').val(this.model.get('radiusX'));
 		},
@@ -611,7 +656,10 @@ $(function()
 			var testNum = parseInt($this.find('.radiusY').val());
 
 			if (!isNaN(testNum))
+			{
 				this.model.set({radiusY: testNum});
+				this.model.save();
+			}
 			else
 				$this.find('.radiusY').val(this.model.get('radiusY'));
 		},
@@ -775,6 +823,8 @@ $(function()
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
+
+			this.model.save();
 		},
 	});
 
@@ -915,6 +965,8 @@ $(function()
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
+
+			this.model.save();
 		},
 	});
 
@@ -1051,6 +1103,8 @@ $(function()
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
+
+			this.model.save();
 		},
 	});
 
@@ -1174,6 +1228,8 @@ $(function()
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
+
+			this.model.save();
 		},
 	});
 
@@ -1193,9 +1249,10 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render','addShape');
+			_.bindAll(this, 'render','addShape', 'addShapes');
 
 			this.collection.bind('add', this.addShape);
+			this.collection.bind('reset', this.addShapes);
 
 			this.render();
 		},
@@ -1216,28 +1273,28 @@ $(function()
 		createLine: function()
 		{
 			var line = new Line;
-			this.collection.add(line);
+			this.collection.create(line);
 			line.set({selected: true});
 		},
 
 		createRectangle: function()
 		{
 			var rectangle = new Rectangle;
-			this.collection.add(rectangle);
+			this.collection.create(rectangle);
 			rectangle.set({selected: true});
 		},
 
 		createCircle: function()
 		{
 			var circle = new Circle;
-			this.collection.add(circle);
+			this.collection.create(circle);
 			circle.set({selected: true});
 		},
 
 		createEllipse: function()
 		{
 			var ellipse = new Ellipse;
-			this.collection.add(ellipse);
+			this.collection.create(ellipse);
 			ellipse.set({selected: true});
 		},
 
@@ -1245,10 +1302,10 @@ $(function()
 		{
 			var view;
 
-			if (shape instanceof Line)
-				view = new LineView({model: shape});
-			else if (shape instanceof Rectangle)
+			if (shape instanceof Rectangle)
 				view = new RectangleView({model: shape});
+			else if (shape instanceof Line)
+				view = new LineView({model: shape});
 			else if (shape instanceof Circle)
 				view = new CircleView({model: shape});
 			else if (shape instanceof Ellipse)
@@ -1259,6 +1316,11 @@ $(function()
 			$newShapeView.hide();
 			this.$('#shapes').prepend($newShapeView);
 			$newShapeView.slideDown();
+		},
+
+		addShapes: function()
+		{
+			this.collection.each(this.addShape);
 		},
 	});
 
@@ -1520,7 +1582,7 @@ $(function()
 
 		initialize: function()
 		{
-			_.bindAll(this, 'render', 'addShape', 'shapeSelected', 'reportLocation', 'mouseUp', 'mouseMove');
+			_.bindAll(this, 'render', 'addShape', 'addShapes', 'shapeSelected', 'reportLocation', 'mouseUp', 'mouseMove');
 
 			// in case the user's mouse is not on the canvas
 			$(document).bind('mousemove', this.mouseMove);
@@ -1533,6 +1595,7 @@ $(function()
 
 			// set bindings with shapes
 			this.collection.bind('add', this.addShape);
+			this.collection.bind('reset', this.addShapes);
 			this.collection.bind('change:selected', this.shapeSelected);
 			this.collection.bind('all', this.render);
 
@@ -1596,6 +1659,11 @@ $(function()
 
 			draw.canvas = this;
 			shape.draw = draw;
+		},
+
+		addShapes: function()
+		{
+			this.collection.each(this.addShape);
 		},
 
 		shapeSelected: function(justSelected)
@@ -1743,5 +1811,6 @@ $(function()
 	var scene =      new CanvasView({collection: shapes});
 
 	shapesPane.resize();
+	shapes.fetch();
 });
 
