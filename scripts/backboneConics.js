@@ -1356,6 +1356,9 @@ $(function()
 
 				if (scaleOrig != scaleTemp)
 				{
+					// we'll trigger the need to redraw once we're done
+					options = _.extend({}, options, {silent: true});
+
 					this.set({scale: scaleTemp}, options);
 
 					if (delta.focusCenter)
@@ -1373,6 +1376,8 @@ $(function()
 						this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
 						this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
 					}
+
+					this.trigger('change:scale');
 				}
 			}
 
