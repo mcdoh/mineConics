@@ -1,19 +1,18 @@
-$(function()
-{
-	var intToHex = function(integer)
-	{
+$(function() {
+
+	var intToHex = function(integer) {
+
 		var hex = integer.toString(16).toUpperCase();
 
 		if (hex.length === 1)
 			hex = '0' + hex;
 
 		return hex;
-	}
+	};
 
-	var Shape = Backbone.Model.extend(
-	{
-		defaults:
-		{
+	var Shape = Backbone.Model.extend({
+
+		defaults: {
 			title:    'shape',
 			virgin:   true,
 			selected: false,
@@ -25,8 +24,8 @@ $(function()
 			hexColor: '#000000',
 		},
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'colorChanged');
 
 			this.bind('change:red', this.colorChanged);
@@ -34,8 +33,8 @@ $(function()
 			this.bind('change:blue', this.colorChanged);
 		},
 
-		colorChanged: function()
-		{
+		colorChanged: function() {
+
 			var rgba = 'rgba(';
 			var hexColor = '#';
 
@@ -54,10 +53,9 @@ $(function()
 		},
 	});
 
-	var Line = Shape.extend(
-	{
-		defaults: _.extend({}, Shape.prototype.defaults,
-		{
+	var Line = Shape.extend({
+
+		defaults: _.extend({}, Shape.prototype.defaults, {
 			title:        'line',
 			startX:       '',
 			startY:       '',
@@ -67,16 +65,16 @@ $(function()
 			editingEnd:   false,
 		}),
 
-		isStart: function(x,y)
-		{
+		isStart: function(x,y) {
+
 			if ((x === this.get('startX')) && (y === this.get('startY')))
 				return true;
 			else
 				return false;
 		},
 
-		isEnd: function(x,y)
-		{
+		isEnd: function(x,y) {
+
 			if ((x === this.get('endX')) && (y === this.get('endY')))
 				return true;
 			else
@@ -84,25 +82,24 @@ $(function()
 		},
 	});
 
-	var Rectangle = Line.extend(
-	{
-		defaults: _.extend({}, Line.prototype.defaults,
-		{
+	var Rectangle = Line.extend({
+
+		defaults: _.extend({}, Line.prototype.defaults, {
 			title:           'rectangle',
 			editingStartEnd: false,
 			editingEndStart: false,
 		}),
 
-		isStartEnd: function(x,y)
-		{
+		isStartEnd: function(x,y) {
+
 			if ((x === this.get('startX')) && (y === this.get('endY')))
 				return true;
 			else
 				return false;
 		},
 
-		isEndStart: function(x,y)
-		{
+		isEndStart: function(x,y) {
+
 			if ((x === this.get('endX')) && (y === this.get('startY')))
 				return true;
 			else
@@ -110,18 +107,17 @@ $(function()
 		},
 	});
 
-	var Conic = Shape.extend(
-	{
-		defaults: _.extend({}, Shape.prototype.defaults,
-		{
+	var Conic = Shape.extend({
+
+		defaults: _.extend({}, Shape.prototype.defaults, {
 			title:         'conic',
 			centerX:       '',
 			centerY:       '',
 			editingCenter: false,
 		}),
 
-		isCenter: function(x,y)
-		{
+		isCenter: function(x,y) {
+
 			if ((x === this.get('centerX')) && (y === this.get('centerY')))
 				return true;
 			else
@@ -129,20 +125,18 @@ $(function()
 		},
 	});
 
-	var Circle = Conic.extend(
-	{
-		defaults: _.extend({}, Conic.prototype.defaults,
-		{
+	var Circle = Conic.extend({
+
+		defaults: _.extend({}, Conic.prototype.defaults, {
 			title:         'circle',
 			radius:        '',
 			editingRadius: false,
 		}),
 	});
 
-	var Ellipse = Conic.extend(
-	{
-		defaults: _.extend({}, Conic.prototype.defaults,
-		{
+	var Ellipse = Conic.extend({
+
+		defaults: _.extend({}, Conic.prototype.defaults, {
 			title:         'ellipse',
 			radiusX:       '',
 			radiusY:       '',
@@ -150,19 +144,19 @@ $(function()
 		}),
 	});
 
-	var Shapes = Backbone.Collection.extend(
-	{
+	var Shapes = Backbone.Collection.extend({
+
 		model: Shape,
 
 		localStorage: new Store('mineConics'),
 
-		fetch: function()
-		{
+		fetch: function() {
+
 			Backbone.Collection.prototype.fetch.call(this, {silent: true});
 
 			// convert each Shape to its respective subclass
-			this.reset(this.map(function(shape)
-			{
+			this.reset(this.map(function(shape) {
+
 				// ensure no Shapes are 'selected'
 				shape.set({selected: false}, {silent: true});
 
@@ -180,15 +174,14 @@ $(function()
 		},
 	});
 
-	var ShapeView = Backbone.View.extend(
-	{
+	var ShapeView = Backbone.View.extend({
+
 		tagName: 'li',
 		className: 'shape control',
 
 		shapeTemplate: _.template($('#shapeTemplate').html()),
 
-		events:
-		{
+		events: {
 			'click .close': 'close',
 			'click .title': 'toggleSelected',
 			'click .hide':  'toggleHidden',
@@ -197,8 +190,8 @@ $(function()
 			'change .hexColor': 'setHexColor',
 		},
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected');
 
 			this.model.bind('remove', this.remove);
@@ -206,30 +199,29 @@ $(function()
 			this.model.bind('change:selected', this.changeSelected);
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			$(this.el).html(this.shapeTemplate(this.model.toJSON()));
 
 			return this;
 		},
 
-		remove: function()
-		{
+		remove: function() {
+
 			var $this = $(this.el);
 
-			$this.slideUp(function()
-			{
+			$this.slideUp(function() {
 				$this.remove();
 			});
 		},
 
-		close: function()
-		{
+		close: function() {
+
 			this.model.destroy();
 		},
 
-		setSelected: function()
-		{
+		setSelected: function() {
+
 			var $this = $(this.el);
 
 			$this.addClass('selected');
@@ -242,30 +234,30 @@ $(function()
 				this.unsetHidden();
 		},
 
-		unsetSelected: function()
-		{
+		unsetSelected: function() {
+
 			var $this = $(this.el);
 
 			$this.removeClass('selected');
 			$this.find('input').removeClass('selected');
 		},
 
-		toggleSelected: function()
-		{
+		toggleSelected: function() {
+
 			this.model.set({selected: !this.model.get('selected')});
 		},
 
 		// set/unset 'selected' based on model state
-		changeSelected: function()
-		{
+		changeSelected: function() {
+
 			if (this.model.get('selected'))
 				this.setSelected();
 			else
 				this.unsetSelected();
 		},
 
-		setHidden: function()
-		{
+		setHidden: function() {
+
 			var $this = $(this.el);
 
 			if (this.model.get('selected'))
@@ -276,16 +268,16 @@ $(function()
 			$this.find('.shapeControls').slideUp();
 		},
 
-		unsetHidden: function()
-		{
+		unsetHidden: function() {
+
 			var $this = $(this.el);
 			$this.removeClass('hidden');
 			$this.find('.hide').html('[-]');
 			$this.find('.shapeControls').slideDown();
 		},
 
-		toggleHidden: function()
-		{
+		toggleHidden: function() {
+
 			var $this = $(this.el);
 
 			if ($this.hasClass('hidden'))
@@ -294,8 +286,8 @@ $(function()
 				this.setHidden();
 		},
 
-		setColor: function()
-		{
+		setColor: function() {
+
 			var $this = $(this.el);
 			var red   = 0;
 			var green = 0;
@@ -314,8 +306,8 @@ $(function()
 			this.model.set({red: red, green: green, blue: blue});
 		},
 
-		setHexColor: function()
-		{
+		setHexColor: function() {
+
 			var $this = $(this.el);
 			var hexString = $this.find('.hexColor').val();
 
@@ -335,26 +327,25 @@ $(function()
 				$this.find('.hexColor').val(this.model.get('hexColor'));
 		},
 
-		changeHexInput: function()
-		{
+		changeHexInput: function() {
+
 			$(this.el).find('.hexColor').val(this.model.get('hexColor'));
 		},
 	});
 
-	var LineView = ShapeView.extend(
-	{
+	var LineView = ShapeView.extend({
+
 		lineTemplate: _.template($('#lineTemplate').html()),
 
-		events: _.extend({}, ShapeView.prototype.events,
-		{
+		events: _.extend({}, ShapeView.prototype.events, {
 			'change .startX': 'updateStartX',
 			'change .startY': 'updateStartY',
 			'change .endX':   'updateEndX',
 			'change .endY':   'updateEndY',
 		}),
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeStartX', 'changeStartY', 'changeEndX', 'changeEndY');
 
 			this.model.bind('remove', this.remove);
@@ -367,8 +358,8 @@ $(function()
 			this.model.bind('change:endY', this.changeEndY);
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			var $shape = $(ShapeView.prototype.render.call(this).el);
 			var line = this.lineTemplate(this.model.toJSON());
 
@@ -378,13 +369,13 @@ $(function()
 			return this;
 		},
 
-		updateStartX: function()
-		{
+		updateStartX: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.startX').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({startX: testNum});
 				this.model.save();
 			}
@@ -392,13 +383,13 @@ $(function()
 				$this.find('.startX').val(this.model.get('startX'));
 		},
 
-		updateStartY: function()
-		{
+		updateStartY: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.startY').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({startY: testNum});
 				this.model.save();
 			}
@@ -406,13 +397,13 @@ $(function()
 				$this.find('.startY').val(this.model.get('startY'));
 		},
 
-		updateEndX: function()
-		{
+		updateEndX: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.endX').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({endX: testNum});
 				this.model.save();
 			}
@@ -420,13 +411,13 @@ $(function()
 				$this.find('.endX').val(this.model.get('endX'));
 		},
 
-		updateEndY: function()
-		{
+		updateEndY: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.endY').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({endY: testNum});
 				this.model.save();
 			}
@@ -434,37 +425,36 @@ $(function()
 				$this.find('.endY').val(this.model.get('endY'));
 		},
 
-		changeStartX: function()
-		{
+		changeStartX: function() {
+
 			$(this.el).find('.startX').val(this.model.get('startX'));
 		},
 
-		changeStartY: function()
-		{
+		changeStartY: function() {
+
 			$(this.el).find('.startY').val(this.model.get('startY'));
 		},
 
-		changeEndX: function()
-		{
+		changeEndX: function() {
+
 			$(this.el).find('.endX').val(this.model.get('endX'));
 		},
 
-		changeEndY: function()
-		{
+		changeEndY: function() {
+
 			$(this.el).find('.endY').val(this.model.get('endY'));
 		},
 	});
 
-	var RectangleView = LineView.extend(
-	{
+	var RectangleView = LineView.extend({
+
 		rectangleTemplate: _.template($('#rectangleTemplate').html()),
 
-		events: _.extend({}, LineView.prototype.events,
-		{
+		events: _.extend({}, LineView.prototype.events, {
 		}),
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeStartX', 'changeStartY', 'changeEndX', 'changeEndY');
 
 			this.model.bind('remove', this.remove);
@@ -477,8 +467,8 @@ $(function()
 			this.model.bind('change:endY', this.changeEndY);
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			var $shape = $(ShapeView.prototype.render.call(this).el);
 			var rectangle = this.rectangleTemplate(this.model.toJSON());
 
@@ -489,16 +479,15 @@ $(function()
 		},
 	});
 
-	var ConicView = ShapeView.extend(
-	{
-		events: _.extend({}, ShapeView.prototype.events,
-		{
+	var ConicView = ShapeView.extend({
+
+		events: _.extend({}, ShapeView.prototype.events, {
 			'change .centerX': 'updateCenterX',
 			'change .centerY': 'updateCenterY',
 		}),
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY');
 
 			this.model.bind('remove', this.remove);
@@ -509,13 +498,13 @@ $(function()
 			this.model.bind('change:centerY', this.changeCenterY);
 		},
 
-		updateCenterX: function()
-		{
+		updateCenterX: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.centerX').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({centerX: testNum});
 				this.model.save();
 			}
@@ -523,13 +512,13 @@ $(function()
 				$this.find('.centerX').val(this.model.get('centerX'));
 		},
 
-		updateCenterY: function()
-		{
+		updateCenterY: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.centerY').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({centerY: testNum});
 				this.model.save();
 			}
@@ -537,28 +526,27 @@ $(function()
 				$this.find('.centerY').val(this.model.get('centerY'));
 		},
 
-		changeCenterX: function()
-		{
+		changeCenterX: function() {
+
 			$(this.el).find('.centerX').val(this.model.get('centerX'));
 		},
 
-		changeCenterY: function()
-		{
+		changeCenterY: function() {
+
 			$(this.el).find('.centerY').val(this.model.get('centerY'));
 		},
 	});
 
-	var CircleView = ConicView.extend(
-	{
+	var CircleView = ConicView.extend({
+
 		circleTemplate: _.template($('#circleTemplate').html()),
 
-		events: _.extend({}, ConicView.prototype.events,
-		{
+		events: _.extend({}, ConicView.prototype.events, {
 			'change .radius':  'updateRadius',
 		}),
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY', 'changeRadius');
 
 			this.model.bind('remove', this.remove);
@@ -570,8 +558,8 @@ $(function()
 			this.model.bind('change:radius', this.changeRadius);
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			var $shape = $(ShapeView.prototype.render.call(this).el);
 			var circle = this.circleTemplate(this.model.toJSON());
 
@@ -581,13 +569,13 @@ $(function()
 			return this;
 		},
 
-		updateRadius: function()
-		{
+		updateRadius: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.radius').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({radius: testNum});
 				this.model.save();
 			}
@@ -595,24 +583,23 @@ $(function()
 				$this.find('.radius').val(this.model.get('radius'));
 		},
 
-		changeRadius: function()
-		{
+		changeRadius: function() {
+
 			$(this.el).find('.radius').val(this.model.get('radius'));
 		},
 	});
 
-	var EllipseView = ConicView.extend(
-	{
+	var EllipseView = ConicView.extend({
+
 		ellipseTemplate: _.template($('#ellipseTemplate').html()),
 
-		events: _.extend({}, ConicView.prototype.events,
-		{
+		events: _.extend({}, ConicView.prototype.events, {
 			'change .radiusX': 'updateRadiusX',
 			'change .radiusY': 'updateRadiusY',
 		}),
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY', 'changeRadiusX', 'changeRadiusY');
 
 			this.model.bind('remove', this.remove);
@@ -625,8 +612,8 @@ $(function()
 			this.model.bind('change:radiusY', this.changeRadiusY);
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			var $shape = $(ShapeView.prototype.render.call(this).el);
 			var ellipse = this.ellipseTemplate(this.model.toJSON());
 
@@ -636,13 +623,13 @@ $(function()
 			return this;
 		},
 
-		updateRadiusX: function()
-		{
+		updateRadiusX: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.radiusX').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({radiusX: testNum});
 				this.model.save();
 			}
@@ -650,13 +637,13 @@ $(function()
 				$this.find('.radiusX').val(this.model.get('radiusX'));
 		},
 
-		updateRadiusY: function()
-		{
+		updateRadiusY: function() {
+
 			var $this = $(this.el);
 			var testNum = parseInt($this.find('.radiusY').val());
 
-			if (!isNaN(testNum))
-			{
+			if (!isNaN(testNum)) {
+
 				this.model.set({radiusY: testNum});
 				this.model.save();
 			}
@@ -664,33 +651,31 @@ $(function()
 				$this.find('.radiusY').val(this.model.get('radiusY'));
 		},
 
-		changeRadiusX: function()
-		{
+		changeRadiusX: function() {
+
 			$(this.el).find('.radiusX').val(this.model.get('radiusX'));
 		},
 
-		changeRadiusY: function()
-		{
+		changeRadiusY: function() {
+
 			$(this.el).find('.radiusY').val(this.model.get('radiusY'));
 		},
 	});
 
 	// repurposing the View object for managing shapes on the canvas
-	var ShapeDraw = Backbone.View.extend(
-	{
-	});
+	var ShapeDraw = Backbone.View.extend({});
 
-	var LineDraw = ShapeDraw.extend(
-	{
+	var LineDraw = ShapeDraw.extend({
+
 		// Bresenham's line algorithm
-		line: function(plot,startX,startY,endX,endY)
-		{
+		line: function(plot,startX,startY,endX,endY) {
+
 			var steep = false;
 			if (Math.abs(endY-startY) > Math.abs(endX-startX))
 				steep = true;
 
-			if (steep)
-			{
+			if (steep) {
+
 				var temp = startX;
 				startX = startY;
 				startY = temp;
@@ -700,8 +685,8 @@ $(function()
 				endY = temp;
 			}
 
-			if (startX > endX)
-			{
+			if (startX > endX) {
+
 				var temp = startX;
 				startX = endX;
 				endX = temp;
@@ -722,37 +707,37 @@ $(function()
 			else
 				yStep = -1;
 
-			for (var x=startX; x<=endX; x++)
-			{
+			for (var x=startX; x<=endX; x++) {
+
 				if (steep)
 					plot(y,x,this.model.get('rgba'));
 				else
 					plot(x,y,this.model.get('rgba'));
 
 				error -= deltaY;
-				if (error < 0)
-				{
+				if (error < 0) {
+
 					y += yStep;
 					error += deltaX;
 				}
 			}
 		},
 
-		render: function(plot)
-		{
+		render: function(plot) {
+
 			var startX = this.model.get('startX');
 			var startY = this.model.get('startY');
 			var endX = this.model.get('endX');
 			var endY = this.model.get('endY');
 
-			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY)))
-			{
+			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY))) {
+
 				this.line(plot,startX,startY,endX,endY);
 			}
 		},
 
-		setCursor: function(locX,locY)
-		{
+		setCursor: function(locX,locY) {
+
 			if (this.model.get('virgin'))
 				this.canvas.setCursor('crosshair');
 			else if (this.model.get('editingStart') || this.model.get('editingEnd'))
@@ -763,10 +748,10 @@ $(function()
 				this.canvas.setCursor('default');
 		},
 
-		mouseDown: function(locX, locY)
-		{
-			if (this.model.get('virgin'))
-			{
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
 				this.model.set({startX: locX});
 				this.model.set({startY: locY});
 				this.model.set({endX: locX});
@@ -774,52 +759,52 @@ $(function()
 
 				this.model.set({editingEnd: true});
 			}
-			else
-			{
-				if (this.model.isStart(locX,locY))
-				{
+			else {
+
+				if (this.model.isStart(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingStart: true});
 				}
-				else if (this.model.isEnd(locX,locY))
-				{
+				else if (this.model.isEnd(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingEnd: true});
 				}
 			}
 		},
 
-		mouseMove: function(locX,locY)
-		{
-			if (this.model.get('editingStart'))
-			{
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
 				this.model.set({startX: locX});
 				this.model.set({startY: locY});
 			}
-			else if (this.model.get('editingEnd'))
-			{
+			else if (this.model.get('editingEnd')) {
+
 				this.model.set({endX: locX});
 				this.model.set({endY: locY});
 			}
 		},
 
-		mouseUp: function(locX,locY)
-		{
-			if (this.model.get('editingStart'))
-			{
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
 				this.model.set({startX: locX});
 				this.model.set({startY: locY});
 				this.model.set({editingStart: false});
 			}
-			else if (this.model.get('editingEnd'))
-			{
+			else if (this.model.get('editingEnd')) {
+
 				this.model.set({endX: locX});
 				this.model.set({endY: locY});
 				this.model.set({editingEnd: false});
 			}
 
-			if (this.model.get('virgin'))
-			{
+			if (this.model.get('virgin')) {
+
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
@@ -828,19 +813,19 @@ $(function()
 		},
 	});
 
-	var RectangleDraw = LineDraw.extend(
-	{
-		render: function(plot)
-		{
+	var RectangleDraw = LineDraw.extend({
+
+		render: function(plot) {
+
 			var startX = this.model.get('startX');
 			var startY = this.model.get('startY');
 			var endX = this.model.get('endX');
 			var endY = this.model.get('endY');
 
-			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY)))
-			{
-				if (startX > endX)
-				{
+			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY))) {
+
+				if (startX > endX) {
+
 					var temp = startX;
 					startX = endX;
 					endX = temp;
@@ -851,8 +836,8 @@ $(function()
 				if (startX != endX)
 					this.line(plot,endX,startY,endX,endY);
 
-				if (Math.abs(endX - startX) > 1)
-				{
+				if (Math.abs(endX - startX) > 1) {
+
 					this.line(plot,startX+1,startY,endX-1,startY);
 
 					if (startY != endY)
@@ -861,8 +846,8 @@ $(function()
 			}
 		},
 
-		setCursor: function(locX,locY)
-		{
+		setCursor: function(locX,locY) {
+
 			if (this.model.get('virgin'))
 				this.canvas.setCursor('crosshair');
 			else if (this.model.get('editingStart') || this.model.get('editingEnd') || this.model.get('editingStartEnd') || this.model.get('editingEndStart'))
@@ -873,10 +858,10 @@ $(function()
 				this.canvas.setCursor('default');
 		},
 
-		mouseDown: function(locX, locY)
-		{
-			if (this.model.get('virgin'))
-			{
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
 				this.model.set({startX: locX});
 				this.model.set({startY: locY});
 				this.model.set({endX: locX});
@@ -884,84 +869,84 @@ $(function()
 
 				this.model.set({editingEnd: true});
 			}
-			else
-			{
-				if (this.model.isStart(locX,locY))
-				{
+			else {
+
+				if (this.model.isStart(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingStart: true});
 				}
-				else if (this.model.isEnd(locX,locY))
-				{
+				else if (this.model.isEnd(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingEnd: true});
 				}
-				else if (this.model.isStartEnd(locX,locY))
-				{
+				else if (this.model.isStartEnd(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingStartEnd: true});
 				}
-				else if (this.model.isEndStart(locX,locY))
-				{
+				else if (this.model.isEndStart(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingEndStart: true});
 				}
 			}
 		},
 
-		mouseMove: function(locX,locY)
-		{
-			if (this.model.get('editingStart'))
-			{
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
 				this.model.set({startX: locX});
 				this.model.set({startY: locY});
 			}
-			else if (this.model.get('editingEnd'))
-			{
+			else if (this.model.get('editingEnd')) {
+
 				this.model.set({endX: locX});
 				this.model.set({endY: locY});
 			}
-			else if (this.model.get('editingStartEnd'))
-			{
+			else if (this.model.get('editingStartEnd')) {
+
 				this.model.set({startX: locX});
 				this.model.set({endY: locY});
 			}
-			else if (this.model.get('editingEndStart'))
-			{
+			else if (this.model.get('editingEndStart')) {
+
 				this.model.set({endX: locX});
 				this.model.set({startY: locY});
 			}
 		},
 
-		mouseUp: function(locX,locY)
-		{
-			if (this.model.get('editingStart'))
-			{
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
 				this.model.set({startX: locX});
 				this.model.set({startY: locY});
 				this.model.set({editingStart: false});
 			}
-			else if (this.model.get('editingEnd'))
-			{
+			else if (this.model.get('editingEnd')) {
+
 				this.model.set({endX: locX});
 				this.model.set({endY: locY});
 				this.model.set({editingEnd: false});
 			}
-			else if (this.model.get('editingStartEnd'))
-			{
+			else if (this.model.get('editingStartEnd')) {
+
 				this.model.set({startX: locX});
 				this.model.set({endY: locY});
 				this.model.set({editingStartEnd: false});
 			}
-			else if (this.model.get('editingEndStart'))
-			{
+			else if (this.model.get('editingEndStart')) {
+
 				this.model.set({endX: locX});
 				this.model.set({startY: locY});
 				this.model.set({editingEndStart: false});
 			}
 
-			if (this.model.get('virgin'))
-			{
+			if (this.model.get('virgin')) {
+
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
@@ -970,10 +955,10 @@ $(function()
 		},
 	});
 
-	var ConicDraw = ShapeDraw.extend(
-	{
-		plotFourPoints: function(plot,x,y)
-		{
+	var ConicDraw = ShapeDraw.extend({
+
+		plotFourPoints: function(plot,x,y) {
+
 			plot(this.model.get('centerX')+x,this.model.get('centerY')+y,this.model.get('rgba'));
 
 			if (x != 0)
@@ -986,8 +971,8 @@ $(function()
 				plot(this.model.get('centerX')-x,this.model.get('centerY')-y,this.model.get('rgba'));
 		},
 
-		setCursor: function(locX,locY)
-		{
+		setCursor: function(locX,locY) {
+
 			if (this.model.get('editingCenter'))
 				this.canvas.setCursor('closedHand');
 			else if (this.model.isCenter(locX,locY))
@@ -998,10 +983,10 @@ $(function()
 
 	});
 
-	var CircleDraw = ConicDraw.extend(
-	{
-		plotEightPoints: function(plot,x,y)
-		{
+	var CircleDraw = ConicDraw.extend({
+
+		plotEightPoints: function(plot,x,y) {
+
 			this.plotFourPoints(plot,x,y);
 
 			if (x != y)
@@ -1009,23 +994,23 @@ $(function()
 		},
 
 		// midpoint circle algorithm
-		render: function(plot)
-		{
-			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radius'))))
-			{
+		render: function(plot) {
+
+			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radius')))) {
+
 				var x = this.model.get('radius');
 				var y = 0;
 				var error = -x;
 
-				while (x >= y)
-				{
+				while (x >= y) {
+
 					this.plotEightPoints(plot,x,y);
 
 					error += (2 * y) + 1;
 					y++;
 
-					if (error >= 0)
-					{
+					if (error >= 0) {
+
 						x--;
 						error -= 2 * x;
 					}
@@ -1036,25 +1021,25 @@ $(function()
 			}
 		},
 
-		mouseDown: function(locX, locY)
-		{
-			if (this.model.get('virgin'))
-			{
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
 				this.model.set({centerX: locX});
 				this.model.set({centerY: locY});
 				this.model.set({radius: 0});
 
 				this.model.set({editingRadius: true});
 			}
-			else
-			{
-				if (this.model.isCenter(locX,locY))
-				{
+			else {
+
+				if (this.model.isCenter(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingCenter: true});
 				}
-				else
-				{
+				else {
+
 					this.model.set({editingRadius: true});
 
 					var deltaX = this.model.get('centerX') - locX;
@@ -1065,15 +1050,15 @@ $(function()
 			}
 		},
 
-		mouseMove: function(locX,locY)
-		{
-			if (this.model.get('editingCenter'))
-			{
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
 				this.model.set({centerX: locX});
 				this.model.set({centerY: locY});
 			}
-			else // editing radius
-			{
+			else if (this.model.get('editingRadius')) {
+
 				var deltaX = this.model.get('centerX') - locX;
 				var deltaY = this.model.get('centerY') - locY;
 
@@ -1081,16 +1066,16 @@ $(function()
 			}
 		},
 
-		mouseUp: function(locX,locY)
-		{
-			if (this.model.get('editingCenter'))
-			{
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
 				this.model.set({centerX: locX});
 				this.model.set({centerY: locY});
 				this.model.set({editingCenter: false});
 			}
-			else // editing radius
-			{
+			else if (this.model.get('editingRadius')) {
+
 				var deltaX = this.model.get('centerX') - locX;
 				var deltaY = this.model.get('centerY') - locY;
 
@@ -1098,8 +1083,8 @@ $(function()
 				this.model.set({editingRadius: false});
 			}
 
-			if (this.model.get('virgin'))
-			{
+			if (this.model.get('virgin')) {
+
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
@@ -1108,13 +1093,13 @@ $(function()
 		},
 	});
 
-	var EllipseDraw = ConicDraw.extend(
-	{
+	var EllipseDraw = ConicDraw.extend({
+
 		// midpoint ellipse algorithm
-		render: function(plot)
-		{
-			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radiusX'))) && !isNaN(parseInt(this.model.get('radiusY'))))
-			{
+		render: function(plot) {
+
+			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radiusX'))) && !isNaN(parseInt(this.model.get('radiusY')))) {
+
 				var x = -this.model.get('radiusX');
 				var y = 0;
 				var twoASquare = 2 * (this.model.get('radiusX') * this.model.get('radiusX'));
@@ -1124,21 +1109,21 @@ $(function()
 				var error = deltaX + deltaY;
 				var errorDoubled;
 
-				do
-				{
+				do {
+
 					this.plotFourPoints(plot,x,y);
 
 					errorDoubled = 2 * error;
 
-					if (errorDoubled >= deltaX)
-					{
+					if (errorDoubled >= deltaX) {
+
 						x++;
 						deltaX += twoBSquare;
 						error += deltaX;
 					}
 
-					if (errorDoubled <= deltaY)
-					{
+					if (errorDoubled <= deltaY) {
+
 						y++;
 						deltaY += twoASquare;
 						error += deltaY;
@@ -1146,8 +1131,8 @@ $(function()
 				} while (x <= 0);
 
 				// for flat ellipses with radiusX = 1
-				while (y++ < this.model.get('radiusY'))
-				{
+				while (y++ < this.model.get('radiusY')) {
+
 					plot(this.model.get('centerX'), (this.model.get('centerY') + y), this.model.get('rgba')); // draw the tip of the ellipse
 					plot(this.model.get('centerX'), (this.model.get('centerY') - y), this.model.get('rgba'));
 				}
@@ -1157,10 +1142,10 @@ $(function()
 			}
 		},
 
-		mouseDown: function(locX, locY)
-		{
-			if (this.model.get('virgin'))
-			{
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
 				this.model.set({centerX: locX});
 				this.model.set({centerY: locY});
 				this.model.set({radiusX: 0});
@@ -1168,15 +1153,15 @@ $(function()
 
 				this.model.set({editingRadius: true});
 			}
-			else
-			{
-				if (this.model.isCenter(locX,locY))
-				{
+			else {
+
+				if (this.model.isCenter(locX,locY)) {
+
 					this.canvas.setCursor('closedHand');
 					this.model.set({editingCenter: true});
 				}
-				else
-				{
+				else {
+
 					this.model.set({editingRadius: true});
 
 					var deltaX = Math.abs(this.model.get('centerX') - locX);
@@ -1188,15 +1173,15 @@ $(function()
 			}
 		},
 
-		mouseMove: function(locX,locY)
-		{
-			if (this.model.get('editingCenter'))
-			{
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
 				this.model.set({centerX: locX});
 				this.model.set({centerY: locY});
 			}
-			else // editing radius
-			{
+			else if (this.model.get('editingRadius')) {
+
 				var deltaX = Math.abs(this.model.get('centerX') - locX);
 				var deltaY = Math.abs(this.model.get('centerY') - locY);
 
@@ -1205,16 +1190,16 @@ $(function()
 			}
 		},
 
-		mouseUp: function(locX,locY)
-		{
-			if (this.model.get('editingCenter'))
-			{
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
 				this.model.set({centerX: locX});
 				this.model.set({centerY: locY});
 				this.model.set({editingCenter: false});
 			}
-			else // editing radius
-			{
+			else if (this.model.get('editingRadius')) {
+
 				var deltaX = Math.abs(this.model.get('centerX') - locX);
 				var deltaY = Math.abs(this.model.get('centerY') - locY);
 
@@ -1223,8 +1208,8 @@ $(function()
 				this.model.set({editingRadius: false});
 			}
 
-			if (this.model.get('virgin'))
-			{
+			if (this.model.get('virgin')) {
+
 				this.model.set({virgin: false});
 				this.model.set({selected: false});
 			}
@@ -1233,22 +1218,21 @@ $(function()
 		},
 	});
 
-	var ShapesPane = Backbone.View.extend(
-	{
+	var ShapesPane = Backbone.View.extend({
+
 		el: $('#shapesPane'),
 
 		template: _.template($('#shapesPaneTemplate').html()),
 
-		events:
-		{
+		events: {
 			'click #addLine':      'createLine',
 			'click #addRectangle': 'createRectangle',
 			'click #addCircle':    'createCircle',
 			'click #addEllipse':   'createEllipse',
 		},
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render','addShape', 'addShapes');
 
 			this.collection.bind('add', this.addShape);
@@ -1257,49 +1241,49 @@ $(function()
 			this.render();
 		},
 
-		resize: function()
-		{
+		resize: function() {
+
 			$('#controlPane').height($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true));
 			$('#shapesPane').height($('#controlPane').height() - $('#graphPane').height());
 			$('#shapes').height($('#shapesPane').height() - $('#addShapes').height());
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			$(this.el).html(this.template({}));
 			return this;
 		},
 
-		createLine: function()
-		{
+		createLine: function() {
+
 			var line = new Line;
 			this.collection.create(line);
 			line.set({selected: true});
 		},
 
-		createRectangle: function()
-		{
+		createRectangle: function() {
+
 			var rectangle = new Rectangle;
 			this.collection.create(rectangle);
 			rectangle.set({selected: true});
 		},
 
-		createCircle: function()
-		{
+		createCircle: function() {
+
 			var circle = new Circle;
 			this.collection.create(circle);
 			circle.set({selected: true});
 		},
 
-		createEllipse: function()
-		{
+		createEllipse: function() {
+
 			var ellipse = new Ellipse;
 			this.collection.create(ellipse);
 			ellipse.set({selected: true});
 		},
 
-		addShape: function(shape)
-		{
+		addShape: function(shape) {
+
 			var view;
 
 			if (shape instanceof Rectangle)
@@ -1318,16 +1302,15 @@ $(function()
 			$newShapeView.slideDown();
 		},
 
-		addShapes: function()
-		{
+		addShapes: function() {
+
 			this.collection.each(this.addShape);
 		},
 	});
 
-	var Graph = Backbone.Model.extend(
-	{
-		defaults:
-		{
+	var Graph = Backbone.Model.extend({
+
+		defaults: {
 			color:      'rgba(1,1,1,0.1)',
 			highlight:  'rgba(1,1,1,0.2)',
 			scale:      10,
@@ -1340,10 +1323,10 @@ $(function()
 		},
 
 		// essentially +=, but then corrected for floating point errors
-		augment: function(delta,options)
-		{
-			if (delta.scale)
-			{
+		augment: function(delta,options) {
+
+			if (delta.scale) {
+
 				var scaleOrig = this.get('scale');
 
 				var scaleTemp = parseInt((scaleOrig+delta.scale) * 1000) / 1000;
@@ -1354,15 +1337,15 @@ $(function()
 				else if (scaleTemp > 50)
 					scaleTemp = 50;
 
-				if (scaleOrig != scaleTemp)
-				{
+				if (scaleOrig != scaleTemp) {
+					//
 					// we'll trigger the need to redraw once we're done
 					options = _.extend({}, options, {silent: true});
 
 					this.set({scale: scaleTemp}, options);
 
-					if (delta.focusCenter)
-					{
+					if (delta.focusCenter) {
+
 						var canvasCenterX = this.canvas.model.get('width') / 2;
 						var canvasCenterY = this.canvas.model.get('height') / 2;
 
@@ -1370,8 +1353,8 @@ $(function()
 						this.augment({originX: (((canvasCenterX-this.get('originX'))/scaleTemp) * (scaleOrig - scaleTemp))}, options);
 						this.augment({originY: (((canvasCenterY-this.get('originY'))/scaleTemp) * (scaleOrig - scaleTemp))}, options);
 					}
-					else
-					{
+					else {
+
 						// zoom to the current mouse location
 						this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
 						this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
@@ -1381,43 +1364,42 @@ $(function()
 				}
 			}
 
-			if (delta.originX)
-			{
+			if (delta.originX) {
+
 				this.set({originX: Math.floor((this.get('originX')*1000) + (delta.originX*1000)) / 1000}, options);
 			}
 
-			if (delta.originY)
-			{
+			if (delta.originY) {
+
 				this.set({originY: Math.floor((this.get('originY')*1000) + (delta.originY*1000)) / 1000}, options);
 			}
 		},
 
 		// return x relative to the graph
-		graphX: function(x)
-		{
+		graphX: function(x) {
+
 			return Math.round((x - this.get('originX')) / this.get('scale'));
 		},
 
 		// return y relative to the graph
-		graphY: function(y)
-		{
+		graphY: function(y) {
+
 			return Math.round((this.get('originY') - y) / this.get('scale'));
 		},
 	});
 
-	var GraphView = Backbone.View.extend(
-	{
+	var GraphView = Backbone.View.extend({
+
 		el: $('#graphPane'),
 
 		template: _.template($('#graphControlTemplate').html()),
 
-		events:
-		{
+		events: {
 			'click #clear': 'clearShapes',
 		},
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'clearShapes', 'changeMouseX', 'changeMouseY');
 
 			this.model.bind('change:mouseX', this.changeMouseX);
@@ -1428,38 +1410,38 @@ $(function()
 			this.$mouseY = $('#mouseY');
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			$(this.el).html(this.template(this.model.toJSON()));
 		},
 
-		clearShapes: function()
-		{
+		clearShapes: function() {
+
 			while(this.model.canvas.collection.size())
 				this.model.canvas.collection.last().destroy();
 		},
 
-		changeMouseX: function()
-		{
+		changeMouseX: function() {
+
 			this.$mouseX.html(this.model.get('mouseX'));
 		},
 
-		changeMouseY: function()
-		{
+		changeMouseY: function() {
+
 			this.$mouseY.html(this.model.get('mouseY'));
 		},
 	});
 
-	var GraphDraw = Backbone.View.extend(
-	{
-		initialize: function()
-		{
+	var GraphDraw = Backbone.View.extend({
+
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'plot', 'fill');
 		},
 
 		// draw a square on the canvas relative to 'scale'
-		fill: function(row,col,color)
-		{
+		fill: function(row,col,color) {
+
 			var width = this.canvas.model.get('width');
 			var height = this.canvas.model.get('height');
 			var scale = this.model.get('scale');
@@ -1478,16 +1460,16 @@ $(function()
 		},
 
 		// 'fill' a point on the cartesian plane
-		plot: function(x,y,color)
-		{
+		plot: function(x,y,color) {
+
 			var upperLeftX = -parseInt((this.model.get('originX') - (this.model.get('scale')/2)) / this.model.get('scale'));
 			var upperLeftY = parseInt((this.model.get('originY') - (this.model.get('scale')/2)) / this.model.get('scale'));
 
 			this.fill(upperLeftY-y,x-upperLeftX,color);
 		},
 
-		render: function()
-		{
+		render: function() {
+
 			var width = this.canvas.model.get('width');
 			var height = this.canvas.model.get('height');
 			var scale = this.model.get('scale');
@@ -1505,8 +1487,8 @@ $(function()
 			if (xOffset < 0)
 				xOffset += scale;
 
-			for (var col=0; col<=cols; col++)
-			{
+			for (var col=0; col<=cols; col++) {
+
 				this.canvas.context.beginPath();
 				this.canvas.context.fillStyle = "rgba(255,255,255,1)";
 				this.canvas.context.rect((col * scale) + xOffset, 0, 1, height);
@@ -1529,8 +1511,8 @@ $(function()
 			if (yOffset < 0)
 				yOffset += scale;
 
-			for (var row=0; row<=rows; row++)
-			{
+			for (var row=0; row<=rows; row++) {
+
 				this.canvas.context.beginPath();
 				this.canvas.context.fillStyle = "rgba(255,255,255,1)";
 				this.canvas.context.rect(0, (row * scale) + yOffset, width, 1);
@@ -1549,10 +1531,9 @@ $(function()
 		},
 	});
 
-	var Canvas = Backbone.Model.extend(
-	{
-		defaults:
-		{
+	var Canvas = Backbone.Model.extend({
+
+		defaults: {
 			height:     500,                // size of canvas
 			width:      500,                // size of canvas
 			offsetLeft: 0,                  // location of canvas
@@ -1565,28 +1546,26 @@ $(function()
 		},
 	});
 
-	var CanvasView = Backbone.View.extend(
-	{
+	var CanvasView = Backbone.View.extend({
+
 		el: $('#canvas'),
 
-		cursors:
-		{
+		cursors: {
 			default:    'default',
 			openHand:   'url(images/openhand.cur),move',
 			closedHand: 'url(images/closedhand.cur),move',
 			crosshair:  'crosshair',
 		},
 
-		events:
-		{
+		events: {
 			'mousedown':  'mouseDown',
 			'mousemove':  'reportLocation',
 			'mouseout':   'clearLocation',
 			'mousewheel': 'mouseWheel',
 		},
 
-		initialize: function()
-		{
+		initialize: function() {
+
 			_.bindAll(this, 'render', 'addShape', 'addShapes', 'shapeSelected', 'reportLocation', 'mouseUp', 'mouseMove');
 
 			// in case the user's mouse is not on the canvas
@@ -1622,19 +1601,18 @@ $(function()
 			this.setCursor('openHand');
 		},
 
-		render: function()
-		{
+		render: function() {
 			this.clear();
 			this.graph.draw.render();
 
-			this.collection.each(function(shape)
-			{
+			this.collection.each(function(shape) {
+
 				shape.draw.render(this.graph.draw.plot);
 			},this);
 		},
 
-		resize: function()
-		{
+		resize: function() {
+
 			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#canvasFooter').outerHeight(true)));
 			this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
 
@@ -1649,8 +1627,8 @@ $(function()
 			$('#canvasPane').width(this.model.get('width'));
 		},
 
-		addShape: function(shape)
-		{
+		addShape: function(shape) {
+
 			var draw;
 
 			if (shape instanceof Rectangle)
@@ -1666,20 +1644,20 @@ $(function()
 			shape.draw = draw;
 		},
 
-		addShapes: function()
-		{
+		addShapes: function() {
+
 			this.collection.each(this.addShape);
 		},
 
-		shapeSelected: function(justSelected)
-		{
-			if (justSelected === this.selected)
-			{
+		shapeSelected: function(justSelected) {
+
+			if (justSelected === this.selected) {
+
 				this.selected = null;
 				this.setCursor('openHand');
 			}
-			else
-			{
+			else {
+
 				if (this.selected)
 					this.selected.set({selected: false}, {silent: true});
 
@@ -1687,20 +1665,20 @@ $(function()
 			}
 		},
 
-		reportLocation: function(event)
-		{
+		reportLocation: function(event) {
+
 			this.graph.set({mouseX: this.graph.graphX(this.canvasX(event.pageX))});
 			this.graph.set({mouseY: this.graph.graphY(this.canvasY(event.pageY))});
 		},
 
-		clearLocation: function()
-		{
+		clearLocation: function() {
+
 			this.graph.set({mouseX: ''});
 			this.graph.set({mouseY: ''});
 		},
 
-		mouseDown: function(event)
-		{
+		mouseDown: function(event) {
+
 			this.model.set({mouseX: this.canvasX(event.pageX)});
 			this.model.set({mouseY: this.canvasY(event.pageY)});
 
@@ -1708,8 +1686,8 @@ $(function()
 
 			if (!this.selected)
 				this.setCursor('closedHand');
-			else
-			{
+			else {
+
 				var locX = this.graph.graphX(this.model.get('mouseX'));
 				var locY = this.graph.graphY(this.model.get('mouseY'));
 
@@ -1717,8 +1695,8 @@ $(function()
 			}
 		},
 
-		mouseMove: function(event)
-		{
+		mouseMove: function(event) {
+
 			this.model.set({lastX: this.model.get('mouseX')});
 			this.model.set({lastY: this.model.get('mouseY')});
 			this.model.set({mouseX: this.canvasX(event.pageX)});
@@ -1733,13 +1711,13 @@ $(function()
 			if (!this.model.get('clicking'))
 				return;
 
-			if (!this.selected)
-			{
+			if (!this.selected) {
+
 				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 			}
-			else
-			{
+			else {
+
 				if (this.model.get('mouseX') < 10)
 					this.graph.augment({scale: -0.1, focusCenter: true});
 				else if (this.model.get('mouseX') > (this.model.get('width') - 10))
@@ -1753,8 +1731,8 @@ $(function()
 			}
 		},
 
-		mouseWheel: function(event,delta)
-		{
+		mouseWheel: function(event,delta) {
+
 			this.model.set({lastX: this.model.get('mouseX')});
 			this.model.set({lastY: this.model.get('mouseY')});
 			this.model.set({mouseX: this.canvasX(event.pageX)});
@@ -1763,8 +1741,8 @@ $(function()
 			this.graph.augment({scale: delta});
 		},
 
-		mouseUp: function(event)
-		{
+		mouseUp: function(event) {
+
 			this.model.set({lastX: this.model.get('mouseX')});
 			this.model.set({lastY: this.model.get('mouseY')});
 			this.model.set({mouseX: this.canvasX(event.pageX)});
@@ -1773,13 +1751,13 @@ $(function()
 			if (!this.model.get('clicking'))
 				return;
 
-			if (!this.selected)
-			{
+			if (!this.selected) {
+
 				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
 				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
 			}
-			else
-			{
+			else {
+
 				var locX = this.graph.graphX(this.model.get('mouseX'));
 				var locY = this.graph.graphY(this.model.get('mouseY'));
 
@@ -1790,23 +1768,23 @@ $(function()
 			this.setCursor('openHand');
 		},
 
-		setCursor: function(cursor)
-		{
+		setCursor: function(cursor) {
+
 			this.$canvas.css('cursor', this.cursors[cursor]);
 		},
 
-		canvasX: function(x)
-		{
+		canvasX: function(x) {
+
 			return x - this.model.get('offsetLeft');
 		},
 
-		canvasY: function(y)
-		{
+		canvasY: function(y) {
+
 			return y - this.model.get('offsetTop');
 		},
 
-		clear: function()
-		{
+		clear: function() {
+
 			this.context.clearRect(0,0,this.model.get('width'),this.model.get('height'));
 		},
 	});
