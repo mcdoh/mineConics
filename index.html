@@ -4,12 +4,34 @@
 		<meta http-equiv="content-type" content="text/html; charset=utf-8">
 
 		<title>mineConics</title>
+		<meta name="description" content="A web app to serve as guide for creating circles, ellipses, and other shapes for games like Minecraft and Dwarf Fortress"/>
+		<meta name="title" content="Create circles, ellipses, and other shapes for Minecraft and Dwarf Fortress"/>
 
-		<link type="text/css" media="screen" href="css/mineConics.css" rel="stylesheet">
 
-		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+		<link type="text/css" href="css/mineConics.css" rel="stylesheet">
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.1/backbone-min.js"></script>
+
+		<script type="text/javascript" src="scripts/backbone-localstorage.js"></script> 
 		<script type="text/javascript" src="scripts/jquery.mousewheel.js"></script>
-		<script type="text/javascript" src="scripts/mineConics.js"></script>
+		<script type="text/javascript" src="scripts/backboneConics.js"></script> 
+
+<!-- 		<script type="text/javascript"> -->
+<!-- 			var _gaq = _gaq || []; -->
+<!-- 			_gaq.push(['_setAccount', 'UA-23497329-1']); -->
+<!-- 			_gaq.push(['_trackPageview']); -->
+<!--  -->
+<!-- 			(function() { -->
+<!-- 				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true; -->
+<!-- 				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js'; -->
+<!-- 				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s); -->
+<!-- 			}) (); -->
+<!-- 		</script> -->
+<!-- 		<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script> -->
 
 	</head>
 
@@ -18,6 +40,7 @@
 		<div id="container">
 
 			<div id="header">
+<!-- 				<div id="plusOne"><g:plusone size="small"></g:plusone></div> -->
 				<div id="menuBar"><a id="blogLink" href="http://blog.mineconics.net">blog</a></div>
 				<div id="headingWrapper">
 					<h1 id="heading"><a id="homeLink" href="http://www.mineconics.net" title="circles and ellipses for minecraft">mineConics</a></h1>
@@ -29,18 +52,149 @@
 			<div id="content">
 
 				<div id="controlPane">
+					<div id="graphPane">
+					</div>
+					<div id="shapesPane">
+					</div>
 				</div>
 
-				<div id="graphPane">
+				<div id="canvasPane">
 					<canvas id="canvas" width="500" height="500"></canvas>
-					<div id="zoomHelp">scroll to zoom</div>
+					<div id="canvasFooter">
+						<div id="mouseLocation">
+							<span id="mouseX" class="mouseLocation"></span>
+							<span id="mouseY" class="mouseLocation"></span>
+						</div>
+						<div id="zoomHelp">scroll to zoom</div>
+					</div>
 				</div>
 
 				<div id="adPane">
+<!-- 					<script type="text/javascript"><!-- -->
+<!-- 						google_ad_client = "ca-pub-4853650459044826"; -->
+<!-- 						/* mineConics */ -->
+<!-- 						google_ad_slot = "9957743254"; -->
+<!-- 						google_ad_width = 160; -->
+<!-- 						google_ad_height = 600; -->
+<!-- 						//--> -->
+<!-- 					</script> -->
+<!-- 					<script type="text/javascript" -->
+<!-- 						src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> -->
+<!-- 					</script> -->
 				</div>
 
 			</div>
 		</div>
 
+
+		<!-- Templates --> 
+
+		<script type="text/template" id="graphControlTemplate"> 
+			<div id="graphControl" class="control">
+				<ul id="graphMenu">
+					<li id="save" class="graphOption">[save]</li>
+					<li id="clear" class="graphOption">[clear]</li>
+				</ul>
+			</div>
+		</script>
+
+		<script type="text/template" id="shapesPaneTemplate"> 
+			<div id="addShapes" class="control">
+				<ul id="addShapeList">
+					<span class="addShapeRow">
+						<li id="addLine" class="addShape">[add line]</li>
+						<li id="addRectangle" class="addShape">[add rectangle]</li>
+					</span>
+					<span class="addShapeRow">
+						<li id="addCircle" class="addShape">[add circle]</li>
+						<li id="addEllipse" class="addShape">[add ellipse]</li>
+					</span>
+				</ul>
+			</div>
+			<ul id="shapes"></ul>
+		</script> 
+
+		<script type="text/template" id="shapeTemplate"> 
+			<div class="titleBar">
+				<span class="close">[X]</span>
+				<span class="titleWrapper">
+					<span class="title"><%= title %></span>
+				</span>
+				<span class="hide">[-]</span>
+			</div>
+			<div class="shapeControls">
+				<div class="colorControl">
+					<form class="field">
+						<span class="field">rgb</span>
+						<input type="checkbox" name="color" class="color red">
+						<input type="checkbox" name="color" class="color green">
+						<input type="checkbox" name="color" class="color blue">
+					</form>
+					<div class="field">
+						<span class="field">hex</span>
+						<input type="text" class="hexColor" value="<%= hexColor %>">
+					</div>
+				</div>
+			</div>
+		</script> 
+
+		<script type="text/template" id="lineTemplate">
+			<div class="shapeControl line">
+				<div class="field">
+					<span class="field">start</span>
+					<input type="text" class="field startX" value="<%= startX %>"></input>
+					<input type="text" class="field startY" value="<%= startY %>"></input>
+				</div>
+				<div class="field">
+					<span class="field">end</span>
+					<input type="text" class="field endX" value="<%= endX %>"></input>
+					<input type="text" class="field endY" value="<%= endY %>"></input>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="rectangleTemplate">
+			<div class="shapeControl rectangle">
+				<div class="field">
+					<span class="field">start</span>
+					<input type="text" class="field startX" value="<%= startX %>"></input>
+					<input type="text" class="field startY" value="<%= startY %>"></input>
+				</div>
+				<div class="field">
+					<span class="field">end</span>
+					<input type="text" class="field endX" value="<%= endX %>"></input>
+					<input type="text" class="field endY" value="<%= endY %>"></input>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="circleTemplate">
+			<div class="shapeControl circle">
+				<div class="field">
+					<span class="field">center</span>
+					<input type="text" class="field centerX" value="<%= centerX %>"></input>
+					<input type="text" class="field centerY" value="<%= centerY %>"></input>
+				</div>
+				<div class="field">
+					<span class="field">radius</span>
+					<input type="text" class="field radius" value="<%= radius %>"></input>
+				</div>
+			</div>
+		</script>
+
+		<script type="text/template" id="ellipseTemplate">
+			<div class="shapeControl ellipse">
+				<div class="field">
+					<span class="field">center</span>
+					<input type="text" class="field centerX" value="<%= centerX %>"></input>
+					<input type="text" class="field centerY" value="<%= centerY %>"></input>
+				</div>
+				<div class="field">
+					<span class="field">radius</span>
+					<input type="text" class="field radiusX" value="<%= radiusX %>"></input>
+					<input type="text" class="field radiusY" value="<%= radiusY %>"></input>
+				</div>
+			</div>
+		</script>
 	</body>
 </html>
