@@ -1,1985 +1,1799 @@
-var canvas;
-var graph;
-var lines;
-var circles;
-var ellipses;
+$(function() {
 
-var clicking = false;
-var startX;
-var startY;
+	var intToHex = function(integer) {
 
-function canvasHandler()
-{
-	this.$canvas = $('#canvas');
-	this.context = $('canvas')[0].getContext('2d');
+		var hex = integer.toString(16).toUpperCase();
 
-	// resize the canvas to take advantage of extra viewport space
-	this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true)));
-	this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
+		if (hex.length === 1)
+			hex = '0' + hex;
 
-	this.height = this.$canvas.height();
-	this.width = this.$canvas.width();
+		return hex;
+	};
 
-	$('#graphPane').height(this.height);
-	$('#graphPane').width(this.width);
+	var Shape = Backbone.Model.extend({
 
-	this.cursorOpenHand();
-}
+		defaults: {
+			title:    'shape',
+			virgin:   true,
+			selected: false,
+			red:      0,
+			green:    0,
+			blue:     0,
+			alpha:    0.75,
+			rgba:     'rgba(0,0,0,0.75)',
+			hexColor: '#000000',
+		},
 
-canvasHandler.prototype.cursorDefault = function()
-{
-	this.$canvas.css('cursor','default');
-}
+		initialize: function() {
 
-canvasHandler.prototype.cursorOpenHand = function()
-{
-	this.$canvas.css('cursor','url(images/openhand.cur),move');
-}
+			_.bindAll(this, 'colorChanged');
 
-canvasHandler.prototype.cursorClosedHand = function()
-{
-	this.$canvas.css('cursor','url(images/closedhand.cur),move');
-}
+			this.bind('change:red', this.colorChanged);
+			this.bind('change:green', this.colorChanged);
+			this.bind('change:blue', this.colorChanged);
+		},
 
-canvasHandler.prototype.cursorCrosshair = function()
-{
-	this.$canvas.css('cursor','crosshair');
-}
+		colorChanged: function() {
 
-canvasHandler.prototype.offsetLeft = function()
-{
-	return this.$canvas.offset().left;
-}
+			var rgba = 'rgba(';
+			var hexColor = '#';
 
-canvasHandler.prototype.offsetTop = function()
-{
-	return this.$canvas.offset().top;
-}
+			rgba += this.get('red')   + ',';
+			rgba += this.get('green') + ',';
+			rgba += this.get('blue')  + ',';
+			rgba += '0.75)';
 
-canvasHandler.prototype.getX = function(x)
-{
-	return x - this.offsetLeft();
-}
+			hexColor += intToHex(this.get('red'));
+			hexColor += intToHex(this.get('green'));
+			hexColor += intToHex(this.get('blue'));
 
-canvasHandler.prototype.getY = function(y)
-{
-	return y - this.offsetTop();
-}
+			this.set({rgba: rgba});
+			this.set({hexColor: hexColor});
+			this.save();
+		},
+	});
 
-canvasHandler.prototype.clear = function()
-{
-	this.context.clearRect(0,0,this.width,this.height);
-}
+	var Line = Shape.extend({
 
-function titleBar(title)
-{
-	var $titleBarDiv = $('<div/>');
-	$titleBarDiv.addClass('titleBar');
+		defaults: _.extend({}, Shape.prototype.defaults, {
+			title:        'line',
+			startX:       '',
+			startY:       '',
+			endX:         '',
+			endY:         '',
+			editingStart: false,
+			editingEnd:   false,
+		}),
 
-	var $closeDiv = $('<div/>');
-	$closeDiv.addClass('close');
-	$closeDiv.append('[X]');
+		isStart: function(x,y) {
 
- 	var $titleWrapper = $('<div/>');
-	var $titleDiv = $('<div/>');
- 	$titleWrapper.addClass('titleWrapper');
-	$titleDiv.addClass('title');
-	$titleDiv.text(title);
- 	$titleWrapper.append($titleDiv);
-
-	var $hideDiv = $('<div/>');
-	$hideDiv.addClass('hide');
-	$hideDiv.text('[-]');
-
-	$titleBarDiv.append($closeDiv);
-	$titleBarDiv.append($hideDiv);
-	$titleBarDiv.append($titleWrapper);
-
-	return $titleBarDiv;
-}
-
-function colorControl()
-{
-	var $colorDiv = $('<div/>');
-	$colorDiv.addClass('colorSelector');
-
-	var $colorForm = $('<form/>');
-	var $colorTitle = $('<div/>');
-	$colorForm.addClass('field');
-	$colorTitle.addClass('fieldTitle');
-	$colorTitle.text('rgb');
-
-	var $redLabel = $('<label/>');
-	var $redInput = $('<input/>');
-	$redInput.addClass('color');
-	$redInput.addClass('red');
-	$redInput.attr('type','checkbox');
-	$redInput.attr('name','color');
-	$redLabel.append($redInput);
-
-	var $greenLabel = $('<label/>');
-	var $greenInput = $('<input/>');
-	$greenInput.addClass('color');
-	$greenInput.addClass('green');
-	$greenInput.attr('type','checkbox');
-	$greenInput.attr('name','color');
-	$greenLabel.append($greenInput);
-
-	var $blueLabel = $('<label/>');
-	var $blueInput = $('<input/>');
-	$blueInput.addClass('color');
-	$blueInput.addClass('blue');
-	$blueInput.attr('type','checkbox');
-	$blueInput.attr('name','color');
-	$blueLabel.append($blueInput);
-
-	$colorForm.append($colorTitle);
-	$colorForm.append($redLabel);
-	$colorForm.append($greenLabel);
-	$colorForm.append($blueLabel);
-
-	var $hexDiv = $('<div/>');
-	var $hexTitle = $('<div/>');
-	var $hexInput = $('<input/>');
-	$hexDiv.addClass('field');
-	$hexTitle.addClass('fieldTitle');
-	$hexTitle.text('hex');
-	$hexInput.addClass('hexColor');
-	$hexInput.val('#000000');
-	$hexDiv.append($hexTitle);
-	$hexDiv.append($hexInput);
-
-	$colorDiv.append($colorForm);
-	$colorDiv.append($hexDiv);
-
-	return $colorDiv;
-}
-
-function graphControl()
-{
-	var $graphDiv = $('<div/>');
-	$graphDiv.addClass('control');
-
-	var $graphForm = $('<form/>');
-	$graphForm.addClass('graph');
-
-	var $sizeInput = $('<input/>');
-	$sizeInput.addClass('graph');
-	$sizeInput.addClass('size');
-	$sizeInput.attr('type','text');
-	$sizeInput.attr('name','size');
-
-	var $graphSubmit = $('<input/>');
-	$graphSubmit.addClass('graph');
-	$graphSubmit.attr('type','submit');
-	$graphSubmit.attr('value','update');
-
-//	$graphForm.text('size');
-// 	$graphForm.append($sizeInput);
-// 	$graphForm.append($graphSubmit);
-	$graphDiv.append($graphForm);
-
-	return $graphDiv;
-}
-
-function newConicControl()
-{
-	var $newConicDiv = $('<div/>');
-	var $newConicUL = $('<ul/>');
-	$newConicDiv.addClass('control');
-	$newConicDiv.addClass('newConics');
-	$newConicUL.addClass('newConics');
-
-	var $newLineButton = $('<li/>');
-	$newLineButton.addClass('newConic');
-	$newLineButton.addClass('newLine');
-	$newLineButton.text('[add line]');
-
-	var $newCircleButton = $('<li/>');
-	$newCircleButton.addClass('newConic');
-	$newCircleButton.addClass('newCircle');
-	$newCircleButton.text('[add cirlce]');
-
-	var $newEllipseButton = $('<li/>');
-	$newEllipseButton.addClass('newConic');
-	$newEllipseButton.addClass('newEllipse');
-	$newEllipseButton.text('[add ellipse]');
-
-	$newConicUL.append($newLineButton);
-	$newConicUL.append($newCircleButton);
-	$newConicUL.append($newEllipseButton);
-	$newConicDiv.append($newConicUL);
-
-	return $newConicDiv;
-}
-
-function addLineControl($shapeControls,lineID)
-{
-	var $conicDiv = $('<div/>');
-	$conicDiv.addClass('conic'); // ok, so maybe a line isn't a conic section
-	$conicDiv.addClass('line');
-	$conicDiv.attr('id','line'+lineID);
-
-	var $controlDiv = $('<div/>');
-	$controlDiv.addClass('conicControl');
-
-	var $startDiv = $('<div/>');
-	var $startTitle = $('<div/>');
-	var $startXInput = $('<input/>');
-	var $startYInput = $('<input/>');
-	$startDiv.addClass('field');
-	$startTitle.addClass('fieldTitle');
-	$startTitle.text('start');
-	$startXInput.addClass('fieldValue');
-	$startXInput.addClass('startX');
-	$startYInput.addClass('fieldValue');
-	$startYInput.addClass('startY');
-	$startXInput.attr('type','text');
-	$startYInput.attr('type','text');
-	$startXInput.attr('name','startX');
-	$startYInput.attr('name','startY');
-	$startDiv.append($startTitle);
-	$startDiv.append($startXInput);
-	$startDiv.append($startYInput);
-
-	var $endDiv = $('<div/>');
-	var $endTitle = $('<div/>');
-	var $endXInput = $('<input/>');
-	var $endYInput = $('<input/>');
-	$endDiv.addClass('field');
-	$endTitle.addClass('fieldTitle');
-	$endTitle.text('end');
-	$endXInput.addClass('fieldValue');
-	$endXInput.addClass('endX');
-	$endYInput.addClass('fieldValue');
-	$endYInput.addClass('endY');
-	$endXInput.attr('type','text');
-	$endYInput.attr('type','text');
-	$endXInput.attr('name','endX');
-	$endYInput.attr('name','endY');
-	$endDiv.append($endTitle);
-	$endDiv.append($endXInput);
-	$endDiv.append($endYInput);
-
-	$controlDiv.append($startDiv);
-	$controlDiv.append($endDiv);
-	$controlDiv.append(colorControl());
-	$conicDiv.append(titleBar('line'));
-	$conicDiv.append($controlDiv);
-	$conicDiv.hide();
-
-	$shapeControls.prepend($conicDiv);
-	$conicDiv.slideDown();
-
-	return $conicDiv;
-}
-
-function addCircleControl($shapeControls,circleID)
-{
-	var $conicDiv = $('<div/>');
-	$conicDiv.addClass('conic');
-	$conicDiv.addClass('circle');
-	$conicDiv.attr('id','circle'+circleID);
-
-	var $controlDiv = $('<div/>');
-	$controlDiv.addClass('conicControl');
-
-	var $centerDiv = $('<div/>');
-	var $centerTitle = $('<div/>');
-	var $circleXInput = $('<input/>');
-	var $circleYInput = $('<input/>');
-	$centerDiv.addClass('field');
-	$centerTitle.addClass('fieldTitle');
-	$centerTitle.text('center');
-	$circleXInput.addClass('fieldValue');
-	$circleXInput.addClass('circleX');
-	$circleYInput.addClass('fieldValue');
-	$circleYInput.addClass('circleY');
-	$circleXInput.attr('type','text');
-	$circleYInput.attr('type','text');
-	$circleXInput.attr('name','circleX');
-	$circleYInput.attr('name','circleY');
-	$centerDiv.append($centerTitle);
-	$centerDiv.append($circleXInput);
-	$centerDiv.append($circleYInput);
-
-	var $radiusDiv = $('<div/>');
-	var $radiusTitle = $('<div/>');
-	var $radiusInput = $('<input/>');
-	$radiusDiv.addClass('field');
-	$radiusTitle.addClass('fieldTitle');
-	$radiusTitle.text('radius');
-	$radiusInput.addClass('fieldValue');
-	$radiusInput.addClass('radius');
-	$radiusInput.attr('type','text');
-	$radiusInput.attr('name','radius');
-	$radiusDiv.append($radiusTitle);
-	$radiusDiv.append($radiusInput);
-
-	$controlDiv.append($centerDiv);
-	$controlDiv.append($radiusDiv);
-	$controlDiv.append(colorControl());
-	$conicDiv.append(titleBar('circle'));
-	$conicDiv.append($controlDiv);
-	$conicDiv.hide();
-
-	$shapeControls.prepend($conicDiv);
-	$conicDiv.slideDown();
-
-	return $conicDiv;
-}
-
-function addEllipseControl($shapeControls,ellipseID)
-{
-	var $conicDiv = $('<div/>');
-	$conicDiv.addClass('conic');
-	$conicDiv.addClass('ellipse');
-	$conicDiv.attr('id','ellipse'+ellipseID);
-
-	var $controlDiv = $('<div/>');
-	$controlDiv.addClass('conicControl');
-
-	var $centerDiv = $('<div/>');
-	var $centerTitle = $('<div/>');
-	var $ellipseXInput = $('<input/>');
-	var $ellipseYInput = $('<input/>');
-	$centerDiv.addClass('field');
-	$centerTitle.addClass('fieldTitle');
-	$centerTitle.text('center');
-	$ellipseXInput.addClass('fieldValue');
-	$ellipseXInput.addClass('ellipseX');
-	$ellipseYInput.addClass('fieldValue');
-	$ellipseYInput.addClass('ellipseY');
-	$ellipseXInput.attr('type','text');
-	$ellipseYInput.attr('type','text');
-	$ellipseXInput.attr('name','ellipseX');
-	$ellipseYInput.attr('name','ellipseY');
-	$centerDiv.append($centerTitle);
-	$centerDiv.append($ellipseXInput);
-	$centerDiv.append($ellipseYInput);
-
-	var $radiusDiv = $('<div/>');
-	var $radiusTitle = $('<div/>');
-	var $radiusXInput = $('<input/>');
-	var $radiusYInput = $('<input/>');
-	$radiusDiv.addClass('field');
-	$radiusTitle.addClass('fieldTitle');
-	$radiusTitle.text('radius');
-	$radiusXInput.addClass('fieldValue');
-	$radiusXInput.addClass('radiusX');
-	$radiusYInput.addClass('fieldValue');
-	$radiusYInput.addClass('radiusY');
-	$radiusXInput.attr('type','text');
-	$radiusYInput.attr('type','text');
-	$radiusXInput.attr('name','radiusX');
-	$radiusYInput.attr('name','radiusY');
-	$radiusDiv.append($radiusTitle);
-	$radiusDiv.append($radiusXInput);
-	$radiusDiv.append($radiusYInput);
-
-	$controlDiv.append($centerDiv);
-	$controlDiv.append($radiusDiv);
-	$controlDiv.append(colorControl());
-	$conicDiv.append(titleBar('ellipse'));
-	$conicDiv.append($controlDiv);
-	$conicDiv.hide();
-
-	$shapeControls.prepend($conicDiv);
-	$conicDiv.slideDown();
-
-	return $conicDiv;
-}
-
-function cartesianPlane()
-{
-	this.scale = 25;
-	this.color = "rgba(1,1,1,0.1)";
-	this.highlight = "rgba(1,1,1,0.2)";
-	this.originX = canvas.width / 2; // distance in pixels from upper left corner to 0,0
-	this.originY = canvas.height / 2; // distance in pixels from upper left corner to 0,0
-	this.interval = 2; // how often a marker is drawn along the axes
-}
-
-cartesianPlane.prototype.getOriginX = function()
-{
-	return Math.floor(this.originX);
-}
-
-cartesianPlane.prototype.getOriginY = function()
-{
-	return Math.floor(this.originY);
-}
-
-cartesianPlane.prototype.moveOriginX = function(delta)
-{
-	this.originX = Math.floor((this.originX*1000) + (delta*1000)) / 1000;
-}
-
-cartesianPlane.prototype.moveOriginY = function(delta)
-{
-	this.originY = Math.floor((this.originY*1000) + (delta*1000)) / 1000;
-}
-
-cartesianPlane.prototype.getX = function(x)
-{
-	return Math.round((x - this.getOriginX()) / this.scale);
-}
-
-cartesianPlane.prototype.getY = function(y)
-{
-	return Math.round((this.getOriginY() - y) / this.scale);
-}
-
-cartesianPlane.prototype.fill = function(row,col,color)
-{
-	var width = canvas.width;
-	var height = canvas.height;
-	var scale = this.scale;
-
-	var cols = Math.floor(width / scale);
-	var rows = Math.floor(height / scale);
-
-	var xOffset = ((this.getOriginX() - (scale/2)) % scale);
-	var yOffset = ((this.getOriginY() - (scale/2)) % scale);
-
-	canvas.context.beginPath();
-	canvas.context.fillStyle = color;
-	canvas.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
-	canvas.context.closePath();
-	canvas.context.fill();
-}
-
-cartesianPlane.prototype.plot = function(x,y,color)
-{
-	var upperLeftX = -parseInt((this.getOriginX() - (this.scale/2)) / this.scale);
-	var upperLeftY = parseInt((this.getOriginY() - (this.scale/2)) / this.scale);
-
-	this.fill(upperLeftY-y,x-upperLeftX,color);
-}
-
-cartesianPlane.prototype.draw = function()
-{
-	var width = canvas.width;
-	var height = canvas.height;
-	var scale = this.scale;
-
-	// fill with background color
-	canvas.context.beginPath();
-	canvas.context.fillStyle = this.color;
-	canvas.context.rect(0,0,width,height);
-	canvas.context.closePath();
-	canvas.context.fill();
-
-	var cols = Math.floor(width / scale);
-	var xOffset = ((this.getOriginX() - (scale/2)) % scale);
-
-	for (var col=0; col<=cols; col++)
-	{
-		canvas.context.beginPath();
-		canvas.context.fillStyle = "rgba(255,255,255,1)";
-		canvas.context.rect((col * scale) + xOffset, 0, 1, height);
-		canvas.context.closePath();
-		canvas.context.fill();
-
-		// draw marks along the X axis
-		var x = col - parseInt((this.getOriginX() + (scale/2)) / scale);
-		if ((x % this.interval) == 0)
-			this.plot(x,0,this.highlight);
-		else if ((col == cols) && (((x+1) % this.interval) == 0))
-			this.plot(x+1,0,this.highlight); // slight hack for small slivers at the edge
-	}
-
-	var rows = Math.floor(height / scale);
-	var yOffset = ((this.getOriginY() - (scale/2)) % scale);
-
-	for (var row=0; row<=rows; row++)
-	{
-		canvas.context.beginPath();
-		canvas.context.fillStyle = "rgba(255,255,255,1)";
-		canvas.context.rect(0, (row * scale) + yOffset, width, 1);
-		canvas.context.closePath();
-		canvas.context.fill();
-
-		// draw marks along the Y axis
-		var y = parseInt((this.getOriginY() - (scale/2)) / scale) - row;
-		if ((y % this.interval) == 0)
-			this.plot(0,y,this.highlight);
-		else if ((row == 0) && (((y+1) % this.interval) == 0))
-			this.plot(0,y+1,this.highlight); // slight hack for small slivers at the edge
-	}
-}
-
-function line(id,$lineControl)
-{
-	this.id = id;
-	this.$lineControl = $lineControl;
-	this.virgin = true;
-
-	this.startX;
-	this.startY;
-	this.endX;
-	this.endY;
-	this.color = "rgba(0,0,0,0.75)";
-}
-
-line.prototype.remove = function()
-{
-	this.$lineControl.slideUp().remove();
-}
-
-line.prototype.allSet = function()
-{
-	if (!isNaN(this.startX) && !isNaN(this.startY) && !isNaN(this.endX) && !isNaN(this.endY))
-		return true;
-	else
-		return false;
-}
-
-line.prototype.editing = function()
-{
-	if (!this.virgin && this.allSet())
-		return true;
-	else
-		return false;
-}
-
-line.prototype.updateStartX = function(newX)
-{
-	var testNum = parseInt(newX);
-
-	if (!isNaN(testNum))
-		this.startX = testNum;
-
-	this.$lineControl.find('input.startX').val(this.startX);
-}
-
-line.prototype.updateStartY = function(newY)
-{
-	var testNum = parseInt(newY);
-
-	if (!isNaN(testNum))
-		this.startY = testNum;
-
-	this.$lineControl.find('input.startY').val(this.startY);
-}
-
-line.prototype.updateEndX = function(newX)
-{
-	var testNum = parseInt(newX);
-
-	if (!isNaN(testNum))
-		this.endX = testNum;
-
-	this.$lineControl.find('input.endX').val(this.endX);
-}
-
-line.prototype.updateEndY = function(newY)
-{
-	var testNum = parseInt(newY);
-
-	if (!isNaN(testNum))
-		this.endY = testNum;
-
-	this.$lineControl.find('input.endY').val(this.endY);
-}
-
-line.prototype.updateColor = function(newColor)
-{
-	this.color = newColor;
-}
-
-// Bresenham's line algorithm
-line.prototype.draw = function()
-{
-	if ((this.startX != null) && (this.startY != null) && (this.endX != null) && (this.endY != null))
-	{
-		var startX = this.startX;
-		var endX = this.endX;
-		var startY = this.startY;
-		var endY = this.endY;
-
-		var steep = false;
-		if (Math.abs(endY-startY) > Math.abs(endX-startX))
-			steep = true;
-
-		if (steep)
-		{
-			var temp = startX;
-			startX = startY;
-			startY = temp;
-
-			temp = endX;
-			endX = endY;
-			endY = temp;
-		}
-
-		if (startX > endX)
-		{
-			var temp = startX;
-			startX = endX;
-			endX = temp;
-
-			temp = startY;
-			startY = endY;
-			endY = temp;
-		}
-
-		var deltaX = endX - startX;
-		var deltaY = Math.abs(endY - startY);
-		var error = deltaX / 2;
-		var y = startY;
-
-		var yStep;
-		if (startY < endY)
-			yStep = 1;
-		else
-			yStep = -1;
-
-		for (var x=startX; x<=endX; x++)
-		{
-			if (steep)
-				graph.plot(y,x,this.color);
+			if ((x === this.get('startX')) && (y === this.get('startY')))
+				return true;
 			else
-				graph.plot(x,y,this.color);
-
-			error -= deltaY;
-			if (error < 0)
-			{
-				y += yStep;
-				error += deltaX;
-			}
-		}
-	}
-}
-
-function lines()
-{
-	this.idPool = 0;
-	this.lineList = [];
-
-	this.curLine;
-	this.editingLineStart = false;
-	this.editingLineEnd = false;
-}
-
-lines.prototype.addLine = function($shapeControls)
-{
-	var newLineID = this.idPool++;
-
-	var $newLineControl = addLineControl($shapeControls,newLineID);
-	this.curLine = new line(newLineID,$newLineControl);
-	this.lineList = this.lineList.concat(this.curLine);
-}
-
-lines.prototype.getLine = function(lineID)
-{
-	for (var i = 0; i<this.lineList.length; i++)
-	{
-		if (this.lineList[i].id == lineID)
-			return this.lineList[i];
-	}
-}
-
-lines.prototype.setCurLine = function(lineID)
-{
-	this.curLine = this.getLine(lineID);
-}
-
-lines.prototype.isCurLineStart = function(x,y)
-{
-	if ((x == this.curLine.startX) && (y == this.curLine.startY))
-		return true;
-	else
-		return false;
-}
-
-lines.prototype.isCurLineEnd = function(x,y)
-{
-	if ((x == this.curLine.endX) && (y == this.curLine.endY))
-		return true;
-	else
-		return false;
-}
-
-lines.prototype.stopEditing = function()
-{
-	if (this.curLine && this.curLine.allSet())
-		this.curLine.virgin = false;
-
-	this.curLine = null;
-	this.editingLineCenter = false;
-	this.editingLineRadius = false;
-}
-
-lines.prototype.deleteLine = function(lineID)
-{
-	for (var i = 0; i<this.lineList.length; i++)
-	{
-		if (this.lineList[i].id == lineID)
-		{
-			this.lineList[i].remove();
-			this.lineList.splice(i,1);
-
-			break;
-		}
-	}
-}
-
-lines.prototype.draw = function()
-{
-	$.each(this.lineList,function(index,line)
-	{
-		line.draw();
-	});
-}
-
-function circle(id,$circleControl)
-{
-	this.id = id;
-	this.$circleControl = $circleControl;
-	this.virgin = true;
-
-	this.centerX;
-	this.centerY;
-	this.radius;
-
-	this.color = "rgba(0,0,0,0.75)";
-	this.showCenter = false;
-}
-
-circle.prototype.remove = function()
-{
-	this.$circleControl.slideUp().remove();
-}
-
-circle.prototype.allSet = function()
-{
-	if (!isNaN(this.centerX) && !isNaN(this.centerY) && !isNaN(this.radius))
-		return true;
-	else
-		return false;
-}
-
-circle.prototype.editing = function()
-{
-	if (!this.virgin && this.allSet())
-		return true;
-	else
-		return false;
-}
-
-circle.prototype.updateCenterX = function(newX)
-{
-	var testNum = parseInt(newX);
-
-	if (!isNaN(testNum))
-		this.centerX = testNum;
-
-	this.$circleControl.find('input.circleX').val(this.centerX);
-}
-
-circle.prototype.updateCenterY = function(newY)
-{
-	var testNum = parseInt(newY);
-
-	if (!isNaN(testNum))
-		this.centerY = testNum;
-
-	this.$circleControl.find('input.circleY').val(this.centerY);
-}
-
-circle.prototype.updateRadius = function(newRadius)
-{
-	var testNum = Math.abs(parseInt(newRadius));
-
-	if (!isNaN(testNum))
-		this.radius = testNum;
-
-	this.$circleControl.find('input.radius').val(this.radius);
-}
-
-circle.prototype.updateColor = function(newColor)
-{
-	this.color = newColor;
-}
-
-// helper for midpoint circle algorithm
-circle.prototype.plotFourPoints = function(x,y)
-{
-	graph.plot(this.centerX+x,this.centerY+y,this.color);
-
-	if (x != 0)
-		graph.plot(this.centerX-x,this.centerY+y,this.color);
-
-	if (y != 0)
-		graph.plot(this.centerX+x,this.centerY-y,this.color);
-
-	if ((x != 0) && (y != 0))
-		graph.plot(this.centerX-x,this.centerY-y,this.color);
-}
-
-// helper for midpoint circle algorithm
-circle.prototype.plotEightPoints = function(x,y)
-{
-	this.plotFourPoints(x,y);
-
-	if (x != y)
-		this.plotFourPoints(y,x);
-}
-
-// midpoint circle algorithm
-circle.prototype.draw = function()
-{
-	if ((this.centerX != null) && (this.centerY != null) && (this.radius != null))
-	{
-		var x = this.radius;
-		var y = 0;
-		var error = -x;
-
-		while (x >= y)
-		{
-			this.plotEightPoints(x,y);
-
-			error += (2 * y) + 1;
-			y++;
-
-			if (error >= 0)
-			{
-				x--;
-				error -= 2 * x;
-			}
-		}
-
-		if (this.showCenter)
-			graph.plot(this.centerX,this.centerY);
-	}
-}
-
-function circles()
-{
-	this.idPool = 0;
-	this.circleList = [];
-
-	this.curCircle;
-	this.editingCircleCenter = false;
-	this.editingCircleRadius = false;
-}
-
-circles.prototype.addCircle = function($shapeControls)
-{
-	var newCircleID = this.idPool++;
-
-	var $newCircleControl = addCircleControl($shapeControls,newCircleID);
-	this.curCircle = new circle(newCircleID,$newCircleControl);
-	this.circleList = this.circleList.concat(this.curCircle);
-
-	this.curCircle.showCenter = true;
-}
-
-circles.prototype.getCircle = function(circleID)
-{
-	for (var i = 0; i<this.circleList.length; i++)
-	{
-		if (this.circleList[i].id == circleID)
-			return this.circleList[i];
-	}
-}
-
-circles.prototype.setCurCircle = function(circleID)
-{
-	this.curCircle = this.getCircle(circleID);
-	this.curCircle.showCenter = true;
-}
-
-circles.prototype.isCurCircleCenter = function(x,y)
-{
-	if ((x == this.curCircle.centerX) && (y == this.curCircle.centerY))
-		return true;
-	else
-		return false;
-}
-
-circles.prototype.stopEditing = function()
-{
-	if (this.curCircle && this.curCircle.allSet())
-	{
-		this.curCircle.virgin = false;
-		this.curCircle.showCenter = false;
-	}
-
-	this.curCircle = null;
-	this.editingCircleCenter = false;
-	this.editingCircleRadius = false;
-}
-
-circles.prototype.deleteCircle = function(circleID)
-{
-	for (var i = 0; i<this.circleList.length; i++)
-	{
-		if (this.circleList[i].id == circleID)
-		{
-			this.circleList[i].remove();
-			this.circleList.splice(i,1);
-
-			break;
-		}
-	}
-}
-
-circles.prototype.draw = function()
-{
-	$.each(this.circleList,function(index,circle)
-	{
-		circle.draw();
-	});
-}
-
-function ellipse(id,$ellipseControl)
-{
-	this.id = id;
-	this.$ellipseControl = $ellipseControl;
-	this.virgin = true;
-
-	this.centerX;
-	this.centerY;
-	this.radiusX;
-	this.radiusY;
-
-	this.color = "rgba(0,0,0,0.75)";
-	this.showCenter = false;
-}
-
-ellipse.prototype.remove = function()
-{
-	this.$ellipseControl.slideUp().remove();
-}
-
-ellipse.prototype.allSet = function()
-{
-	if (!isNaN(this.centerX) && !isNaN(this.centerY) && !isNaN(this.radiusX) && !isNaN(this.radiusY))
-		return true;
-	else
-		return false;
-}
-
-ellipse.prototype.editing = function()
-{
-	if (!this.virgin && this.allSet())
-		return true;
-	else
-		return false;
-}
-
-ellipse.prototype.updateCenterX = function(newX)
-{
-	var testNum = parseInt(newX);
-
-	if (!isNaN(testNum))
-		this.centerX = testNum;
-
-	this.$ellipseControl.find('input.ellipseX').val(this.centerX);
-}
-
-ellipse.prototype.updateCenterY = function(newY)
-{
-	var testNum = parseInt(newY);
-
-	if (!isNaN(testNum))
-		this.centerY = testNum;
-
-	this.$ellipseControl.find('input.ellipseY').val(this.centerY);
-}
-
-ellipse.prototype.updateRadiusX = function(newRadiusX)
-{
-	var testNum = Math.abs(parseInt(newRadiusX));
-
-	if (!isNaN(testNum))
-		this.radiusX = testNum;
-
-	this.$ellipseControl.find('input.radiusX').val(this.radiusX);
-}
-
-ellipse.prototype.updateRadiusY = function(newRadiusY)
-{
-	var testNum = Math.abs(parseInt(newRadiusY));
-
-	if (!isNaN(testNum))
-		this.radiusY = testNum;
-
-	this.$ellipseControl.find('input.radiusY').val(this.radiusY);
-}
-
-ellipse.prototype.updateColor = function(newColor)
-{
-	this.color = newColor;
-}
-
-// helper for midpoint ellipse algorithm
-ellipse.prototype.plotFourPoints = function(x,y)
-{
-	graph.plot(this.centerX+x,this.centerY+y,this.color);
-
-	if (x != 0)
-		graph.plot(this.centerX-x,this.centerY+y,this.color);
-
-	if (y != 0)
-		graph.plot(this.centerX+x,this.centerY-y,this.color);
-
-	if ((x != 0) && (y != 0))
-		graph.plot(this.centerX-x,this.centerY-y,this.color);
-}
-
-// midpoint ellipse algorithm
-ellipse.prototype.draw = function()
-{
-	if ((this.centerX != null) && (this.centerY != null) && (this.radiusX != null) && (this.radiusY != null))
-	{
-		var x = -this.radiusX;
-		var y = 0;
-		var twoASquare = 2 * (this.radiusX * this.radiusX);
-		var twoBSquare = 2 * (this.radiusY * this.radiusY);
-		var deltaX = (1 - (2 * this.radiusX)) * (this.radiusY * this.radiusY);
-		var deltaY = this.radiusX * this.radiusX;
-		var error = deltaX + deltaY;
-		var errorDoubled;
-
-		do
-		{
-			this.plotFourPoints(x,y);
-
-			errorDoubled = 2 * error;
-
-			if (errorDoubled >= deltaX)
-			{
-				x++;
-				deltaX += twoBSquare;
-				error += deltaX;
-			}
-
-			if (errorDoubled <= deltaY)
-			{
-				y++;
-				deltaY += twoASquare;
-				error += deltaY;
-			}
-		} while (x <= 0);
-
-		// for flat ellipses with radiusX = 1
-		while (y++ < this.radiusY)
-		{
-			graph.plot(this.centerX, (this.centerY + y)); // draw the tip of the ellipse
-			graph.plot(this.centerX, (this.centerY - y));
-		}
-
-		if (this.showCenter)
-			graph.plot(this.centerX,this.centerY);
-	}
-}
-
-function ellipses()
-{
-	this.idPool = 0;
-	this.ellipseList = [];
-
-	this.curEllipse;
-	this.editingEllipseCenter = false;
-	this.editingEllipseRadius = false;
-}
-
-ellipses.prototype.addEllipse = function($shapeControls)
-{
-	var newEllipseID = this.idPool++;
-
-	var $newEllipseControl = addEllipseControl($shapeControls,newEllipseID);
-	this.curEllipse = new ellipse(newEllipseID,$newEllipseControl);
-	this.ellipseList = this.ellipseList.concat(this.curEllipse);
-
-	this.curEllipse.showCenter = true;
-}
-
-ellipses.prototype.getEllipse = function(ellipseID)
-{
-	for (var i = 0; i<this.ellipseList.length; i++)
-	{
-		if (this.ellipseList[i].id == ellipseID)
-			return this.ellipseList[i];
-	}
-}
-
-ellipses.prototype.setCurEllipse = function(ellipseID)
-{
-	this.curEllipse = this.getEllipse(ellipseID);
-	this.curEllipse.showCenter = true;
-}
-
-ellipses.prototype.isCurEllipseCenter = function(x,y)
-{
-	if ((x == this.curEllipse.centerX) && (y == this.curEllipse.centerY))
-		return true;
-	else
-		return false;
-}
-
-ellipses.prototype.stopEditing = function()
-{
-	if (this.curEllipse && this.curEllipse.allSet())
-	{
-		this.curEllipse.virgin = false;
-		this.curEllipse.showCenter = false;
-	}
-
-	this.curEllipse = null;
-	this.editingEllipseCenter = false;
-	this.editingEllipseRadius = false;
-}
-
-ellipses.prototype.deleteEllipse = function(ellipseID)
-{
-	for (var i = 0; i<this.ellipseList.length; i++)
-	{
-		if (this.ellipseList[i].id == ellipseID)
-		{
-			this.ellipseList[i].remove();
-			this.ellipseList.splice(i,1);
-
-			break;
-		}
-	}
-}
-
-ellipses.prototype.draw = function()
-{
-	$.each(this.ellipseList,function(index,ellipse)
-	{
-		ellipse.draw();
-	});
-}
-
-function draw()
-{
-	canvas.clear();
-
-	graph.draw();
-	lines.draw();
-	circles.draw();
-	ellipses.draw();
-}
-
-$(document).ready(function()
-{
-	canvas = new canvasHandler();
-	graph = new cartesianPlane();
-	lines = new lines();
-	circles = new circles();
-	ellipses = new ellipses();
-	
-	// resize controlPane to prevent lengthening of page
-	var $controlPane = $('#controlPane');
-	$controlPane.height(canvas.height);
-	
-	// move menuBar to aligng with edge of adPane
-	$('#menuBar').css('margin-right',$('#adPane').outerWidth(true));
-	
-	// add conic form to config div
-	var $pageControls = $('<div/>');
-	$pageControls.addClass('controls');
-	$pageControls.append(graphControl());
-	$pageControls.append(newConicControl());
-	$controlPane.append($pageControls);
-
-	// add div for shape controls
-	var $shapeControls = $('<div/>');
-	$shapeControls.addClass('shapeControls');
-	$controlPane.append($shapeControls);
-	$shapeControls.height($controlPane.height() - $pageControls.outerHeight(true));
-
-	// display the initial graph
-	setInterval(draw,100);
-
-	$('li.newLine').click(function(event)
-	{
-		lines.stopEditing();
-		circles.stopEditing();
-		ellipses.stopEditing();
-
-		lines.addLine($shapeControls);
-
-		lines.curLine.$lineControl.addClass('selected');
-		lines.curLine.$lineControl.find('input').addClass('selected');
-
-		lines.curLine.$lineControl.siblings().removeClass('selected');
-		lines.curLine.$lineControl.siblings().find('input').removeClass('selected');
-
-		canvas.cursorCrosshair();
+				return false;
+		},
+
+		isEnd: function(x,y) {
+
+			if ((x === this.get('endX')) && (y === this.get('endY')))
+				return true;
+			else
+				return false;
+		},
 	});
 
-	$('li.newCircle').click(function(event)
-	{
-		lines.stopEditing();
-		circles.stopEditing();
-		ellipses.stopEditing();
+	var Rectangle = Line.extend({
 
-		circles.addCircle($shapeControls);
+		defaults: _.extend({}, Line.prototype.defaults, {
+			title:           'rectangle',
+			editingStartEnd: false,
+			editingEndStart: false,
+		}),
 
-		circles.curCircle.$circleControl.addClass('selected');
-		circles.curCircle.$circleControl.find('input').addClass('selected');
+		isStartEnd: function(x,y) {
 
-		circles.curCircle.$circleControl.siblings().removeClass('selected');
-		circles.curCircle.$circleControl.siblings().find('input').removeClass('selected');
+			if ((x === this.get('startX')) && (y === this.get('endY')))
+				return true;
+			else
+				return false;
+		},
 
-		canvas.cursorCrosshair();
+		isEndStart: function(x,y) {
+
+			if ((x === this.get('endX')) && (y === this.get('startY')))
+				return true;
+			else
+				return false;
+		},
 	});
 
-	$('li.newEllipse').click(function(event)
-	{
-		lines.stopEditing();
-		circles.stopEditing();
-		ellipses.stopEditing();
+	var Conic = Shape.extend({
 
-		ellipses.addEllipse($shapeControls);
+		defaults: _.extend({}, Shape.prototype.defaults, {
+			title:         'conic',
+			centerX:       '',
+			centerY:       '',
+			editingCenter: false,
+		}),
 
-		ellipses.curEllipse.$ellipseControl.addClass('selected');
-		ellipses.curEllipse.$ellipseControl.find('input').addClass('selected');
+		isCenter: function(x,y) {
 
-		ellipses.curEllipse.$ellipseControl.siblings().removeClass('selected');
-		ellipses.curEllipse.$ellipseControl.siblings().find('input').removeClass('selected');
-
-		canvas.cursorCrosshair();
+			if ((x === this.get('centerX')) && (y === this.get('centerY')))
+				return true;
+			else
+				return false;
+		},
 	});
 
-	// handle updates to line start X values
-	$('input.startX').live('change',function()
-	{
-		var $startX = $(this);
-		var lineID = $startX.closest('div.line').attr('id').replace('line','');
+	var Circle = Conic.extend({
 
-		lines.getLine(lineID).updateStartX($startX.val());
+		defaults: _.extend({}, Conic.prototype.defaults, {
+			title:         'circle',
+			radius:        '',
+			editingRadius: false,
+		}),
 	});
 
-	// handle updates to line start Y values
-	$('input.startY').live('change',function()
-	{
-		var $startY = $(this);
-		var lineID = $startY.closest('div.line').attr('id').replace('line','');
+	var Ellipse = Conic.extend({
 
-		lines.getLine(lineID).updateStartY($startY.val());
+		defaults: _.extend({}, Conic.prototype.defaults, {
+			title:         'ellipse',
+			radiusX:       '',
+			radiusY:       '',
+			editingRadius: false,
+		}),
 	});
 
-	// handle updates to line end X values
-	$('input.endX').live('change',function()
-	{
-		var $endX = $(this);
-		var lineID = $endX.closest('div.line').attr('id').replace('line','');
+	var Shapes = Backbone.Collection.extend({
 
-		lines.getLine(lineID).updateEndX($endX.val());
+		model: Shape,
+
+		localStorage: new Store('mineConics'),
+
+		fetch: function() {
+
+			Backbone.Collection.prototype.fetch.call(this, {silent: true});
+
+			// convert each Shape to its respective subclass
+			this.reset(this.map(function(shape) {
+
+				// ensure no Shapes are 'selected'
+				shape.set({selected: false}, {silent: true});
+
+				var type = shape.get('title');
+
+				if (type === 'rectangle')
+					return new Rectangle(shape.attributes);
+				else if (type === 'line')
+					return new Line(shape.attributes);
+				else if (type === 'circle')
+					return new Circle(shape.attributes);
+				else if (type === 'ellipse')
+					return new Ellipse(shape.attributes);
+			}));
+		},
 	});
 
-	// handle updates to line end Y values
-	$('input.endY').live('change',function()
-	{
-		var $endY = $(this);
-		var lineID = $endY.closest('div.line').attr('id').replace('line','');
+	var ShapeView = Backbone.View.extend({
 
-		lines.getLine(lineID).updateEndY($endY.val());
+		tagName: 'li',
+		className: 'shape control',
+
+		shapeTemplate: _.template($('#shapeTemplate').html()),
+
+		events: {
+			'click .close': 'close',
+			'click .title': 'toggleSelected',
+			'click .hide':  'toggleHidden',
+
+			'change .color':    'setColor',
+			'change .hexColor': 'setHexColor',
+		},
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+		},
+
+		render: function() {
+
+			$(this.el).html(this.shapeTemplate(this.model.toJSON()));
+
+			return this;
+		},
+
+		remove: function() {
+
+			var $this = $(this.el);
+
+			$this.slideUp(function() {
+				$this.remove();
+			});
+		},
+
+		close: function() {
+
+			this.model.destroy();
+		},
+
+		setSelected: function() {
+
+			var $this = $(this.el);
+
+			$this.addClass('selected');
+			$this.find('input').addClass('selected');
+
+			$this.siblings().removeClass('selected');
+			$this.siblings().find('input').removeClass('selected');
+
+			if ($this.hasClass('hidden'))
+				this.unsetHidden();
+		},
+
+		unsetSelected: function() {
+
+			var $this = $(this.el);
+
+			$this.removeClass('selected');
+			$this.find('input').removeClass('selected');
+		},
+
+		toggleSelected: function() {
+
+			this.model.set({selected: !this.model.get('selected')});
+		},
+
+		// set/unset 'selected' based on model state
+		changeSelected: function() {
+
+			if (this.model.get('selected'))
+				this.setSelected();
+			else
+				this.unsetSelected();
+		},
+
+		setHidden: function() {
+
+			var $this = $(this.el);
+
+			if (this.model.get('selected'))
+				this.model.set({selected: false});
+
+			$this.addClass('hidden');
+			$this.find('.hide').html('[+]');
+			$this.find('.shapeControls').slideUp();
+		},
+
+		unsetHidden: function() {
+
+			var $this = $(this.el);
+			$this.removeClass('hidden');
+			$this.find('.hide').html('[-]');
+			$this.find('.shapeControls').slideDown();
+		},
+
+		toggleHidden: function() {
+
+			var $this = $(this.el);
+
+			if ($this.hasClass('hidden'))
+				this.unsetHidden();
+			else
+				this.setHidden();
+		},
+
+		setColor: function() {
+
+			var $this = $(this.el);
+			var red   = 0;
+			var green = 0;
+			var blue  = 0;
+
+
+			if ($this.find('input.red').is(':checked'))
+				red = 255;
+
+			if ($this.find('input.green').is(':checked'))
+				green = 255;
+
+			if ($this.find('input.blue').is(':checked'))
+				blue = 255;
+
+			this.model.set({red: red, green: green, blue: blue});
+		},
+
+		setHexColor: function() {
+
+			var $this = $(this.el);
+			var hexString = $this.find('.hexColor').val();
+
+			if (hexString.charAt(0) == '#')
+				hexString = hexString.substring(1,7);
+
+			var red = parseInt(hexString.substring(0,2), 16);
+			var green = parseInt(hexString.substring(2,4), 16);
+			var blue = parseInt(hexString.substring(4,6), 16);
+
+			// ensure all of the rgb checkboxes are unset
+			$this.find('input.color').attr('checked',false);
+
+			if (!isNaN(red) && !isNaN(green) && !isNaN(blue))
+				this.model.set({red: red, green: green, blue: blue});
+			else
+				$this.find('.hexColor').val(this.model.get('hexColor'));
+		},
+
+		changeHexInput: function() {
+
+			$(this.el).find('.hexColor').val(this.model.get('hexColor'));
+		},
 	});
 
-	// handle updates to circle center X values
-	$('input.circleX').live('change',function()
-	{
-		var $circleX = $(this);
-		var circleID = $circleX.closest('div.circle').attr('id').replace('circle','');
+	var LineView = ShapeView.extend({
 
-		circles.getCircle(circleID).updateCenterX($circleX.val());
-	});
+		lineTemplate: _.template($('#lineTemplate').html()),
 
-	// handle updates to circle center Y values
-	$('input.circleY').live('change',function()
-	{
-		var $circleY = $(this);
-		var circleID = $circleY.closest('div.circle').attr('id').replace('circle','');
+		events: _.extend({}, ShapeView.prototype.events, {
+			'change .startX': 'updateStartX',
+			'change .startY': 'updateStartY',
+			'change .endX':   'updateEndX',
+			'change .endY':   'updateEndY',
+		}),
 
-		circles.getCircle(circleID).updateCenterY($circleY.val());
-	});
+		initialize: function() {
 
-	// handle updates to circle radius values
-	$('input.radius').live('change',function()
-	{
-		var $radius = $(this);
-		var circleID = $radius.closest('div.circle').attr('id').replace('circle','');
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeStartX', 'changeStartY', 'changeEndX', 'changeEndY');
 
-		circles.getCircle(circleID).updateRadius($radius.val());
-	});
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
 
-	// handle updates to ellipse center X values
-	$('input.ellipseX').live('change',function()
-	{
-		var $ellipseX = $(this);
-		var ellipseID = $ellipseX.closest('div.ellipse').attr('id').replace('ellipse','');
+			this.model.bind('change:startX', this.changeStartX);
+			this.model.bind('change:startY', this.changeStartY);
+			this.model.bind('change:endX', this.changeEndX);
+			this.model.bind('change:endY', this.changeEndY);
+		},
 
-		ellipses.getEllipse(ellipseID).updateCenterX($ellipseX.val());
-	});
+		render: function() {
 
-	// handle updates to ellipse center Y values
-	$('input.ellipseY').live('change',function()
-	{
-		var $ellipseY = $(this);
-		var ellipseID = $ellipseY.closest('div.ellipse').attr('id').replace('ellipse','');
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var line = this.lineTemplate(this.model.toJSON());
 
-		ellipses.getEllipse(ellipseID).updateCenterY($ellipseY.val());
-	});
+			$shape.find('.shapeControls').prepend(line);
+			$(this.el).html($shape.html());
 
-	// handle updates to ellipse radius X values
-	$('input.radiusX').live('change',function()
-	{
-		var $radiusX = $(this);
-		var ellipseID = $radiusX.closest('div.ellipse').attr('id').replace('ellipse','');
+			return this;
+		},
 
-		ellipses.getEllipse(ellipseID).updateRadiusX($radiusX.val());
-	});
+		updateStartX: function() {
 
-	// handle updates to ellipse radius Y values
-	$('input.radiusY').live('change',function()
-	{
-		var $radiusY = $(this);
-		var ellipseID = $radiusY.closest('div.ellipse').attr('id').replace('ellipse','');
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.startX').val());
 
-		ellipses.getEllipse(ellipseID).updateRadiusY($radiusY.val());
-	});
+			if (!isNaN(testNum)) {
 
-	$('input.color').live('change',function()
-	{
-		var $conic = $(this).closest('div.conic');
-
-		color = "rgba(";
-		hex = "#";
-
-		if ($($conic).find('input.red').is(':checked'))
-		{
-			color += "255,";
-			hex += "FF";
-		}
-		else
-		{
-			color += "0,";
-			hex += "00";
-		}
-
-		if ($($conic).find('input.green').is(':checked'))
-		{
-			color += "255,";
-			hex += "FF";
-		}
-		else
-		{
-			color += "0,";
-			hex += "00";
-		}
-
-		if ($($conic).find('input.blue').is(':checked'))
-		{
-			color += "255,";
-			hex += "FF";
-		}
-		else
-		{
-			color += "0,";
-			hex += "00";
-		}
-
-		color += "0.75)";
-
-		$conic.find('input.hexColor').val(hex);
-
-		if ($($conic).is('.line'))
-		{
-			var lineID = $conic.attr('id').replace('line','');
-
-			lines.getLine(lineID).updateColor(color);
-		}
-		else if ($($conic).is('.circle'))
-		{
-			var circleID = $conic.attr('id').replace('circle','');
-
-			circles.getCircle(circleID).updateColor(color);
-		}
-		else if ($($conic).is('.ellipse'))
-		{
-			var ellipseID = $conic.attr('id').replace('ellipse','');
-
-			ellipses.getEllipse(ellipseID).updateColor(color);
-		}
-	});
-
-	$('input.hexColor').live('change',function()
-	{
-		var $hexInput = $(this);
-		var hexString = $hexInput.val();
-		var $conic = $(this).closest('div.conic');
-
-		if (hexString.charAt(0) == '#')
-			hexString = hexString.substring(1,7);
-
-		var redInt = parseInt(hexString.substring(0,2), 16);
-		var greenInt = parseInt(hexString.substring(2,4), 16);
-		var blueInt = parseInt(hexString.substring(4,6), 16);
-
-		$conic.find('input.color').attr('checked',false);
-
-		if (!isNaN(redInt) && !isNaN(greenInt) && !isNaN(blueInt))
-		{
-			var color = "rgba(" + redInt + "," + greenInt + "," + blueInt + ",0.75)";
-
-			if ($($conic).is('.line'))
-			{
-				var lineID = $conic.attr('id').replace('line','');
-
-				lines.getLine(lineID).updateColor(color);
-			}
-			else if ($($conic).is('.circle'))
-			{
-				var circleID = $conic.attr('id').replace('circle','');
-
-				circles.getCircle(circleID).updateColor(color);
-			}
-			else if ($($conic).is('.ellipse'))
-			{
-				var ellipseID = $conic.attr('id').replace('ellipse','');
-
-				ellipses.getEllipse(ellipseID).updateColor(color);
-			}
-		}
-		else
-		{
-			$hexInput.val('');
-		}
-	});
-
-	$('.title').live('click',function()
-	{
-		var $conic = $(this).closest('div.conic');
-		var $conicControl = $conic.find('.conicControl');
-
-		if ($($conic).is('.selected'))
-		{
-			$conic.removeClass('selected');
-			$conic.find('input').removeClass('selected');
-
-			lines.stopEditing();
-			circles.stopEditing();
-			ellipses.stopEditing();
-
-			canvas.cursorOpenHand();
-		}
-		else if (!$($conicControl).is(':visible'))
-		{
-			$conic.find('.hide').text('[-]');
-			$conicControl.slideDown();
-		}
-		else
-		{
-			$conic.addClass('selected');
-			$conic.find('input').addClass('selected');
-
-			$conic.siblings().removeClass('selected');
-			$conic.siblings().find('input').removeClass('selected');
-
-			lines.stopEditing();
-			circles.stopEditing();
-			ellipses.stopEditing();
-
-			if ($($conic).is('.line'))
-			{
-				var lineID = $conic.attr('id').replace('line','');
-
-				lines.setCurLine(lineID);
-
-				// if this line was never drawn in the first place
-				if (!lines.curLine.editing())
-					canvas.cursorCrosshair();
-			}
-			else if ($($conic).is('.circle'))
-			{
-				var circleID = $conic.attr('id').replace('circle','');
-
-				circles.setCurCircle(circleID);
-
-				// if this circle was never drawn in the first place
-				if (!circles.curCircle.editing())
-					canvas.cursorCrosshair();
-			}
-			else if ($($conic).is('.ellipse'))
-			{
-				var ellipseID = $conic.attr('id').replace('ellipse','');
-
-				ellipses.setCurEllipse(ellipseID);
-
-				// if this ellipse was never drawn in the first place
-				if (!ellipses.curEllipse.editing())
-					canvas.cursorCrosshair();
-			}
-		}
-	});
-
-	$('.close').live('click',function()
-	{
-		var $conic = $(this).closest('div.conic');
-
-		if ($($conic).is('.line'))
-		{
-			var lineID = $conic.attr('id').replace('line','');
-
-			if (lines.curLine && (lines.curLine.id == lineID))
-			{
-				lines.stopEditing();
-				canvas.cursorOpenHand();
-			}
-
-			lines.deleteLine(lineID);
-		}
-		else if ($($conic).is('.circle'))
-		{
-			var circleID = $conic.attr('id').replace('circle','');
-
-			if (circles.curCircle && (circles.curCircle.id == circleID))
-			{
-				circles.stopEditing();
-				canvas.cursorOpenHand();
-			}
-
-			circles.deleteCircle(circleID);
-		}
-		else if ($($conic).is('.ellipse'))
-		{
-			var ellipseID = $conic.attr('id').replace('ellipse','');
-
-			if (ellipses.curEllipse && (ellipses.curEllipse.id == ellipseID))
-			{
-				ellipses.stopEditing();
-				canvas.cursorOpenHand();
-			}
-
-			ellipses.deleteEllipse(ellipseID);
-		}
-	});
-
-	$('.hide').live('click',function()
-	{
-		var $hideIcon = $(this);
-		var $conic = $(this).closest('div.conic');
-		var $conicControl = $conic.find('.conicControl');
-
-		if ($($conicControl).is(':visible'))
-		{
-			$hideIcon.text('[+]');
-			$conicControl.slideUp();
-
-			if ($($conic).is('.selected'))
-			{
-				$conic.removeClass('selected');
-				$conic.find('input').removeClass('selected');
-
-				$hideIcon.text('[+]');
-
-				lines.stopEditing();
-				circles.stopEditing();
-				ellipses.stopEditing();
-
-				canvas.cursorOpenHand();
-			}
-		}
-		else
-		{
-			$hideIcon.text('[-]');
-			$conicControl.slideDown();
-		}
-	});
-
-	$('#canvas').mousedown(function(event)
-	{
-		clicking = true;
-
-		var curX = graph.getX(canvas.getX(event.pageX));
-		var curY = graph.getY(canvas.getY(event.pageY));
-
-		if (lines.curLine)
-		{
-			if (lines.curLine.editing())
-			{
-				if (lines.isCurLineStart(curX,curY))
-				{
-					canvas.cursorClosedHand();
-					lines.editingLineStart = true;
-				}
-				else if (lines.isCurLineEnd(curX,curY))
-				{
-					canvas.cursorClosedHand();
-					lines.editingLineEnd = true;
-				}
+				this.model.set({startX: testNum});
+				this.model.save();
 			}
 			else
-			{
-				startX = curX;
-				startY = curY;
+				$this.find('.startX').val(this.model.get('startX'));
+		},
 
-				lines.curLine.updateStartX(curX);
-				lines.curLine.updateStartY(curY);
-				lines.curLine.updateEndX(curX);
-				lines.curLine.updateEndY(curY);
+		updateStartY: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.startY').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({startY: testNum});
+				this.model.save();
 			}
-		}
-		else if (circles.curCircle)
-		{
-			if (circles.curCircle.editing())
-			{
-				if (circles.isCurCircleCenter(curX,curY))
-				{
-					canvas.cursorClosedHand();
-					circles.editingCircleCenter = true;
-				}
+			else
+				$this.find('.startY').val(this.model.get('startY'));
+		},
+
+		updateEndX: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.endX').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({endX: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.endX').val(this.model.get('endX'));
+		},
+
+		updateEndY: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.endY').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({endY: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.endY').val(this.model.get('endY'));
+		},
+
+		changeStartX: function() {
+
+			$(this.el).find('.startX').val(this.model.get('startX'));
+		},
+
+		changeStartY: function() {
+
+			$(this.el).find('.startY').val(this.model.get('startY'));
+		},
+
+		changeEndX: function() {
+
+			$(this.el).find('.endX').val(this.model.get('endX'));
+		},
+
+		changeEndY: function() {
+
+			$(this.el).find('.endY').val(this.model.get('endY'));
+		},
+	});
+
+	var RectangleView = LineView.extend({
+
+		rectangleTemplate: _.template($('#rectangleTemplate').html()),
+
+		events: _.extend({}, LineView.prototype.events, {
+		}),
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeStartX', 'changeStartY', 'changeEndX', 'changeEndY');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:startX', this.changeStartX);
+			this.model.bind('change:startY', this.changeStartY);
+			this.model.bind('change:endX', this.changeEndX);
+			this.model.bind('change:endY', this.changeEndY);
+		},
+
+		render: function() {
+
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var rectangle = this.rectangleTemplate(this.model.toJSON());
+
+			$shape.find('.shapeControls').prepend(rectangle);
+			$(this.el).html($shape.html());
+
+			return this;
+		},
+	});
+
+	var ConicView = ShapeView.extend({
+
+		events: _.extend({}, ShapeView.prototype.events, {
+			'change .centerX': 'updateCenterX',
+			'change .centerY': 'updateCenterY',
+		}),
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:centerX', this.changeCenterX);
+			this.model.bind('change:centerY', this.changeCenterY);
+		},
+
+		updateCenterX: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.centerX').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({centerX: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.centerX').val(this.model.get('centerX'));
+		},
+
+		updateCenterY: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.centerY').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({centerY: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.centerY').val(this.model.get('centerY'));
+		},
+
+		changeCenterX: function() {
+
+			$(this.el).find('.centerX').val(this.model.get('centerX'));
+		},
+
+		changeCenterY: function() {
+
+			$(this.el).find('.centerY').val(this.model.get('centerY'));
+		},
+	});
+
+	var CircleView = ConicView.extend({
+
+		circleTemplate: _.template($('#circleTemplate').html()),
+
+		events: _.extend({}, ConicView.prototype.events, {
+			'change .radius':  'updateRadius',
+		}),
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY', 'changeRadius');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:centerX', this.changeCenterX);
+			this.model.bind('change:centerY', this.changeCenterY);
+			this.model.bind('change:radius', this.changeRadius);
+		},
+
+		render: function() {
+
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var circle = this.circleTemplate(this.model.toJSON());
+
+			$shape.find('.shapeControls').prepend(circle);
+			$(this.el).html($shape.html());
+
+			return this;
+		},
+
+		updateRadius: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.radius').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({radius: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.radius').val(this.model.get('radius'));
+		},
+
+		changeRadius: function() {
+
+			$(this.el).find('.radius').val(this.model.get('radius'));
+		},
+	});
+
+	var EllipseView = ConicView.extend({
+
+		ellipseTemplate: _.template($('#ellipseTemplate').html()),
+
+		events: _.extend({}, ConicView.prototype.events, {
+			'change .radiusX': 'updateRadiusX',
+			'change .radiusY': 'updateRadiusY',
+		}),
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'remove', 'changeHexInput', 'changeSelected', 'changeCenterX', 'changeCenterY', 'changeRadiusX', 'changeRadiusY');
+
+			this.model.bind('remove', this.remove);
+			this.model.bind('change:hexColor', this.changeHexInput);
+			this.model.bind('change:selected', this.changeSelected);
+
+			this.model.bind('change:centerX', this.changeCenterX);
+			this.model.bind('change:centerY', this.changeCenterY);
+			this.model.bind('change:radiusX', this.changeRadiusX);
+			this.model.bind('change:radiusY', this.changeRadiusY);
+		},
+
+		render: function() {
+
+			var $shape = $(ShapeView.prototype.render.call(this).el);
+			var ellipse = this.ellipseTemplate(this.model.toJSON());
+
+			$shape.find('.shapeControls').prepend(ellipse);
+			$(this.el).html($shape.html());
+
+			return this;
+		},
+
+		updateRadiusX: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.radiusX').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({radiusX: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.radiusX').val(this.model.get('radiusX'));
+		},
+
+		updateRadiusY: function() {
+
+			var $this = $(this.el);
+			var testNum = parseInt($this.find('.radiusY').val());
+
+			if (!isNaN(testNum)) {
+
+				this.model.set({radiusY: testNum});
+				this.model.save();
+			}
+			else
+				$this.find('.radiusY').val(this.model.get('radiusY'));
+		},
+
+		changeRadiusX: function() {
+
+			$(this.el).find('.radiusX').val(this.model.get('radiusX'));
+		},
+
+		changeRadiusY: function() {
+
+			$(this.el).find('.radiusY').val(this.model.get('radiusY'));
+		},
+	});
+
+	// repurposing the View object for managing shapes on the canvas
+	var ShapeDraw = Backbone.View.extend({});
+
+	var LineDraw = ShapeDraw.extend({
+
+		// Bresenham's line algorithm
+		line: function(plot,startX,startY,endX,endY) {
+
+			var steep = false;
+			if (Math.abs(endY-startY) > Math.abs(endX-startX))
+				steep = true;
+
+			if (steep) {
+
+				var temp = startX;
+				startX = startY;
+				startY = temp;
+
+				temp = endX;
+				endX = endY;
+				endY = temp;
+			}
+
+			if (startX > endX) {
+
+				var temp = startX;
+				startX = endX;
+				endX = temp;
+
+				temp = startY;
+				startY = endY;
+				endY = temp;
+			}
+
+			var deltaX = endX - startX;
+			var deltaY = Math.abs(endY - startY);
+			var error = deltaX / 2;
+			var y = startY;
+
+			var yStep;
+			if (startY < endY)
+				yStep = 1;
+			else
+				yStep = -1;
+
+			for (var x=startX; x<=endX; x++) {
+
+				if (steep)
+					plot(y,x,this.model.get('rgba'));
 				else
-				{
-					circles.editingCircleRadius = true;
+					plot(x,y,this.model.get('rgba'));
 
-					var deltaX = circles.curCircle.centerX - curX;
-					var deltaY = circles.curCircle.centerY - curY;
+				error -= deltaY;
+				if (error < 0) {
 
-					circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+					y += yStep;
+					error += deltaX;
 				}
 			}
+		},
+
+		render: function(plot) {
+
+			var startX = this.model.get('startX');
+			var startY = this.model.get('startY');
+			var endX = this.model.get('endX');
+			var endY = this.model.get('endY');
+
+			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY))) {
+
+				this.line(plot,startX,startY,endX,endY);
+			}
+		},
+
+		setCursor: function(locX,locY) {
+
+			if (this.model.get('virgin'))
+				this.canvas.setCursor('crosshair');
+			else if (this.model.get('editingStart') || this.model.get('editingEnd'))
+				this.canvas.setCursor('closedHand');
+			else if (this.model.isStart(locX,locY) || this.model.isEnd(locX,locY))
+				this.canvas.setCursor('openHand');
 			else
-			{
-				startX = curX;
-				startY = curY;
+				this.canvas.setCursor('default');
+		},
 
-				circles.curCircle.updateCenterX(curX);
-				circles.curCircle.updateCenterY(curY);
-				circles.curCircle.updateRadius(0);
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+
+				this.model.set({editingEnd: true});
 			}
-		}
-		else if (ellipses.curEllipse)
-		{
-			if (ellipses.curEllipse.editing())
-			{
-				if (ellipses.isCurEllipseCenter(curX,curY))
-				{
-					canvas.cursorClosedHand();
-					ellipses.editingEllipseCenter = true;
+			else {
+
+				if (this.model.isStart(locX,locY)) {
+
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingStart: true});
 				}
-				else
-				{
-					ellipses.editingEllipseRadius = true;
+				else if (this.model.isEnd(locX,locY)) {
 
-					var deltaX = Math.abs(ellipses.curEllipse.centerX - curX);
-					var deltaY = Math.abs(ellipses.curEllipse.centerY - curY);
-
-					ellipses.curEllipse.updateRadiusX(deltaX);
-					ellipses.curEllipse.updateRadiusY(deltaY);
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingEnd: true});
 				}
 			}
-			else
-			{
-				startX = curX;
-				startY = curY;
+		},
 
-				ellipses.curEllipse.updateCenterX(curX);
-				ellipses.curEllipse.updateCenterY(curY);
-				ellipses.curEllipse.updateRadiusX(0);
-				ellipses.curEllipse.updateRadiusY(0);
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
 			}
-		}
-		else // click and drag panning
-		{
-			canvas.cursorClosedHand();
+			else if (this.model.get('editingEnd')) {
 
-			startX = canvas.getX(event.pageX);
-			startY = canvas.getY(event.pageY);
-		}
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+			}
+		},
+
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+				this.model.set({editingStart: false});
+			}
+			else if (this.model.get('editingEnd')) {
+
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+				this.model.set({editingEnd: false});
+			}
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+
+			this.model.save();
+		},
 	});
 
-	$('#canvas').mousemove(function(event)
-	{
-		if ((lines.curLine && lines.curLine.editing()) || (circles.curCircle && circles.curCircle.editing()) || (ellipses.curEllipse && ellipses.curEllipse.editing()))
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
+	var RectangleDraw = LineDraw.extend({
 
-			if (lines.curLine)
-			{
-				if (lines.editingLineStart || lines.editingLineEnd)
-					canvas.cursorClosedHand();
-				else if (lines.isCurLineStart(curX,curY) || lines.isCurLineEnd(curX,curY))
-					canvas.cursorOpenHand();
-				else
-					canvas.cursorDefault();
-			}
-			else if (circles.curCircle)
-			{
-				if (circles.editingCircleCenter)
-					canvas.cursorClosedHand();
-				else if (circles.isCurCircleCenter(curX,curY))
-					canvas.cursorOpenHand();
-				else
-					canvas.cursorCrosshair();
-			}
-			else if (ellipses.curEllipse)
-			{
-				if (ellipses.editingEllipseCenter)
-					canvas.cursorClosedHand();
-				else if (ellipses.isCurEllipseCenter(curX,curY))
-					canvas.cursorOpenHand();
-				else
-					canvas.cursorCrosshair();
-			}
-		}
+		render: function(plot) {
 
-		if (!clicking)
-			return;
+			var startX = this.model.get('startX');
+			var startY = this.model.get('startY');
+			var endX = this.model.get('endX');
+			var endY = this.model.get('endY');
 
-		if (lines.curLine)
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
+			if (!isNaN(parseInt(startX)) && !isNaN(parseInt(startY)) && !isNaN(parseInt(endX)) && !isNaN(parseInt(endY))) {
 
-			if (lines.curLine.editing())
-			{
-				if (lines.editingLineStart)
-				{
-					lines.curLine.updateStartX(curX);
-					lines.curLine.updateStartY(curY);
+				if (startX > endX) {
+
+					var temp = startX;
+					startX = endX;
+					endX = temp;
 				}
-				else if (lines.editingLineEnd)
-				{
-					lines.curLine.updateEndX(curX);
-					lines.curLine.updateEndY(curY);
+
+				this.line(plot,startX,startY,startX,endY);
+
+				if (startX != endX)
+					this.line(plot,endX,startY,endX,endY);
+
+				if (Math.abs(endX - startX) > 1) {
+
+					this.line(plot,startX+1,startY,endX-1,startY);
+
+					if (startY != endY)
+						this.line(plot,startX+1,endY,endX-1,endY);
 				}
 			}
+		},
+
+		setCursor: function(locX,locY) {
+
+			if (this.model.get('virgin'))
+				this.canvas.setCursor('crosshair');
+			else if (this.model.get('editingStart') || this.model.get('editingEnd') || this.model.get('editingStartEnd') || this.model.get('editingEndStart'))
+				this.canvas.setCursor('closedHand');
+			else if (this.model.isStart(locX,locY) || this.model.isEnd(locX,locY) || this.model.isStartEnd(locX,locY) || this.model.isEndStart(locX,locY))
+				this.canvas.setCursor('openHand');
 			else
-			{
-				lines.curLine.updateEndX(curX);
-				lines.curLine.updateEndY(curY);
+				this.canvas.setCursor('default');
+		},
+
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+
+				this.model.set({editingEnd: true});
 			}
-		}
-		else if (circles.curCircle)
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
+			else {
 
-			if (circles.curCircle.editing())
-			{
-				if (circles.editingCircleCenter)
-				{
-					circles.curCircle.updateCenterX(curX);
-					circles.curCircle.updateCenterY(curY);
+				if (this.model.isStart(locX,locY)) {
+
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingStart: true});
 				}
-				else if (circles.editingCircleRadius)
-				{
-					var deltaX = circles.curCircle.centerX - curX;
-					var deltaY = circles.curCircle.centerY - curY;
+				else if (this.model.isEnd(locX,locY)) {
 
-					circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingEnd: true});
 				}
-			}
-			else
-			{
-				var deltaX = startX - curX;
-				var deltaY = startY - curY;
+				else if (this.model.isStartEnd(locX,locY)) {
 
-				circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
-			}
-		}
-		else if (ellipses.curEllipse)
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
-
-			if (ellipses.curEllipse.editing())
-			{
-				if (ellipses.editingEllipseCenter)
-				{
-					ellipses.curEllipse.updateCenterX(curX);
-					ellipses.curEllipse.updateCenterY(curY);
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingStartEnd: true});
 				}
-				else if (ellipses.editingEllipseRadius)
-				{
-					var deltaX = Math.abs(ellipses.curEllipse.centerX - curX);
-					var deltaY = Math.abs(ellipses.curEllipse.centerY - curY);
+				else if (this.model.isEndStart(locX,locY)) {
 
-					ellipses.curEllipse.updateRadiusX(deltaX);
-					ellipses.curEllipse.updateRadiusY(deltaY);
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingEndStart: true});
 				}
 			}
-			else
-			{
-				var deltaX = Math.abs(startX - curX);
-				var deltaY = Math.abs(startY - curY);
+		},
 
-				ellipses.curEllipse.updateRadiusX(deltaX);
-				ellipses.curEllipse.updateRadiusY(deltaY);
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
 			}
-		}
-		else // click and drag panning
-		{
-			var curX = canvas.getX(event.pageX);
-			var curY = canvas.getY(event.pageY);
+			else if (this.model.get('editingEnd')) {
 
-			graph.moveOriginX(curX - startX);
-			graph.moveOriginY(curY - startY);
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+			}
+			else if (this.model.get('editingStartEnd')) {
 
-			startX = curX;
-			startY = curY
-		}
+				this.model.set({startX: locX});
+				this.model.set({endY: locY});
+			}
+			else if (this.model.get('editingEndStart')) {
+
+				this.model.set({endX: locX});
+				this.model.set({startY: locY});
+			}
+		},
+
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingStart')) {
+
+				this.model.set({startX: locX});
+				this.model.set({startY: locY});
+				this.model.set({editingStart: false});
+			}
+			else if (this.model.get('editingEnd')) {
+
+				this.model.set({endX: locX});
+				this.model.set({endY: locY});
+				this.model.set({editingEnd: false});
+			}
+			else if (this.model.get('editingStartEnd')) {
+
+				this.model.set({startX: locX});
+				this.model.set({endY: locY});
+				this.model.set({editingStartEnd: false});
+			}
+			else if (this.model.get('editingEndStart')) {
+
+				this.model.set({endX: locX});
+				this.model.set({startY: locY});
+				this.model.set({editingEndStart: false});
+			}
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+
+			this.model.save();
+		},
 	});
 
-	$(document).mouseup(function(event)
-	{
- 		if (!clicking)
-			return;
+	var ConicDraw = ShapeDraw.extend({
 
-		if (lines.curLine)
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
+		plotFourPoints: function(plot,x,y) {
 
-			if (lines.curLine.editing())
-			{
-				if (lines.editingLineStart)
-				{
-					lines.curLine.updateStartX(curX);
-					lines.curLine.updateStartY(curY);
+			plot(this.model.get('centerX')+x,this.model.get('centerY')+y,this.model.get('rgba'));
 
-					lines.editingLineStart = false;
-				}
-				else if (lines.editingLineEnd)
-				{
-					lines.curLine.updateEndX(curX);
-					lines.curLine.updateEndY(curY);
+			if (x != 0)
+				plot(this.model.get('centerX')-x,this.model.get('centerY')+y,this.model.get('rgba'));
 
-					lines.editingLineEnd = false;
-				}
-			}
+			if (y != 0)
+				plot(this.model.get('centerX')+x,this.model.get('centerY')-y,this.model.get('rgba'));
+
+			if ((x != 0) && (y != 0))
+				plot(this.model.get('centerX')-x,this.model.get('centerY')-y,this.model.get('rgba'));
+		},
+
+		setCursor: function(locX,locY) {
+
+			if (this.model.get('editingCenter'))
+				this.canvas.setCursor('closedHand');
+			else if (this.model.isCenter(locX,locY))
+				this.canvas.setCursor('openHand');
 			else
-			{
-				lines.curLine.updateEndX(curX);
-				lines.curLine.updateEndY(curY);
+				this.canvas.setCursor('crosshair');
+		},
 
-				lines.curLine.$lineControl.removeClass('selected');
-				lines.curLine.$lineControl.find('input').removeClass('selected');
-
-				lines.stopEditing();
-				canvas.cursorOpenHand();
-			}
-		}
-		else if (circles.curCircle)
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
-
-			if (circles.curCircle.editing())
-			{
-				if (circles.editingCircleCenter)
-				{
-					circles.curCircle.updateCenterX(curX);
-					circles.curCircle.updateCenterY(curY);
-
-					circles.editingCircleCenter = false;
-				}
-				else if (circles.editingCircleRadius)
-				{
-					var deltaX = circles.curCircle.centerX - curX;
-					var deltaY = circles.curCircle.centerY - curY;
-
-					circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
-
-					circles.editingCircleRadius = false;
-				}
-			}
-			else
-			{
-				var deltaX = startX - curX;
-				var deltaY = startY - curY;
-
-				circles.curCircle.updateRadius(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)));
-
-				circles.curCircle.$circleControl.removeClass('selected');
-				circles.curCircle.$circleControl.find('input').removeClass('selected');
-
-				circles.stopEditing();
-				canvas.cursorOpenHand();
-			}
-		}
-		else if (ellipses.curEllipse)
-		{
-			var curX = graph.getX(canvas.getX(event.pageX));
-			var curY = graph.getY(canvas.getY(event.pageY));
-
-			if (ellipses.curEllipse.editing())
-			{
-				if (ellipses.editingEllipseCenter)
-				{
-					ellipses.curEllipse.updateCenterX(curX);
-					ellipses.curEllipse.updateCenterY(curY);
-
-					ellipses.editingEllipseCenter = false;
-				}
-				else if (ellipses.editingEllipseRadius)
-				{
-					var deltaX = Math.abs(ellipses.curEllipse.centerX - curX);
-					var deltaY = Math.abs(ellipses.curEllipse.centerY - curY);
-
-					ellipses.curEllipse.updateRadiusX(deltaX);
-					ellipses.curEllipse.updateRadiusY(deltaY);
-
-					ellipses.editingEllipseRadius = false;
-				}
-			}
-			else
-			{
-				var deltaX = Math.abs(startX - curX);
-				var deltaY = Math.abs(startY - curY);
-
-				ellipses.curEllipse.updateRadiusX(deltaX);
-				ellipses.curEllipse.updateRadiusY(deltaY);
-
-				ellipses.curEllipse.$ellipseControl.removeClass('selected');
-				ellipses.curEllipse.$ellipseControl.find('input').removeClass('selected');
-
-				ellipses.stopEditing();
-				canvas.cursorOpenHand();
-			}
-		}
-		else // click and drag panning
-		{
-			var curX = canvas.getX(event.pageX);
-			var curY = canvas.getY(event.pageY);
-
-			graph.moveOriginX(curX - startX);
-			graph.moveOriginY(curY - startY);
-
-			canvas.cursorOpenHand();
-		}
-
-		clicking = false;
 	});
 
-	$('#canvas').mousewheel(function(event,delta)
-	{
-		var scaleTemp = graph.scale;
+	var CircleDraw = ConicDraw.extend({
 
-		graph.scale += delta;
-		graph.scale = parseInt(graph.scale * 1000) / 1000;
+		plotEightPoints: function(plot,x,y) {
 
-		if (graph.scale < 3)
-			graph.scale = 3;
-		else if (graph.scale > 50)
-			graph.scale = 50;
-		else
-		{
-			var mouseX = canvas.getX(event.pageX)-graph.getOriginX();
-			var mouseY = canvas.getY(event.pageY)-graph.getOriginY();
+			this.plotFourPoints(plot,x,y);
 
-			graph.moveOriginX(-(mouseX / scaleTemp) * delta);
-			graph.moveOriginY(-(mouseY / scaleTemp) * delta);
-		}
+			if (x != y)
+				this.plotFourPoints(plot,y,x);
+		},
+
+		// midpoint circle algorithm
+		render: function(plot) {
+
+			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radius')))) {
+
+				var x = this.model.get('radius');
+				var y = 0;
+				var error = -x;
+
+				while (x >= y) {
+
+					this.plotEightPoints(plot,x,y);
+
+					error += (2 * y) + 1;
+					y++;
+
+					if (error >= 0) {
+
+						x--;
+						error -= 2 * x;
+					}
+				}
+
+				if (this.model.get('selected'))
+					plot(this.model.get('centerX'),this.model.get('centerY'));
+			}
+		},
+
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({radius: 0});
+
+				this.model.set({editingRadius: true});
+			}
+			else {
+
+				if (this.model.isCenter(locX,locY)) {
+
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingCenter: true});
+				}
+				else {
+
+					this.model.set({editingRadius: true});
+
+					var deltaX = this.model.get('centerX') - locX;
+					var deltaY = this.model.get('centerY') - locY;
+
+					this.model.set({radius: (Math.sqrt((deltaX*deltaX) + (deltaY*deltaY)))});
+				}
+			}
+		},
+
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+			}
+			else if (this.model.get('editingRadius')) {
+
+				var deltaX = this.model.get('centerX') - locX;
+				var deltaY = this.model.get('centerY') - locY;
+
+				this.model.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
+			}
+		},
+
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({editingCenter: false});
+			}
+			else if (this.model.get('editingRadius')) {
+
+				var deltaX = this.model.get('centerX') - locX;
+				var deltaY = this.model.get('centerY') - locY;
+
+				this.model.set({radius: parseInt((Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))))});
+				this.model.set({editingRadius: false});
+			}
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+
+			this.model.save();
+		},
 	});
+
+	var EllipseDraw = ConicDraw.extend({
+
+		// midpoint ellipse algorithm
+		render: function(plot) {
+
+			if (!isNaN(parseInt(this.model.get('centerX'))) && !isNaN(parseInt(this.model.get('centerY'))) && !isNaN(parseInt(this.model.get('radiusX'))) && !isNaN(parseInt(this.model.get('radiusY')))) {
+
+				var x = -this.model.get('radiusX');
+				var y = 0;
+				var twoASquare = 2 * (this.model.get('radiusX') * this.model.get('radiusX'));
+				var twoBSquare = 2 * (this.model.get('radiusY') * this.model.get('radiusY'));
+				var deltaX = (1 - (2 * this.model.get('radiusX'))) * (this.model.get('radiusY') * this.model.get('radiusY'));
+				var deltaY = this.model.get('radiusX') * this.model.get('radiusX');
+				var error = deltaX + deltaY;
+				var errorDoubled;
+
+				do {
+
+					this.plotFourPoints(plot,x,y);
+
+					errorDoubled = 2 * error;
+
+					if (errorDoubled >= deltaX) {
+
+						x++;
+						deltaX += twoBSquare;
+						error += deltaX;
+					}
+
+					if (errorDoubled <= deltaY) {
+
+						y++;
+						deltaY += twoASquare;
+						error += deltaY;
+					}
+				} while (x <= 0);
+
+				// for flat ellipses with radiusX = 1
+				while (y++ < this.model.get('radiusY')) {
+
+					plot(this.model.get('centerX'), (this.model.get('centerY') + y), this.model.get('rgba')); // draw the tip of the ellipse
+					plot(this.model.get('centerX'), (this.model.get('centerY') - y), this.model.get('rgba'));
+				}
+
+				if (this.model.get('selected'))
+					plot(this.model.get('centerX'), this.model.get('centerY'), this.model.get('rgba'));
+			}
+		},
+
+		mouseDown: function(locX, locY) {
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({radiusX: 0});
+				this.model.set({radiusY: 0});
+
+				this.model.set({editingRadius: true});
+			}
+			else {
+
+				if (this.model.isCenter(locX,locY)) {
+
+					this.canvas.setCursor('closedHand');
+					this.model.set({editingCenter: true});
+				}
+				else {
+
+					this.model.set({editingRadius: true});
+
+					var deltaX = Math.abs(this.model.get('centerX') - locX);
+					var deltaY = Math.abs(this.model.get('centerY') - locY);
+
+					this.model.set({radiusX: deltaX});
+					this.model.set({radiusY: deltaY});
+				}
+			}
+		},
+
+		mouseMove: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+			}
+			else if (this.model.get('editingRadius')) {
+
+				var deltaX = Math.abs(this.model.get('centerX') - locX);
+				var deltaY = Math.abs(this.model.get('centerY') - locY);
+
+				this.model.set({radiusX: deltaX});
+				this.model.set({radiusY: deltaY});
+			}
+		},
+
+		mouseUp: function(locX,locY) {
+
+			if (this.model.get('editingCenter')) {
+
+				this.model.set({centerX: locX});
+				this.model.set({centerY: locY});
+				this.model.set({editingCenter: false});
+			}
+			else if (this.model.get('editingRadius')) {
+
+				var deltaX = Math.abs(this.model.get('centerX') - locX);
+				var deltaY = Math.abs(this.model.get('centerY') - locY);
+
+				this.model.set({radiusX: deltaX});
+				this.model.set({radiusY: deltaY});
+				this.model.set({editingRadius: false});
+			}
+
+			if (this.model.get('virgin')) {
+
+				this.model.set({virgin: false});
+				this.model.set({selected: false});
+			}
+
+			this.model.save();
+		},
+	});
+
+	var ShapesPane = Backbone.View.extend({
+
+		el: $('#shapesPane'),
+
+		template: _.template($('#shapesPaneTemplate').html()),
+
+		events: {
+			'click #addLine':      'createLine',
+			'click #addRectangle': 'createRectangle',
+			'click #addCircle':    'createCircle',
+			'click #addEllipse':   'createEllipse',
+		},
+
+		initialize: function() {
+
+			_.bindAll(this, 'render','addShape', 'addShapes');
+
+			this.collection.bind('add', this.addShape);
+			this.collection.bind('reset', this.addShapes);
+
+			this.render();
+		},
+
+		resize: function() {
+
+			$('#controlPane').height($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true));
+			$('#shapesPane').height($('#controlPane').height() - $('#graphPane').height());
+			$('#shapes').height($('#shapesPane').height() - $('#addShapes').height());
+		},
+
+		render: function() {
+
+			$(this.el).html(this.template({}));
+			return this;
+		},
+
+		createLine: function() {
+
+			var line = new Line;
+			this.collection.create(line);
+			line.set({selected: true});
+		},
+
+		createRectangle: function() {
+
+			var rectangle = new Rectangle;
+			this.collection.create(rectangle);
+			rectangle.set({selected: true});
+		},
+
+		createCircle: function() {
+
+			var circle = new Circle;
+			this.collection.create(circle);
+			circle.set({selected: true});
+		},
+
+		createEllipse: function() {
+
+			var ellipse = new Ellipse;
+			this.collection.create(ellipse);
+			ellipse.set({selected: true});
+		},
+
+		addShape: function(shape) {
+
+			var view;
+
+			if (shape instanceof Rectangle)
+				view = new RectangleView({model: shape});
+			else if (shape instanceof Line)
+				view = new LineView({model: shape});
+			else if (shape instanceof Circle)
+				view = new CircleView({model: shape});
+			else if (shape instanceof Ellipse)
+				view = new EllipseView({model: shape});
+
+			var $newShapeView = $(view.render().el);
+
+			$newShapeView.hide();
+			this.$('#shapes').prepend($newShapeView);
+			$newShapeView.slideDown();
+		},
+
+		addShapes: function() {
+
+			this.collection.each(this.addShape);
+		},
+	});
+
+	var Graph = Backbone.Model.extend({
+
+		defaults: {
+			color:      'rgba(1,1,1,0.1)',
+			highlight:  'rgba(1,1,1,0.2)',
+			scale:      10,
+			originX:    0,
+			originY:    0,
+			interval:   2,                  // how often a marker is drawn along the axes
+
+			mouseX:     '',                 // location of mouse when within canvas
+			mouseY:     '',                 // location of mouse when within canvas
+		},
+
+		// essentially +=, but then corrected for floating point errors
+		augment: function(delta,options) {
+
+			if (delta.scale) {
+
+				var scaleOrig = this.get('scale');
+
+				var scaleTemp = parseInt((scaleOrig+delta.scale) * 1000) / 1000;
+
+				// make sure 'scale' doesn't get too small nor too big
+				if (scaleTemp < 3)
+					scaleTemp = 3;
+				else if (scaleTemp > 50)
+					scaleTemp = 50;
+
+				if (scaleOrig != scaleTemp) {
+					//
+					// we'll trigger the need to redraw once we're done
+					options = _.extend({}, options, {silent: true});
+
+					this.set({scale: scaleTemp}, options);
+
+					if (delta.focusCenter) {
+
+						var canvasCenterX = this.canvas.model.get('width') / 2;
+						var canvasCenterY = this.canvas.model.get('height') / 2;
+
+						// zoom to center of canvas
+						this.augment({originX: (((canvasCenterX-this.get('originX'))/scaleTemp) * (scaleOrig - scaleTemp))}, options);
+						this.augment({originY: (((canvasCenterY-this.get('originY'))/scaleTemp) * (scaleOrig - scaleTemp))}, options);
+					}
+					else {
+
+						// zoom to the current mouse location
+						this.augment({originX: (((this.canvas.model.get('mouseX')-this.get('originX')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
+						this.augment({originY: (((this.canvas.model.get('mouseY')-this.get('originY')) / scaleOrig) * (scaleOrig - scaleTemp))}, options);
+					}
+
+					this.trigger('change:scale');
+				}
+			}
+
+			if (delta.originX) {
+
+				this.set({originX: Math.floor((this.get('originX')*1000) + (delta.originX*1000)) / 1000}, options);
+			}
+
+			if (delta.originY) {
+
+				this.set({originY: Math.floor((this.get('originY')*1000) + (delta.originY*1000)) / 1000}, options);
+			}
+		},
+
+		// return x relative to the graph
+		graphX: function(x) {
+
+			return Math.round((x - this.get('originX')) / this.get('scale'));
+		},
+
+		// return y relative to the graph
+		graphY: function(y) {
+
+			return Math.round((this.get('originY') - y) / this.get('scale'));
+		},
+	});
+
+	var GraphView = Backbone.View.extend({
+
+		el: $('#graphPane'),
+
+		template: _.template($('#graphControlTemplate').html()),
+
+		events: {
+			'click #clear': 'clearShapes',
+		},
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'clearShapes', 'changeMouseX', 'changeMouseY');
+
+			this.model.bind('change:mouseX', this.changeMouseX);
+			this.model.bind('change:mouseY', this.changeMouseY);
+
+			this.render();
+			this.$mouseX = $('#mouseX');
+			this.$mouseY = $('#mouseY');
+		},
+
+		render: function() {
+
+			$(this.el).html(this.template(this.model.toJSON()));
+		},
+
+		clearShapes: function() {
+
+			while(this.model.canvas.collection.size())
+				this.model.canvas.collection.last().destroy();
+		},
+
+		changeMouseX: function() {
+
+			this.$mouseX.html(this.model.get('mouseX'));
+		},
+
+		changeMouseY: function() {
+
+			this.$mouseY.html(this.model.get('mouseY'));
+		},
+	});
+
+	var GraphDraw = Backbone.View.extend({
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'plot', 'fill');
+		},
+
+		// draw a square on the canvas relative to 'scale'
+		fill: function(row,col,color) {
+
+			var width = this.canvas.model.get('width');
+			var height = this.canvas.model.get('height');
+			var scale = this.model.get('scale');
+
+			var cols = Math.floor(width / scale);
+			var rows = Math.floor(height / scale);
+
+			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
+			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			this.canvas.context.beginPath();
+			this.canvas.context.fillStyle = color;
+			this.canvas.context.rect(col*scale+xOffset,row*scale+yOffset,scale-1,scale-1);
+			this.canvas.context.closePath();
+			this.canvas.context.fill();
+		},
+
+		// 'fill' a point on the cartesian plane
+		plot: function(x,y,color) {
+
+			var upperLeftX = -parseInt((this.model.get('originX') - (this.model.get('scale')/2)) / this.model.get('scale'));
+			var upperLeftY = parseInt((this.model.get('originY') - (this.model.get('scale')/2)) / this.model.get('scale'));
+
+			this.fill(upperLeftY-y,x-upperLeftX,color);
+		},
+
+		render: function() {
+
+			var width = this.canvas.model.get('width');
+			var height = this.canvas.model.get('height');
+			var scale = this.model.get('scale');
+
+			// fill with background color
+			this.canvas.context.beginPath();
+			this.canvas.context.fillStyle = this.model.get('color');
+			this.canvas.context.rect(0,0,width,height);
+			this.canvas.context.closePath();
+			this.canvas.context.fill();
+
+			var cols = Math.floor(width / scale);
+			var xOffset = ((this.model.get('originX') - (scale/2)) % scale);
+
+			if (xOffset < 0)
+				xOffset += scale;
+
+			for (var col=0; col<=cols; col++) {
+
+				this.canvas.context.beginPath();
+				this.canvas.context.fillStyle = "rgba(255,255,255,1)";
+				this.canvas.context.rect((col * scale) + xOffset, 0, 1, height);
+				this.canvas.context.closePath();
+				this.canvas.context.fill();
+
+				// draw marks along the X axis
+				var x = col - parseInt((this.model.get('originX') - (scale/2)) / scale);
+				if ((x % this.model.get('interval')) == 0)
+					this.plot(x,0,this.model.get('highlight'));
+				else if ((col == 0) && (((x-1) % this.model.get('interval')) == 0))
+					this.plot(x-1,0,this.model.get('highlight'));
+				else if ((col == cols) && (((x+1) % this.model.get('interval')) == 0))
+					this.plot(x+1,0,this.model.get('highlight'));
+			}
+
+			var rows = Math.floor(height / scale);
+			var yOffset = ((this.model.get('originY') - (scale/2)) % scale);
+
+			if (yOffset < 0)
+				yOffset += scale;
+
+			for (var row=0; row<=rows; row++) {
+
+				this.canvas.context.beginPath();
+				this.canvas.context.fillStyle = "rgba(255,255,255,1)";
+				this.canvas.context.rect(0, (row * scale) + yOffset, width, 1);
+				this.canvas.context.closePath();
+				this.canvas.context.fill();
+
+				// draw marks along the Y axis
+				var y = parseInt((this.model.get('originY') - (scale/2)) / scale) - row;
+				if ((y % this.model.get('interval')) == 0)
+					this.plot(0,y,this.model.get('highlight'));
+				else if ((row == 0) && (((y+1) % this.model.get('interval')) == 0))
+					this.plot(0,y+1,this.model.get('highlight'));
+				else if ((row == rows) && (((y-1) % this.model.get('interval')) == 0))
+					this.plot(0,y-1,this.model.get('highlight'));
+			}
+		},
+	});
+
+	var Canvas = Backbone.Model.extend({
+
+		defaults: {
+			height:     500,                // size of canvas
+			width:      500,                // size of canvas
+			offsetLeft: 0,                  // location of canvas
+			offsetTop:  0,                  // location of canvas
+			mouseX:     0,                  // mouse location
+			mouseY:     0,                  // mouse location
+			lastX:      0,                  // last mouse location
+			lastY:      0,                  // last mouse location
+			clicking:   false,              // if the user is clicking the mouse button
+		},
+	});
+
+	var CanvasView = Backbone.View.extend({
+
+		el: $('#canvas'),
+
+		cursors: {
+			default:    'default',
+			openHand:   'url(images/openhand.cur),move',
+			closedHand: 'url(images/closedhand.cur),move',
+			crosshair:  'crosshair',
+		},
+
+		events: {
+			'mousedown':  'mouseDown',
+			'mousemove':  'reportLocation',
+			'mouseout':   'clearLocation',
+			'mousewheel': 'mouseWheel',
+		},
+
+		initialize: function() {
+
+			_.bindAll(this, 'render', 'addShape', 'addShapes', 'shapeSelected', 'reportLocation', 'mouseUp', 'mouseMove');
+
+			// in case the user's mouse is not on the canvas
+			$(document).bind('mousemove', this.mouseMove);
+			$(document).bind('mouseup', this.mouseUp);
+
+			this.model = new Canvas();
+
+			this.$canvas = $(this.el);
+			this.context = this.$canvas[0].getContext('2d');
+
+			// set bindings with shapes
+			this.collection.bind('add', this.addShape);
+			this.collection.bind('reset', this.addShapes);
+			this.collection.bind('change:selected', this.shapeSelected);
+			this.collection.bind('all', this.render);
+
+			// set up graph
+			this.graph = new Graph();
+			this.graph.view = new GraphView({model: this.graph});
+			this.graph.draw = new GraphDraw({model: this.graph});
+			this.graph.canvas = this;
+			this.graph.draw.canvas = this;
+
+			this.graph.bind('change:scale', this.render);
+			this.graph.bind('change:originX', this.render);
+			this.graph.bind('change:originY', this.render);
+
+			this.resize();
+			this.graph.set({originX: Math.floor(this.model.get('width') / 2)});
+			this.graph.set({originY: Math.floor(this.model.get('height') / 2)});
+
+			this.setCursor('openHand');
+		},
+
+		render: function() {
+			this.clear();
+			this.graph.draw.render();
+
+			this.collection.each(function(shape) {
+
+				shape.draw.render(this.graph.draw.plot);
+			},this);
+		},
+
+		resize: function() {
+
+			this.$canvas.attr('height', ($(window).height() - $('#header').outerHeight(true) - $('#canvasFooter').outerHeight(true)));
+			this.$canvas.attr('width', ($(window).width() - $('#controlPane').outerWidth(true) - $('#adPane').outerWidth(true)));
+
+			// stash canvas details
+			this.model.set({height: this.$canvas.height()});
+			this.model.set({width: this.$canvas.width()});
+			this.model.set({offsetLeft: this.$canvas.offset().left});
+			this.model.set({offsetTop: this.$canvas.offset().top});
+
+			// adjust size of #canvasPane
+			$('#canvasPane').height(this.model.get('height') + $('#canvasFooter').outerHeight(true));
+			$('#canvasPane').width(this.model.get('width'));
+		},
+
+		addShape: function(shape) {
+
+			var draw;
+
+			if (shape instanceof Rectangle)
+				draw = new RectangleDraw({model: shape});
+			else if (shape instanceof Line)
+				draw = new LineDraw({model: shape});
+			else if (shape instanceof Circle)
+				draw = new CircleDraw({model: shape});
+			else if (shape instanceof Ellipse)
+				draw = new EllipseDraw({model: shape});
+
+			draw.canvas = this;
+			shape.draw = draw;
+		},
+
+		addShapes: function() {
+
+			this.collection.each(this.addShape);
+		},
+
+		shapeSelected: function(justSelected) {
+
+			if (justSelected === this.selected) {
+
+				this.selected = null;
+				this.setCursor('openHand');
+			}
+			else {
+
+				if (this.selected)
+					this.selected.set({selected: false}, {silent: true});
+
+				this.selected = justSelected;
+			}
+		},
+
+		reportLocation: function(event) {
+
+			this.graph.set({mouseX: this.graph.graphX(this.canvasX(event.pageX))});
+			this.graph.set({mouseY: this.graph.graphY(this.canvasY(event.pageY))});
+		},
+
+		clearLocation: function() {
+
+			this.graph.set({mouseX: ''});
+			this.graph.set({mouseY: ''});
+		},
+
+		mouseDown: function(event) {
+
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
+
+			this.model.set({clicking: true});
+
+			if (!this.selected)
+				this.setCursor('closedHand');
+			else {
+
+				var locX = this.graph.graphX(this.model.get('mouseX'));
+				var locY = this.graph.graphY(this.model.get('mouseY'));
+
+				this.selected.draw.mouseDown(locX,locY);
+			}
+		},
+
+		mouseMove: function(event) {
+
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
+
+			var locX = this.graph.graphX(this.model.get('mouseX'));
+			var locY = this.graph.graphY(this.model.get('mouseY'));
+
+			if (this.selected)
+				this.selected.draw.setCursor(locX,locY);
+
+			if (!this.model.get('clicking'))
+				return;
+
+			if (!this.selected) {
+
+				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			}
+			else {
+
+				if (this.model.get('mouseX') < 10)
+					this.graph.augment({scale: -0.1, focusCenter: true});
+				else if (this.model.get('mouseX') > (this.model.get('width') - 10))
+					this.graph.augment({scale: -0.1, focusCenter: true});
+				else if (this.model.get('mouseY') < 10)
+					this.graph.augment({scale: -0.1, focusCenter: true});
+				else if (this.model.get('mouseY') > (this.model.get('height') - 10))
+					this.graph.augment({scale: -0.1, focusCenter: true});
+
+				this.selected.draw.mouseMove(locX,locY);
+			}
+		},
+
+		mouseWheel: function(event,delta) {
+
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
+
+			this.graph.augment({scale: delta});
+		},
+
+		mouseUp: function(event) {
+
+			this.model.set({lastX: this.model.get('mouseX')});
+			this.model.set({lastY: this.model.get('mouseY')});
+			this.model.set({mouseX: this.canvasX(event.pageX)});
+			this.model.set({mouseY: this.canvasY(event.pageY)});
+
+			if (!this.model.get('clicking'))
+				return;
+
+			if (!this.selected) {
+
+				this.graph.augment({originX: this.model.get('mouseX') - this.model.get('lastX')});
+				this.graph.augment({originY: this.model.get('mouseY') - this.model.get('lastY')});
+			}
+			else {
+
+				var locX = this.graph.graphX(this.model.get('mouseX'));
+				var locY = this.graph.graphY(this.model.get('mouseY'));
+
+				this.selected.draw.mouseUp(locX,locY);
+			}
+
+			this.model.set({clicking: false});
+			this.setCursor('openHand');
+		},
+
+		setCursor: function(cursor) {
+
+			this.$canvas.css('cursor', this.cursors[cursor]);
+		},
+
+		canvasX: function(x) {
+
+			return x - this.model.get('offsetLeft');
+		},
+
+		canvasY: function(y) {
+
+			return y - this.model.get('offsetTop');
+		},
+
+		clear: function() {
+
+			this.context.clearRect(0,0,this.model.get('width'),this.model.get('height'));
+		},
+	});
+
+	var shapes =     new Shapes();
+	var shapesPane = new ShapesPane({collection: shapes});
+	var scene =      new CanvasView({collection: shapes});
+
+	shapesPane.resize();
+	shapes.fetch();
 });
+
