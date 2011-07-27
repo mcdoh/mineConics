@@ -110,6 +110,7 @@ input
 #controlPane
 {
 	width: 20%;
+	max-width: 225px;
 	float: left;
 }
 
@@ -161,7 +162,7 @@ ul#addShapeList
 {
 }
 
-span.addShapeRow
+div.addShapeRow
 {
 	float: right;
 	right: 50%;
@@ -292,9 +293,7 @@ input.field
 
 #canvasPane
 {
-	width: 500px;
-	height: 500px;
-	float: left;
+	float: right;
 }
 
 #graph
@@ -333,8 +332,7 @@ input.field
 {
 	max-width: 160px;
 	min-width: 1em;
-	max-height: 600px;
 	float: right;
-	margin-left: 2px;
+	margin: 5px;
 }
 

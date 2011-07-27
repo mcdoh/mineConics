@@ -1243,7 +1243,7 @@ $(function() {
 
 		resize: function() {
 
-			$('#controlPane').height($(window).height() - $('#header').outerHeight(true) - $('#zoomHelp').outerHeight(true));
+			$('#controlPane').height($(window).height() - $('#header').outerHeight(true) - $('#canvasFooter').outerHeight(true));
 			$('#shapesPane').height($('#controlPane').height() - $('#graphPane').height());
 			$('#shapes').height($('#shapesPane').height() - $('#addShapes').height());
 		},
@@ -1536,8 +1536,6 @@ $(function() {
 		defaults: {
 			height:     500,                // size of canvas
 			width:      500,                // size of canvas
-			offsetLeft: 0,                  // location of canvas
-			offsetTop:  0,                  // location of canvas
 			mouseX:     0,                  // mouse location
 			mouseY:     0,                  // mouse location
 			lastX:      0,                  // last mouse location
@@ -1619,12 +1617,16 @@ $(function() {
 			// stash canvas details
 			this.model.set({height: this.$canvas.height()});
 			this.model.set({width: this.$canvas.width()});
-			this.model.set({offsetLeft: this.$canvas.offset().left});
-			this.model.set({offsetTop: this.$canvas.offset().top});
 
 			// adjust size of #canvasPane
 			$('#canvasPane').height(this.model.get('height') + $('#canvasFooter').outerHeight(true));
 			$('#canvasPane').width(this.model.get('width'));
+
+			// adjust #adPane to align with bottom of canvas
+			if ($('#adPane').outerHeight(true) < $(window).height())
+			{
+				$('#adPane').css('margin-top', $(window).height() - ($('#adPane').height() + $('#canvasFooter').outerHeight(true)));
+			}
 		},
 
 		addShape: function(shape) {
@@ -1775,12 +1777,12 @@ $(function() {
 
 		canvasX: function(x) {
 
-			return x - this.model.get('offsetLeft');
+			return x - this.$canvas.offset().left;
 		},
 
 		canvasY: function(y) {
 
-			return y - this.model.get('offsetTop');
+			return y - this.$canvas.offset().top;
 		},
 
 		clear: function() {

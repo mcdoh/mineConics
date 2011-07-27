@@ -10,23 +10,18 @@
 
 		<link type="text/css" href="css/mineConics.css" rel="stylesheet">
 
-		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
-
-		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js"></script>
-		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js"></script>
-		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.1/backbone-min.js"></script>
-
-		<script type="text/javascript" src="scripts/backbone-localstorage.js"></script> 
-		<script type="text/javascript" src="scripts/jquery.mousewheel.js"></script>
-		<script type="text/javascript" src="scripts/mineConics.js"></script> 
-
 	</head>
 
 	<body>
 
+		<div id="adPane">
+			<img src="myAd.png"/>
+		</div>
+
 		<div id="container">
 
 			<div id="header">
+<!-- 				<div id="plusOne"><g:plusone size="small"></g:plusone></div> -->
 				<div id="menuBar"><a id="blogLink" href="http://blog.mineconics.net">blog</a></div>
 				<div id="headingWrapper">
 					<h1 id="heading"><a id="homeLink" href="http://www.mineconics.net" title="circles and ellipses for minecraft">mineConics</a></h1>
@@ -45,7 +40,7 @@
 				</div>
 
 				<div id="canvasPane">
-					<canvas id="canvas" width="500" height="500"></canvas>
+					<canvas id="canvas"></canvas>
 					<div id="canvasFooter">
 						<div id="mouseLocation">
 							<span id="mouseX" class="mouseLocation"></span>
@@ -53,9 +48,6 @@
 						</div>
 						<div id="zoomHelp">scroll to zoom</div>
 					</div>
-				</div>
-
-				<div id="adPane">
 				</div>
 
 			</div>
@@ -76,14 +68,15 @@
 		<script type="text/template" id="shapesPaneTemplate"> 
 			<div id="addShapes" class="control">
 				<ul id="addShapeList">
-					<span class="addShapeRow">
+					<div class="addShapeRow">
 						<li id="addLine" class="addShape">[add line]</li>
 						<li id="addRectangle" class="addShape">[add rectangle]</li>
-					</span>
-					<span class="addShapeRow">
+					</div>
+					<br/>
+					<div class="addShapeRow">
 						<li id="addCircle" class="addShape">[add circle]</li>
 						<li id="addEllipse" class="addShape">[add ellipse]</li>
-					</span>
+					</div>
 				</ul>
 			</div>
 			<ul id="shapes"></ul>
@@ -171,5 +164,24 @@
 				</div>
 			</div>
 		</script>
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.1.7/underscore-min.js"></script>
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.5.1/backbone-min.js"></script>
+
+		<script type="text/javascript" src="scripts/backbone-localstorage.js"></script> 
+		<script type="text/javascript" src="scripts/jquery.mousewheel.js"></script>
+		<script type="text/javascript" src="scripts/mineConics.js"></script> 
+
+		<script type="text/javascript">
+			(function() {
+				var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+				po.src = 'https://apis.google.com/js/plusone.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+			})();
+		</script>
+
 	</body>
 </html>
